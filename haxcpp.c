@@ -563,6 +563,13 @@ int main(int argc,char **argv) {
 
                         continue;
                     }
+                    else if (!strcasecmp(token,"error")) {
+                        /* error out, as instructed */
+                        strp_eatwhitespace(&s);
+                        fprintf_stderr_current_source(ERROR);
+                        fprintf(stderr,"#error %s\n",s);
+                        goto fail;
+                    }
                 }
             }
         }
