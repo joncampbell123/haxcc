@@ -59,13 +59,27 @@ struct macro {
 struct macro            macro[MAX_DEFINES];
 int                     macro_count=0;
 
+static int macro_delete(struct macro *mac) {
+    if (mac->name) {
+        free(mac->name);
+        mac->name = NULL;
+    }
+    if (mac->value != NULL) {
+        free(mac->value);
+        mac->value = NULL;
+    }
+    mac->source_line = 0;
+    mac->source_path_index = -1;
+    return 0;
+}
+
 static struct macro *macro_find(const char *name) {
     struct macro *ret;
     int i=0;
 
     while (i < macro_count) {
         ret = &macro[i++];
-        if (!strcmp(name,ret->name))
+        if (ret->name && !strcmp(name,ret->name))
             return ret;
     }
 
@@ -163,6 +177,7 @@ static void dump_macros(void) {
     fprintf(stderr,"Macros:\n");
     for (i=0;i < macro_count;i++) {
         mac = &macro[i];
+        if (mac->name == NULL) continue;
         fprintf(stderr,"  From: %s\n",source_path_name(mac->source_path_index));
         fprintf(stderr,"  Line: %ld\n",mac->source_line);
         fprintf(stderr,"  Name: %s\n",mac->name);
@@ -374,6 +389,43 @@ void fprintf_stderr_current_source(const int wtype) {
     fprintf(stderr,"%s: %s:%ld ",stderr_msg[wtype],source_path_name(current_source_path_index),current_source_path_line);
 }
 
+int do_undef(char *s) {
+    struct macro *mac;
+
+/* #undef macro */
+/* s = points at first char of macro name */
+    if (*s == 0) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"#define requires macro name\n");
+        return -1;
+    }
+    if (strp_macroname(token,sizeof(token),&s) < 0) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"Failure to parse macro name\n");
+        return -1;
+    }
+    if (*s == 0) {
+        /* #define macro with no value */
+    }
+    else if (!isspace(*s)) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"Junk after macro name '%s'\n",s);
+        return -1;
+    }
+    strp_eatwhitespace(&s);
+
+    mac = macro_find(token);
+    if (mac != NULL) {
+        macro_delete(mac);
+    }
+    else {
+        fprintf_stderr_current_source(WARNING);
+        fprintf(stderr,"Macro '%s' not defined\n",token);
+    }
+
+    return 0;
+}
+
 int do_define(char *s) {
     struct macro *mac;
 
@@ -499,6 +551,14 @@ int main(int argc,char **argv) {
                         /* do not carry through */
                         strp_eatwhitespace(&s);
                         if (do_define(s) < 0)
+                            goto fail;
+
+                        continue;
+                    }
+                    else if (!strcasecmp(token,"undef")) {
+                        /* do not carry through */
+                        strp_eatwhitespace(&s);
+                        if (do_undef(s) < 0)
                             goto fail;
 
                         continue;
