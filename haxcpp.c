@@ -164,6 +164,7 @@ static void dump_macros(void) {
         fprintf(stderr,"  From: %s\n",source_path_name(mac->source_path_index));
         fprintf(stderr,"  Name: %s\n",mac->name);
         fprintf(stderr,"  Valu: %s\n",mac->value);
+        fprintf(stderr,"\n");
     }
 }
 
@@ -371,6 +372,8 @@ void fprintf_stderr_current_source(const int wtype) {
 }
 
 int do_define(char *s) {
+    struct macro *mac;
+
 /* #define macro
  * #define macro value */
 /* s = points at first char of macro name */
@@ -398,6 +401,22 @@ int do_define(char *s) {
         return -1;
     }
     strp_eatwhitespace(&s);
+
+    mac = macro_find(token);
+    if (mac != NULL) {
+        if (strcmp(mac->value,s) != 0) {
+            /* only warn if the name is the same, and the value is not */
+            fprintf_stderr_current_source(WARNING);
+            fprintf(stderr,"Macro '%s' multiply defined, with different values.\n",token);
+            /* and then let the latter one replace the former */
+            if (macro_value_replace(mac,s) < 0)
+                return -1;
+        }
+    }
+    else {
+        if ((mac=macro_add(token,s,current_source_path_index)) == NULL)
+            return -1;
+    }
 
     return 0;
 }
@@ -497,6 +516,11 @@ int main(int argc,char **argv) {
     if (output_fp != NULL) {
         fclose(output_fp);
         output_fp = NULL;
+    }
+
+    if (dumppre) {
+        dump_macros();
+        dump_includes();
     }
 
     return 0;
