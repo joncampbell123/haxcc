@@ -17,5 +17,5 @@ $(HAXCPP): $(HAXCPP_OBJ) $(HAXCPP_DEPS)
 	gcc -o $@ $(HAXCPP_OBJ)
 
 .c.o:
-	gcc -DLINUX -c -o $@ $<
+	gcc -DLINUX -Wall -pedantic -c -o $@ $<
 
