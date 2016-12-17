@@ -1,5 +1,7 @@
 
+#include <ctype.h>
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,6 +9,9 @@ char                dumppre = 0;
 
 char*               source_file = NULL;
 char*               output_file = NULL;
+
+FILE*               source_fp = NULL;
+FILE*               output_fp = NULL;
 
 #define MAX_DEFINES         4096
 #define MAX_SOURCE_FILES    4096
@@ -18,6 +23,10 @@ struct source_path {
 
 struct source_path      source_path[MAX_SOURCE_FILES];
 int                     source_path_count = 0;
+
+static int source_path_ptr2index(struct source_path *rec) {
+    return (int)(rec - &source_path[0]); /* C pointer math says result is byte count difference divided by sizeof struct */
+}
 
 static struct source_path *source_path_add(const char *path) {
     struct source_path *ret;
@@ -135,9 +144,11 @@ static int include_path_add(const char *path) {
 }
 
 static const char *source_path_name(int idx) {
-    if (idx < 0)
+    if (idx == -1)
         return "<command line>";
-    if (idx >= source_path_count)
+    else if (idx == -2)
+        return "<stdin>";
+    else if (idx < -2 || idx >= source_path_count)
         return "<ERANGE>";
 
     return source_path[idx].path;
@@ -286,7 +297,113 @@ static int parse_argv(int argc,char **argv) {
     return 0;
 }
 
+static void strp_eatwhitespace(char **s) {
+    char c;
+
+    while ((c=*(*s)) && isspace(c))
+        (*s)++;
+}
+
+static int strp_parsedirective(char *dst,size_t dstmax,char **s) {
+    size_t o=0;
+    char c;
+
+    strp_eatwhitespace(s);
+
+    while ((c=*(*s)) && !(isspace(c) || c == '<')) {
+        if ((o+1) >= dstmax)
+            return -1;
+
+        if (!isalpha(c))
+            return -1;
+
+        dst[o++] = c;
+        (*s)++;
+    }
+    dst[o] = 0;
+    return 0;
+}
+
+static int ismacronamechar(const char c) {
+    return isalnum(c) || c == '_';
+}
+
+static int strp_macroname(char *dst,size_t dstmax,char **s) {
+    size_t o=0;
+    char c;
+
+    strp_eatwhitespace(s);
+
+    while ((c=*(*s)) && !(isspace(c) || c == '(')) {
+        if ((o+1) >= dstmax)
+            return -1;
+
+        if (!ismacronamechar(c))
+            return -1;
+
+        dst[o++] = c;
+        (*s)++;
+    }
+    dst[o] = 0;
+    return 0;
+}
+
+/* line (and where string expansion occurs) */
+static char token[1024];
+static char line[32768];
+static long current_source_path_line;
+static int current_source_path_index;
+
+enum {
+    INFO=0,
+    WARNING,
+    ERROR
+};
+
+const char *stderr_msg[] = {
+    "Info",
+    "Warning",
+    "Error"
+};
+
+void fprintf_stderr_current_source(const int wtype) {
+    fprintf(stderr,"%s: %s:%ld ",stderr_msg[wtype],source_path_name(current_source_path_index),current_source_path_line);
+}
+
+int do_define(char *s) {
+/* #define macro
+ * #define macro value */
+/* s = points at first char of macro name */
+    if (*s == 0) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"#define requires macro name\n");
+        return -1;
+    }
+    if (strp_macroname(token,sizeof(token),&s) < 0) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"Failure to parse macro name\n");
+        return -1;
+    }
+    if (*s == '(') {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"Macros with parameters not yet supported\n");
+        return -1;
+    }
+    if (*s == 0) {
+        /* #define macro with no value */
+    }
+    else if (!isspace(*s)) {
+        fprintf_stderr_current_source(ERROR);
+        fprintf(stderr,"Junk after macro name '%s'\n",s);
+        return -1;
+    }
+    strp_eatwhitespace(&s);
+
+    return 0;
+}
+
 int main(int argc,char **argv) {
+    struct source_path *srcpath;
     int err;
 
     if ((err=parse_argv(argc,argv)))
@@ -297,6 +414,94 @@ int main(int argc,char **argv) {
         dump_includes();
     }
 
+    if (source_file != NULL) {
+        source_fp = fopen(source_file,"r");
+        if (!source_fp) {
+            fprintf(stderr,"Unable to open source file '%s', %s\n",source_file,strerror(errno));
+            return 1;
+        }
+
+        srcpath = source_path_add(source_file);
+        if (srcpath == NULL) {
+            fprintf(stderr,"Unable to add source file path\n");
+            return 1;
+        }
+        current_source_path_index = source_path_ptr2index(srcpath);
+    }
+    else {
+        source_fp = stdin;
+        current_source_path_index = -2; /* STDIN */
+    }
+
+    if (output_file != NULL) {
+        output_fp = fopen(output_file,"w");
+        if (!output_fp) {
+            fprintf(stderr,"Unable to open output file '%s', %s\n",output_file,strerror(errno));
+            return 1;
+        }
+    }
+    else {
+        output_fp = stdout;
+    }
+
+    current_source_path_line = 0;
+    while (!feof(source_fp)) {
+        if (ferror(source_fp)) {
+            fprintf_stderr_current_source(ERROR);
+            fprintf(stderr,"Source file error, %s\n",strerror(errno));
+            goto fail;
+        }
+        current_source_path_line++;
+        if (fgets(line,sizeof(line),source_fp) == NULL)
+            break;
+
+        /* eat newline */
+        {
+            char *s = line + strlen(line) - 1;
+            while (s >= line && (*s == '\r' || *s == '\n')) *s-- = 0;
+        }
+
+        /* handle the preprocessor directives we understand, pass the ones we don't */
+        {
+            char *s = line;
+            char *n;
+
+            /* skip non-space */
+            while (*s && isspace(*s)) s++;
+
+            /* is this is a directive we know? */
+            if (*s == '#') {
+                s++;
+                if (strp_parsedirective(token,sizeof(token),&s) == 0) {
+                    if (!strcasecmp(token,"define")) {
+                        /* do not carry through */
+                        strp_eatwhitespace(&s);
+                        if (do_define(s) < 0)
+                            goto fail;
+
+                        continue;
+                    }
+                }
+            }
+        }
+
+        /* output */
+        fprintf(output_fp,"%s\n",line);
+    }
+
+    if (source_fp != NULL) {
+        fclose(source_fp);
+        source_fp = NULL;
+    }
+
+    if (output_fp != NULL) {
+        fclose(output_fp);
+        output_fp = NULL;
+    }
+
     return 0;
+fail:
+    /* TODO: delete output file */
+    return 1;
 }
 
