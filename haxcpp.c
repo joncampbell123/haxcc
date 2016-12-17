@@ -51,6 +51,7 @@ static struct source_path *source_path_add(const char *path) {
 
 struct macro {
     int             source_path_index;      /* where it came from (source_path index), or -1 for command line */
+    long            source_line;            /* what line */
     char*           name;                   /* macro name */
     char*           value;                  /* macro value */
 };
@@ -71,7 +72,7 @@ static struct macro *macro_find(const char *name) {
     return NULL;
 }
 
-static struct macro *macro_add(const char *name,const char *value,int source_path_index) {
+static struct macro *macro_add(const char *name,const char *value,int source_path_index,long line) {
     struct macro *mac;
 
     /* NTS: for perf reasons, this does not look for existing macros of the same name. */
@@ -87,6 +88,7 @@ static struct macro *macro_add(const char *name,const char *value,int source_pat
 
     mac = &macro[macro_count];
     mac->source_path_index = source_path_index;
+    mac->source_line = line;
     mac->name = strdup(name);
     mac->value = strdup(value);
     if (mac->name == NULL || mac->value == NULL)
@@ -162,6 +164,7 @@ static void dump_macros(void) {
     for (i=0;i < macro_count;i++) {
         mac = &macro[i];
         fprintf(stderr,"  From: %s\n",source_path_name(mac->source_path_index));
+        fprintf(stderr,"  Line: %ld\n",mac->source_line);
         fprintf(stderr,"  Name: %s\n",mac->name);
         fprintf(stderr,"  Valu: %s\n",mac->value);
         fprintf(stderr,"\n");
@@ -262,7 +265,7 @@ static int parse_argv(int argc,char **argv) {
                                 }
                             }
                             else {
-                                if ((mac=macro_add(name,value,-1/*command line*/)) == NULL)
+                                if ((mac=macro_add(name,value,-1/*command line*/,-1L/*line*/)) == NULL)
                                     return -1;
                             }
                         }
@@ -414,7 +417,7 @@ int do_define(char *s) {
         }
     }
     else {
-        if ((mac=macro_add(token,s,current_source_path_index)) == NULL)
+        if ((mac=macro_add(token,s,current_source_path_index,current_source_path_line)) == NULL)
             return -1;
     }
 
