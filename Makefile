@@ -17,7 +17,7 @@ clean:
 	rm -vf *~
 
 .l.c: .SECONDARY
-	flex -o $@ $^
+	flex --header-file="$@.h" -o $@ $^
 
 .y.c: .SECONDARY
 	bison "--defines=$@.h" -o $@ $^
