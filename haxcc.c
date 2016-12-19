@@ -9,6 +9,10 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+void c_node_init(struct c_node *node) {
+    memset(node,0,sizeof(*node));
+}
+
 unsigned char char_width_b = 1;
 unsigned char wchar_width_b = 2;
 unsigned char int_width_b = 2;
