@@ -28,5 +28,12 @@
 *.out
 *.app
 
+# VIM backups
 *~
+
+# intermediate known files
+cparsb.c
+cparsb.c.h
+cparsl.c
+cparsl.c.h
 
