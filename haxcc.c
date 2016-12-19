@@ -136,6 +136,19 @@ void idents_free_all(void) {
     }
 }
 
+struct identifier_t *idents_find(const char *str) {
+    struct identifier_t *id;
+    int i=0;
+
+    while (i < idents_count) {
+        id = &idents[i++];
+        if (id->name && !strcmp(str,id->name))
+            return id;
+    }
+
+    return NULL;
+}
+
 struct identifier_t *idents_alloc(void) {
     struct identifier_t *id;
 
@@ -150,20 +163,27 @@ struct identifier_t *idents_alloc(void) {
 }
 
 c_identref_t identifier_parse(char *str) {
-    struct identifier_t *id = idents_alloc();
+    struct identifier_t *id;
 
+    id = idents_find(str);
     if (id == NULL) {
-        fprintf(stderr,"Cannot alloc identifier\n");
-        return 0; // FIXME
-    }
+        id = idents_alloc();
+        if (id == NULL) {
+            fprintf(stderr,"Cannot alloc identifier\n");
+            return 0; // FIXME
+        }
 
-    id->name = strdup(str);
-    if (id->name == NULL) {
-        fprintf(stderr,"Cannot strdup ident name\n");
-        return 0; // FIXME
-    }
+        id->name = strdup(str);
+        if (id->name == NULL) {
+            fprintf(stderr,"Cannot strdup ident name\n");
+            return 0; // FIXME
+        }
 
-    fprintf(stderr,"Identifier '%s'\n",id->name);
+        fprintf(stderr,"Identifier '%s' (new)\n",id->name);
+    }
+    else {
+        fprintf(stderr,"Identifier '%s' (already)\n",id->name);
+    }
 
     return idents_ptr_to_ref(id);
 }
