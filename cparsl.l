@@ -27,6 +27,9 @@ WS  [ \t\v\n\f]
 #include "cparsb.c.h"
 long line_num = 1;
 
+extern void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base);
+extern void iconst_parse_char(struct c_node_val_int *val,char *str);
+
 extern void yyerror(const char *);  /* prints grammar violation message */
 
 extern int sym_type(const char *);  /* returns type from symbol table */
@@ -89,10 +92,10 @@ static int check_type(void);
 
 {L}{A}*                 { return yylval.node.token=check_type(); }
 
-{HP}{H}+{IS}?               { return yylval.node.token=I_CONSTANT; }
-{NZ}{D}*{IS}?               { return yylval.node.token=I_CONSTANT; }
-"0"{O}*{IS}?                { return yylval.node.token=I_CONSTANT; }
-{CP}?"'"([^'\\\n]|{ES})+"'"     { return yylval.node.token=I_CONSTANT; }
+{HP}{H}+{IS}?               { iconst_parse(&yylval.node.value.val_uint,yytext,16); return yylval.node.token=I_CONSTANT; }
+{NZ}{D}*{IS}?               { iconst_parse(&yylval.node.value.val_uint,yytext,10); return yylval.node.token=I_CONSTANT; }
+"0"{O}*{IS}?                { iconst_parse(&yylval.node.value.val_uint,yytext,8); return yylval.node.token=I_CONSTANT; }
+{CP}?"'"([^'\\\n]|{ES})+"'"     { iconst_parse_char(&yylval.node.value.val_uint,yytext); return yylval.node.token=I_CONSTANT; }
 
 {D}+{E}{FS}?                { return yylval.node.token=F_CONSTANT; }
 {D}*"."{D}+{E}?{FS}?            { return yylval.node.token=F_CONSTANT; }

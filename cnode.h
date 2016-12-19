@@ -8,7 +8,11 @@ struct c_node {
     union c_node_val {
         // for use with "int/long/long long" datatype
         // token == I_CONSTANT
-        uint64_t        val_uint;
+        struct c_node_val_int {
+            uint64_t        uint;
+            unsigned char   bwidth;     // width, in bytes
+            unsigned char   bsign;      // 1=signed 0=unsigned
+        } val_uint;
         // for use with "float/double" datatype
         // token == F_CONSTANT
         double          val_double;
