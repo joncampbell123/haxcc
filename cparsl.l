@@ -27,6 +27,7 @@ WS  [ \t\v\n\f]
 #include "cparsb.c.h"
 long line_num = 1;
 
+extern c_stringref_t sconst_parse(char *str);
 extern void fconst_parse(struct c_node_val_float *val,char *str);
 extern void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base);
 extern void iconst_parse_char(struct c_node_val_int *val,char *str);
@@ -105,7 +106,7 @@ static int check_type(void);
 {HP}{H}*"."{H}+{P}{FS}?         { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
 {HP}{H}+"."{P}{FS}?         { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { return STRING_LITERAL; }
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { yylval.node.value.val_string=sconst_parse(yytext); return STRING_LITERAL; }
 
 "..."                   { return yylval.node.token=ELLIPSIS; }
 ">>="                   { return yylval.node.token=RIGHT_ASSIGN; }

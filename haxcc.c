@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <endian.h>
 
 #include "cnode.h"
 
@@ -105,6 +106,150 @@ uint64_t strescp(char ** const s) {
     }
 
     return val;
+}
+
+struct string_t {
+    unsigned char       wchar;      // L prefix
+    unsigned char       utf8;       // u8 prefix
+    unsigned char       bsign;      // signed char array (FIXME: so what does an unsigned string do?)
+    unsigned char*      bytes;      // byte array of string
+    size_t              bytelen;    // length of string
+};
+
+#define MAX_STRINGS     16384
+
+struct string_t         strings[MAX_STRINGS];
+int                     strings_count=0;
+
+void strings_free_item(struct string_t *s) {
+    if (s->bytes != NULL) {
+        free(s->bytes);
+        s->bytes = NULL;
+    }
+    s->bytelen = 0;
+}
+
+void strings_free_all(void) {
+    while (strings_count > 0) {
+        strings_count--;
+        strings_free_item(&strings[strings_count]);
+    }
+}
+
+struct string_t *strings_alloc(void) {
+    struct string_t *r;
+
+    if (strings_count >= MAX_STRINGS)
+        return NULL;
+
+    r = &strings[strings_count++];
+    memset(r,0,sizeof(*r));
+    r->bsign = 1;
+    return r;
+}
+
+c_stringref_t string_t_to_ref(struct string_t *r) {
+    return (c_stringref_t)(r - &strings[0]);
+}
+
+c_stringref_t sconst_parse(char *str) {
+    struct string_t *r = strings_alloc();
+    unsigned char *tmp;
+    size_t tmp_alloc;
+    size_t tmp_len;
+    uint64_t cval;
+
+    if (r == NULL) {
+        fprintf(stderr,"Unable to alloc string ref\n");
+        return 0; // FIXME
+    }
+
+    do {
+        if (*str == 'u' || *str == 'U') {
+            str++;
+            if (*str == '8') {
+                r->utf8 = 1;
+                str++;
+            }
+            else {
+                r->bsign = 0;
+            }
+        }
+        else if (*str == 'l' || *str == 'L') {
+            r->wchar = 1;
+            str++;
+        }
+        else {
+            break;
+        }
+    } while(1);
+
+    if (*str++ != '\"') {
+        fprintf(stderr,"String did not begin with \"\n");
+        return 0; // FIXME
+    }
+
+    tmp_alloc = 128;
+    tmp_len = 0;
+    tmp = malloc(tmp_alloc);
+    if (tmp == NULL) {
+        fprintf(stderr,"Unable to alloc str\n");
+        return 0; // FIXME
+    }
+
+    while (*str) {
+        if (*str == '\"')
+            break;
+
+        if ((tmp_len+10) >= tmp_alloc) {
+            size_t nalloc = tmp_alloc * 2U;
+            unsigned char *np;
+
+            np = (unsigned char*)realloc((void*)tmp,nalloc);
+            if (np == NULL) {
+                fprintf(stderr,"Out of string space\n");
+                return 0; // FIXME
+            }
+
+            tmp = np;
+            tmp_alloc = nalloc;
+        }
+
+        cval = strescp(&str);
+        if (r->utf8) {
+            // TODO
+        }
+        else if (r->wchar) {
+            if (wchar_width_b == 2) {
+                *((uint16_t*)(tmp+tmp_len)) = htole16((uint16_t)cval);
+                tmp_len += 2;
+            }
+            else if (wchar_width_b == 4) {
+                *((uint32_t*)(tmp+tmp_len)) = htole32((uint32_t)cval);
+                tmp_len += 4;
+            }
+            else {
+                abort();
+            }
+        }
+        else {
+            // FIXME: Obviously, this doesn't handle multibyte character encodings.
+            tmp[tmp_len++] = (char)cval;
+        }
+    }
+
+    r->bytes = tmp;
+    r->bytelen = tmp_len;
+
+    fprintf(stderr,"String const ref=%llu \"%s\" len=%zu w=%u u=%u s=%u\n",
+        (unsigned long long)string_t_to_ref(r),
+        (r->bytes!=NULL?(char*)r->bytes:""),
+        r->bytelen,
+        r->wchar,
+        r->utf8,
+        r->bsign);
+
+    return string_t_to_ref(r);
 }
 
 void fconst_parse(struct c_node_val_float *val,char *str) {
@@ -225,5 +370,7 @@ int main(int argc, char **argv) {
     do {
         yyparse();
     } while (!feof(yyin));
+
+    strings_free_all();
 }
 
