@@ -433,6 +433,7 @@ int main(int argc, char **argv) {
     do {
         yyparse();
     } while (!feof(yyin));
+    yylex_destroy();
 
     strings_free_all();
     idents_free_all();
