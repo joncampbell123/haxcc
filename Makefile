@@ -25,5 +25,5 @@ clean:
 	bison "--defines=$@.h" -o $@ $^
 
 .c.o:
-	gcc -std=gnu99 -DLINUX -Wall -pedantic -c -o $@ $<
+	gcc -std=gnu99 -DLINUX -Wall -pedantic -g3 -O0 -c -o $@ $<
 

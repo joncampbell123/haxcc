@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <assert.h>
 #include <stdint.h>
 #include <endian.h>
 
@@ -237,6 +238,9 @@ c_stringref_t sconst_parse(char *str) {
             tmp[tmp_len++] = (char)cval;
         }
     }
+
+    assert((tmp_len+1) <= tmp_alloc);
+    tmp[tmp_len] = 0;
 
     r->bytes = tmp;
     r->bytelen = tmp_len;
