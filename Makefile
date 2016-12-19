@@ -13,7 +13,7 @@ $(HAXCC): $(HAXCC_OBJ)
 all: $(TARGETS)
 
 clean:
-	rm -v cparsb.c cparsb.c.h cparsl.c cparsl.c.h
+	rm -vf cparsb.c cparsb.c.h cparsl.c cparsl.c.h
 	rm -vf *.$(OBJ) *.$(LIB)
 	rm -vf $(TARGETS)
 	rm -vf *~
