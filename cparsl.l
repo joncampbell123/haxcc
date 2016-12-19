@@ -28,6 +28,7 @@ WS  [ \t\v\n\f]
 long line_num = 1;
 
 extern c_stringref_t sconst_parse(char *str);
+extern c_identref_t identifier_parse(char *str);
 extern void fconst_parse(struct c_node_val_float *val,char *str);
 extern void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base);
 extern void iconst_parse_char(struct c_node_val_int *val,char *str);
@@ -92,7 +93,7 @@ static int check_type(void);
 "_Thread_local"                         { return yylval.node.token=THREAD_LOCAL; }
 "__func__"                              { return yylval.node.token=FUNC_NAME; }
 
-{L}{A}*                 { return yylval.node.token=check_type(); }
+{L}{A}*                 { yylval.node.value.val_identifier=identifier_parse(yytext); return yylval.node.token=check_type(); }
 
 {HP}{H}+{IS}?               { iconst_parse(&yylval.node.value.val_uint,yytext,16); return yylval.node.token=I_CONSTANT; }
 {NZ}{D}*{IS}?               { iconst_parse(&yylval.node.value.val_uint,yytext,10); return yylval.node.token=I_CONSTANT; }

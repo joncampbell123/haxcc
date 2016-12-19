@@ -109,6 +109,65 @@ uint64_t strescp(char ** const s) {
     return val;
 }
 
+struct identifier_t {
+    char*               name;
+};
+
+#define MAX_IDENTS      32768
+
+struct identifier_t     idents[MAX_IDENTS];
+int                     idents_count=0;
+
+c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
+    return (c_identref_t)(id - &idents[0]);
+}
+
+void idents_free_item(struct identifier_t *s) {
+    if (s->name != NULL) {
+        free(s->name);
+        s->name = NULL;
+    }
+}
+
+void idents_free_all(void) {
+    while (idents_count > 0) {
+        idents_count--;
+        idents_free_item(&idents[idents_count]);
+    }
+}
+
+struct identifier_t *idents_alloc(void) {
+    struct identifier_t *id;
+
+    if (idents_count >= MAX_IDENTS) {
+        fprintf(stderr,"Out of identifiers\n");
+        return NULL;
+    }
+
+    id = &idents[idents_count++];
+    memset(id,0,sizeof(*id));
+    return id;
+}
+
+c_identref_t identifier_parse(char *str) {
+    struct identifier_t *id = idents_alloc();
+
+    if (id == NULL) {
+        fprintf(stderr,"Cannot alloc identifier\n");
+        return 0; // FIXME
+    }
+
+    id->name = strdup(str);
+    if (id->name == NULL) {
+        fprintf(stderr,"Cannot strdup ident name\n");
+        return 0; // FIXME
+    }
+
+    fprintf(stderr,"Identifier '%s'\n",id->name);
+
+    return idents_ptr_to_ref(id);
+}
+
 struct string_t {
     unsigned char       wchar;      // L prefix
     unsigned char       utf8;       // u8 prefix
@@ -376,5 +435,6 @@ int main(int argc, char **argv) {
     } while (!feof(yyin));
 
     strings_free_all();
+    idents_free_all();
 }
 
