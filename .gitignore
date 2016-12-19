@@ -37,3 +37,6 @@ cparsb.c.h
 cparsl.c
 cparsl.c.h
 
+# known outputs
+haxcc
+
