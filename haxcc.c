@@ -12,6 +12,9 @@ unsigned char wchar_width_b = 2;
 unsigned char int_width_b = 2;
 unsigned char long_width_b = 4;
 unsigned char longlong_width_b = 8;
+unsigned char double_width_b = 8;
+unsigned char float_width_b = 4;
+unsigned char longdouble_width_b = 10;
 
 unsigned char octtobin(const char c) {
     if (c >= '0' && c <= '7')
@@ -102,6 +105,25 @@ uint64_t strescp(char ** const s) {
     }
 
     return val;
+}
+
+void fconst_parse(struct c_node_val_float *val,char *str) {
+    // FIXME: This does not support the hexadecimal form!
+    val->bwidth = double_width_b;
+    val->val = strtod(str,&str);
+
+    if (*str == 'f' || *str == 'F') {
+        val->bwidth = float_width_b;
+        str++;
+    }
+    else if (*str == 'l' || *str == 'L') {
+        val->bwidth = longdouble_width_b;
+        str++;
+    }
+
+    fprintf(stderr,"Float const: %.9f w=%u\n",
+        val->val,
+        val->bwidth);
 }
 
 void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base) {

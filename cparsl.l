@@ -27,6 +27,7 @@ WS  [ \t\v\n\f]
 #include "cparsb.c.h"
 long line_num = 1;
 
+extern void fconst_parse(struct c_node_val_float *val,char *str);
 extern void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base);
 extern void iconst_parse_char(struct c_node_val_int *val,char *str);
 
@@ -97,12 +98,12 @@ static int check_type(void);
 "0"{O}*{IS}?                { iconst_parse(&yylval.node.value.val_uint,yytext,8); return yylval.node.token=I_CONSTANT; }
 {CP}?"'"([^'\\\n]|{ES})+"'"     { iconst_parse_char(&yylval.node.value.val_uint,yytext); return yylval.node.token=I_CONSTANT; }
 
-{D}+{E}{FS}?                { return yylval.node.token=F_CONSTANT; }
-{D}*"."{D}+{E}?{FS}?            { return yylval.node.token=F_CONSTANT; }
-{D}+"."{E}?{FS}?            { return yylval.node.token=F_CONSTANT; }
-{HP}{H}+{P}{FS}?            { return yylval.node.token=F_CONSTANT; }
-{HP}{H}*"."{H}+{P}{FS}?         { return yylval.node.token=F_CONSTANT; }
-{HP}{H}+"."{P}{FS}?         { return yylval.node.token=F_CONSTANT; }
+{D}+{E}{FS}?                { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
+{D}*"."{D}+{E}?{FS}?            { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
+{D}+"."{E}?{FS}?            { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
+{HP}{H}+{P}{FS}?            { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
+{HP}{H}*"."{H}+{P}{FS}?         { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
+{HP}{H}+"."{P}{FS}?         { fconst_parse(&yylval.node.value.val_float,yytext); return yylval.node.token=F_CONSTANT; }
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { return STRING_LITERAL; }
 

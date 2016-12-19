@@ -15,7 +15,10 @@ struct c_node {
         } val_uint;
         // for use with "float/double" datatype
         // token == F_CONSTANT
-        double          val_double;
+        struct c_node_val_float {
+            unsigned char   bwidth;     // width, in bytes
+            double          val;        // FIXME: This won't allow "long double"
+        } val_float;
         // string storage. we don't put the pointer directly here, that's not sane.
         // instead we store a reference to string storage. that way we also keep track
         // whether ANSI or WIDE and we don't lose track of pointers.
