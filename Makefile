@@ -2,7 +2,8 @@ OBJ=o
 LIB=a
 
 HAXCC=haxcc
-HAXCC_OBJ=haxcc.$(OBJ) cparsb.$(OBJ) cparsl.$(OBJ)
+# haxcc.OBJ must come LAST, must make cparsb.o and cparsl.o first
+HAXCC_OBJ=cparsb.$(OBJ) cparsl.$(OBJ) haxcc.$(OBJ)
 
 TARGETS=$(HAXCC)
 
@@ -12,6 +13,7 @@ $(HAXCC): $(HAXCC_OBJ)
 all: $(TARGETS)
 
 clean:
+	rm -v cparsb.c cparsb.c.h cparsl.c cparsl.c.h
 	rm -vf *.$(OBJ) *.$(LIB)
 	rm -vf $(TARGETS)
 	rm -vf *~
