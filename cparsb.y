@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cnode.h"
+#include "cstring.h"
+
 // stuff from flex that bison needs to know about:
 int yylex();
 int yyparse();
@@ -11,6 +14,10 @@ FILE *yyin;
  
 void yyerror(const char *s);
 %}
+
+%union {
+    struct c_node   node;
+}
 
 %token  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
 %token  PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP

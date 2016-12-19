@@ -749,6 +749,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "cparsl.l"
 #line 26 "cparsl.l"
+#include "cnode.h"
 #include "cparsb.c.h"
 long line_num = 1;
 
@@ -760,7 +761,7 @@ extern int sym_type(const char *);  /* returns type from symbol table */
 
 static void comment(void);
 static int check_type(void);
-#line 764 "cparsl.c"
+#line 765 "cparsl.c"
 
 #define INITIAL 0
 
@@ -942,9 +943,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 39 "cparsl.l"
+#line 40 "cparsl.l"
 
-#line 948 "cparsl.c"
+#line 949 "cparsl.c"
 
 	if ( !(yy_init) )
 		{
@@ -1029,547 +1030,547 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 40 "cparsl.l"
+#line 41 "cparsl.l"
 { comment(); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 41 "cparsl.l"
+#line 42 "cparsl.l"
 { /* consume //-comment */ }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 43 "cparsl.l"
+#line 44 "cparsl.l"
 { return(AUTO); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 44 "cparsl.l"
+#line 45 "cparsl.l"
 { return(BREAK); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 45 "cparsl.l"
+#line 46 "cparsl.l"
 { return(CASE); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 46 "cparsl.l"
+#line 47 "cparsl.l"
 { return(CHAR); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 47 "cparsl.l"
+#line 48 "cparsl.l"
 { return(CONST); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 48 "cparsl.l"
+#line 49 "cparsl.l"
 { return(CONTINUE); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 49 "cparsl.l"
+#line 50 "cparsl.l"
 { return(DEFAULT); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 50 "cparsl.l"
+#line 51 "cparsl.l"
 { return(DO); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 51 "cparsl.l"
+#line 52 "cparsl.l"
 { return(DOUBLE); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 52 "cparsl.l"
+#line 53 "cparsl.l"
 { return(ELSE); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 53 "cparsl.l"
+#line 54 "cparsl.l"
 { return(ENUM); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 54 "cparsl.l"
+#line 55 "cparsl.l"
 { return(EXTERN); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 55 "cparsl.l"
+#line 56 "cparsl.l"
 { return(FLOAT); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 56 "cparsl.l"
+#line 57 "cparsl.l"
 { return(FOR); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 57 "cparsl.l"
+#line 58 "cparsl.l"
 { return(GOTO); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 58 "cparsl.l"
+#line 59 "cparsl.l"
 { return(IF); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 59 "cparsl.l"
+#line 60 "cparsl.l"
 { return(INLINE); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 60 "cparsl.l"
+#line 61 "cparsl.l"
 { return(INT); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 61 "cparsl.l"
+#line 62 "cparsl.l"
 { return(LONG); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 62 "cparsl.l"
+#line 63 "cparsl.l"
 { return(REGISTER); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 63 "cparsl.l"
+#line 64 "cparsl.l"
 { return(RESTRICT); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 64 "cparsl.l"
+#line 65 "cparsl.l"
 { return(RETURN); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 65 "cparsl.l"
+#line 66 "cparsl.l"
 { return(SHORT); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 66 "cparsl.l"
+#line 67 "cparsl.l"
 { return(SIGNED); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 67 "cparsl.l"
+#line 68 "cparsl.l"
 { return(SIZEOF); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 68 "cparsl.l"
+#line 69 "cparsl.l"
 { return(STATIC); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 69 "cparsl.l"
+#line 70 "cparsl.l"
 { return(STRUCT); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 70 "cparsl.l"
+#line 71 "cparsl.l"
 { return(SWITCH); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 71 "cparsl.l"
+#line 72 "cparsl.l"
 { return(TYPEDEF); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 72 "cparsl.l"
+#line 73 "cparsl.l"
 { return(UNION); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 73 "cparsl.l"
+#line 74 "cparsl.l"
 { return(UNSIGNED); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 74 "cparsl.l"
+#line 75 "cparsl.l"
 { return(VOID); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 75 "cparsl.l"
+#line 76 "cparsl.l"
 { return(VOLATILE); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 76 "cparsl.l"
+#line 77 "cparsl.l"
 { return(WHILE); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 77 "cparsl.l"
+#line 78 "cparsl.l"
 { return ALIGNAS; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 78 "cparsl.l"
+#line 79 "cparsl.l"
 { return ALIGNOF; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 79 "cparsl.l"
+#line 80 "cparsl.l"
 { return ATOMIC; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 80 "cparsl.l"
+#line 81 "cparsl.l"
 { return BOOL; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 81 "cparsl.l"
+#line 82 "cparsl.l"
 { return COMPLEX; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 82 "cparsl.l"
+#line 83 "cparsl.l"
 { return GENERIC; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 83 "cparsl.l"
+#line 84 "cparsl.l"
 { return IMAGINARY; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 84 "cparsl.l"
+#line 85 "cparsl.l"
 { return NORETURN; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 85 "cparsl.l"
+#line 86 "cparsl.l"
 { return STATIC_ASSERT; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 86 "cparsl.l"
+#line 87 "cparsl.l"
 { return THREAD_LOCAL; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 87 "cparsl.l"
+#line 88 "cparsl.l"
 { return FUNC_NAME; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 89 "cparsl.l"
+#line 90 "cparsl.l"
 { return check_type(); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 91 "cparsl.l"
+#line 92 "cparsl.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 92 "cparsl.l"
+#line 93 "cparsl.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 93 "cparsl.l"
+#line 94 "cparsl.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 94 "cparsl.l"
+#line 95 "cparsl.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 96 "cparsl.l"
+#line 97 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 97 "cparsl.l"
+#line 98 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 98 "cparsl.l"
+#line 99 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 99 "cparsl.l"
+#line 100 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 100 "cparsl.l"
+#line 101 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 101 "cparsl.l"
+#line 102 "cparsl.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 59:
 /* rule 59 can match eol */
 YY_RULE_SETUP
-#line 103 "cparsl.l"
+#line 104 "cparsl.l"
 { return STRING_LITERAL; }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 105 "cparsl.l"
+#line 106 "cparsl.l"
 { return ELLIPSIS; }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 106 "cparsl.l"
+#line 107 "cparsl.l"
 { return RIGHT_ASSIGN; }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 107 "cparsl.l"
+#line 108 "cparsl.l"
 { return LEFT_ASSIGN; }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 108 "cparsl.l"
+#line 109 "cparsl.l"
 { return ADD_ASSIGN; }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 109 "cparsl.l"
+#line 110 "cparsl.l"
 { return SUB_ASSIGN; }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 110 "cparsl.l"
+#line 111 "cparsl.l"
 { return MUL_ASSIGN; }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 111 "cparsl.l"
+#line 112 "cparsl.l"
 { return DIV_ASSIGN; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 112 "cparsl.l"
+#line 113 "cparsl.l"
 { return MOD_ASSIGN; }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 113 "cparsl.l"
+#line 114 "cparsl.l"
 { return AND_ASSIGN; }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 114 "cparsl.l"
+#line 115 "cparsl.l"
 { return XOR_ASSIGN; }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 115 "cparsl.l"
+#line 116 "cparsl.l"
 { return OR_ASSIGN; }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 116 "cparsl.l"
+#line 117 "cparsl.l"
 { return RIGHT_OP; }
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 117 "cparsl.l"
+#line 118 "cparsl.l"
 { return LEFT_OP; }
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 118 "cparsl.l"
+#line 119 "cparsl.l"
 { return INC_OP; }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 119 "cparsl.l"
+#line 120 "cparsl.l"
 { return DEC_OP; }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 120 "cparsl.l"
+#line 121 "cparsl.l"
 { return PTR_OP; }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 121 "cparsl.l"
+#line 122 "cparsl.l"
 { return AND_OP; }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 122 "cparsl.l"
+#line 123 "cparsl.l"
 { return OR_OP; }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 123 "cparsl.l"
+#line 124 "cparsl.l"
 { return LE_OP; }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 124 "cparsl.l"
+#line 125 "cparsl.l"
 { return GE_OP; }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 125 "cparsl.l"
+#line 126 "cparsl.l"
 { return EQ_OP; }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 126 "cparsl.l"
+#line 127 "cparsl.l"
 { return NE_OP; }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 127 "cparsl.l"
+#line 128 "cparsl.l"
 { return ';'; }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 128 "cparsl.l"
+#line 129 "cparsl.l"
 { return '{'; }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 129 "cparsl.l"
+#line 130 "cparsl.l"
 { return '}'; }
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 130 "cparsl.l"
+#line 131 "cparsl.l"
 { return ','; }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 131 "cparsl.l"
+#line 132 "cparsl.l"
 { return ':'; }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 132 "cparsl.l"
+#line 133 "cparsl.l"
 { return '='; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 133 "cparsl.l"
+#line 134 "cparsl.l"
 { return '('; }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 134 "cparsl.l"
+#line 135 "cparsl.l"
 { return ')'; }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 135 "cparsl.l"
+#line 136 "cparsl.l"
 { return '['; }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 136 "cparsl.l"
+#line 137 "cparsl.l"
 { return ']'; }
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 137 "cparsl.l"
+#line 138 "cparsl.l"
 { return '.'; }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 138 "cparsl.l"
+#line 139 "cparsl.l"
 { return '&'; }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 139 "cparsl.l"
+#line 140 "cparsl.l"
 { return '!'; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 140 "cparsl.l"
+#line 141 "cparsl.l"
 { return '~'; }
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 141 "cparsl.l"
+#line 142 "cparsl.l"
 { return '-'; }
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 142 "cparsl.l"
+#line 143 "cparsl.l"
 { return '+'; }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 143 "cparsl.l"
+#line 144 "cparsl.l"
 { return '*'; }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 144 "cparsl.l"
+#line 145 "cparsl.l"
 { return '/'; }
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 145 "cparsl.l"
+#line 146 "cparsl.l"
 { return '%'; }
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 146 "cparsl.l"
+#line 147 "cparsl.l"
 { return '<'; }
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 147 "cparsl.l"
+#line 148 "cparsl.l"
 { return '>'; }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 148 "cparsl.l"
+#line 149 "cparsl.l"
 { return '^'; }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 149 "cparsl.l"
+#line 150 "cparsl.l"
 { return '|'; }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 150 "cparsl.l"
+#line 151 "cparsl.l"
 { return '?'; }
 	YY_BREAK
 case 106:
 /* rule 106 can match eol */
 YY_RULE_SETUP
-#line 152 "cparsl.l"
+#line 153 "cparsl.l"
 { /* whitespace separates tokens */ }
 	YY_BREAK
 case 107:
 YY_RULE_SETUP
-#line 153 "cparsl.l"
+#line 154 "cparsl.l"
 { /* discard bad characters */ }
 	YY_BREAK
 case 108:
 YY_RULE_SETUP
-#line 155 "cparsl.l"
+#line 156 "cparsl.l"
 ECHO;
 	YY_BREAK
-#line 1573 "cparsl.c"
+#line 1574 "cparsl.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2567,7 +2568,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 155 "cparsl.l"
+#line 156 "cparsl.l"
 
 
 
