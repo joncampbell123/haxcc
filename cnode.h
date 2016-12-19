@@ -17,6 +17,11 @@ struct c_node {
         // whether ANSI or WIDE and we don't lose track of pointers.
         // token == STRING_LITERAL
         c_stringref_t   val_string;
+        // identifier storage, by name. again, by reference only.
+        // token == TYPEDEF_NAME
+        // token == ENUMERATION_CONSTANT
+        // token == IDENTIFIER
+        c_identref_t    val_identifier;
         // for anything else, this value is meaningless
     } value;
 };
