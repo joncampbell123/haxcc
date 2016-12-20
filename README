@@ -1,0 +1,14 @@
+HaxCC, a hacker's compiler for the MS-DOS/Windows target.
+
+I will change the name when this compiler is more developed,
+and when I have a better name.
+
+This compiler is intended to work alongside existing
+components, and to compile part of a program that needs it.
+It will probably not generate whole programs for a long time.
+
+External tools to use with it are:
+ - Any external C preprocessor
+ - NASM or YASM (assemblers)
+ - Watcom linker
+
