@@ -31,7 +31,5 @@ struct c_node {
         c_identref_t    val_identifier;
         // for anything else, this value is meaningless
     } value;
-
-    struct c_node       *next;
 };
 
