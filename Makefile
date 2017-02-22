@@ -27,3 +27,5 @@ clean:
 .c.o:
 	gcc -std=gnu99 -DLINUX -Wall -pedantic -g3 -O0 -c -o $@ $<
 
+tests: $(HAXCC)
+	./$(HAXCC) <test1.c
