@@ -1,4 +1,10 @@
 
+int xyz;
+long longcat;
+float floatey;
+double doubleback;
+long long longlongcat;
+int long float double this_is_invalid;
 int abcd = 1234;
 
 void function1(void) {
