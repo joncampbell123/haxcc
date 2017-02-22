@@ -452,6 +452,10 @@ void iconst_parse_char(struct c_node_val_int *val,const char *str) {
 int yyparse();
 
 int main(int argc, char **argv) {
+    // debug
+    extern int yydebug;
+    yydebug = 1;
+
     // parse through the input until there is no more:
     yyin = stdin;
     do {

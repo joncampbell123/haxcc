@@ -25,7 +25,7 @@ clean:
 	bison "--defines=$@.h" -o $@ $^
 
 .c.o:
-	gcc -std=gnu99 -DLINUX -Wall -pedantic -g3 -O0 -c -o $@ $<
+	gcc -std=gnu99 -DLINUX -DYYDEBUG=1 -DYYERROR_VERBOSE=1 -DYYTOKEN_TABLE=1 -Wall -pedantic -g3 -O0 -c -o $@ $<
 
 tests: $(HAXCC)
 	./$(HAXCC) <test1.c
