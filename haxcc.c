@@ -469,6 +469,55 @@ int c_node_typespec_init(struct c_node_type_spec *ts,int token) {
     return 1;
 }
 
+const char *typespec_token_to_str(const int tok) {
+    switch (tok) {
+        case 0:
+            return "(unspecified)";
+        case BOOL:
+            return "BOOL";
+        case CHAR:
+            return "CHAR";
+        case SHORT:
+            return "SHORT";
+        case INT:
+            return "INT";
+        case LONG:
+            return "LONG";
+        case SIGNED:
+            return "SIGNED";
+        case UNSIGNED:
+            return "UNSIGNED";
+        case FLOAT:
+            return "FLOAT";
+        case DOUBLE:
+            return "DOUBLE";
+        case VOID:
+            return "VOID";
+        case LONG_LONG:
+            return "LONG-LONG";
+        case LONG_DOUBLE:
+            return "LONG-DOUBLE";
+        default:
+            break;
+    }
+
+    return "?";
+}
+
+void c_node_typespec_dump(const struct c_node_type_spec * const ts) {
+    if (ts->bsign > 0)
+        fprintf(stderr,"signed");
+    else if (ts->bsign == 0)
+        fprintf(stderr,"unsigned");
+    else
+        fprintf(stderr,"(sign unspecified)");
+    fprintf(stderr," ");
+
+    fprintf(stderr,"type=%s",typespec_token_to_str(ts->main_type));
+
+    fprintf(stderr,"\n");
+}
+
 int c_node_typespec_add(struct c_node_type_spec *ts,int token) {
     fprintf(stderr,"typespec comb %u and %u\n",ts->main_type,token);
 
@@ -542,11 +591,32 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
 }
 
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
+    int add_type;
+
     assert(decl->token == DECL_SPECIFIER);
     assert(typ->token == TYPE_SPECIFIER);
 
-    if (!c_node_typespec_add(&decl->value.val_decl_spec.typespec,typ->value.val_type_spec.main_type))
+    add_type = typ->value.val_type_spec.main_type;
+    if (add_type == 0) {
+        if (typ->value.val_type_spec.bsign < 0)
+            return 1;
+
+        add_type = typ->value.val_type_spec.bsign > 0 ? SIGNED : UNSIGNED;
+    }
+
+    if (!c_node_typespec_add(&decl->value.val_decl_spec.typespec,add_type))
         return 0;
+
+    return 1;
+}
+
+int c_node_finish_declaration(struct c_node *decl) {
+    assert(decl->token == DECL_SPECIFIER);
+
+    fprintf(stderr,"Finished declaration:\n");
+    fprintf(stderr,"  typespec: ");
+    c_node_typespec_dump(&decl->value.val_decl_spec.typespec);
+    fprintf(stderr,"\n");
 
     return 1;
 }

@@ -16,6 +16,7 @@ void yyerror(const char *s);
 
 int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
 int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
+int c_node_finish_declaration(struct c_node *decl);
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
 
 %}
@@ -221,13 +222,21 @@ constant_expression
     ;
 
 declaration
-    : declaration_specifiers ';'
-    | declaration_specifiers init_declarator_list ';'
+    : declaration_specifiers ';' {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
+    | declaration_specifiers init_declarator_list ';' {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        /* TODO: init_declarator_list */
+    }
     | static_assert_declaration
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers
+    : storage_class_specifier declaration_specifiers {
+        /* TODO */
+        $<node>$ = $<node>2;
+    }
     | storage_class_specifier
     | type_specifier declaration_specifiers {
         if (!c_node_on_type_spec(&($<node>1))) YYABORT;
@@ -238,11 +247,20 @@ declaration_specifiers
         if (!c_node_on_type_spec(&($<node>$))) YYABORT;
         if (!c_node_type_to_decl(&($<node>$))) YYABORT;
     }
-    | type_qualifier declaration_specifiers
+    | type_qualifier declaration_specifiers {
+        /* TODO */
+        $<node>$ = $<node>2;
+    }
     | type_qualifier
-    | function_specifier declaration_specifiers
+    | function_specifier declaration_specifiers {
+        /* TODO */
+        $<node>$ = $<node>2;
+    }
     | function_specifier
-    | alignment_specifier declaration_specifiers
+    | alignment_specifier declaration_specifiers {
+        /* TODO */
+        $<node>$ = $<node>2;
+    }
     | alignment_specifier
     ;
 
@@ -409,9 +427,15 @@ parameter_list
     ;
 
 parameter_declaration
-    : declaration_specifiers declarator
-    | declaration_specifiers abstract_declarator
-    | declaration_specifiers
+    : declaration_specifiers declarator {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
+    | declaration_specifiers abstract_declarator {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
+    | declaration_specifiers {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
     ;
 
 identifier_list
@@ -554,8 +578,12 @@ external_declaration
     ;
 
 function_definition
-    : declaration_specifiers declarator declaration_list compound_statement
-    | declaration_specifiers declarator compound_statement
+    : declaration_specifiers declarator declaration_list compound_statement {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
+    | declaration_specifiers declarator compound_statement {
+        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+    }
     ;
 
 declaration_list
