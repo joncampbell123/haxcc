@@ -40,7 +40,7 @@ unsigned char hextobin(const char c) {
     return 0;
 }
 
-uint64_t strescp_o(char ** const s) {
+uint64_t strescp_o(const char ** const s) {
     uint64_t v;
 
     // \nnn  where nnn is octal
@@ -50,7 +50,7 @@ uint64_t strescp_o(char ** const s) {
     return v;
 }
 
-uint64_t strescp_x(char ** const s) {
+uint64_t strescp_x(const char ** const s) {
     uint64_t v;
 
     // \xXX  where XX is hex
@@ -60,7 +60,7 @@ uint64_t strescp_x(char ** const s) {
     return v;
 }
 
-uint64_t strescp(char ** const s) {
+uint64_t strescp(const char ** const s) {
     uint64_t val = 0;
 
     if (*(*s) == '\\') {
@@ -166,7 +166,7 @@ struct identifier_t *idents_alloc(void) {
     return id;
 }
 
-c_identref_t identifier_parse(char *str) {
+c_identref_t identifier_parse(const char *str) {
     struct identifier_t *id;
 
     id = idents_find(str);
@@ -236,7 +236,7 @@ c_stringref_t string_t_to_ref(struct string_t *r) {
     return (c_stringref_t)(r - &strings[0]);
 }
 
-c_stringref_t sconst_parse(char *str) {
+c_stringref_t sconst_parse(const char *str) {
     struct string_t *r = strings_alloc();
     unsigned char *tmp;
     size_t tmp_alloc;
@@ -339,10 +339,10 @@ c_stringref_t sconst_parse(char *str) {
     return string_t_to_ref(r);
 }
 
-void fconst_parse(struct c_node_val_float *val,char *str) {
+void fconst_parse(struct c_node_val_float *val,const char *str) {
     // FIXME: This does not support the hexadecimal form!
     val->bwidth = double_width_b;
-    val->val = strtod(str,&str);
+    val->val = strtod(str,(char**)(&str));
 
     if (*str == 'f' || *str == 'F') {
         val->bwidth = float_width_b;
@@ -358,7 +358,7 @@ void fconst_parse(struct c_node_val_float *val,char *str) {
         val->bwidth);
 }
 
-void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base) {
+void iconst_parse(struct c_node_val_int *val,const char *str,const unsigned int base) {
     // will begin with:
     // 0x.... (octal)
     // 0...  (octal)
@@ -367,7 +367,7 @@ void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base) 
     // will never begin with minus sign
     //
     // may end in L, l, U, u, LL, ll, etc.
-    val->uint = (uint64_t)strtoul(str,&str,0);
+    val->uint = (uint64_t)strtoul(str,(char**)(&str),0);
     val->bwidth = int_width_b; // default width by default
     val->bsign = 1; // signed by default
 
@@ -392,7 +392,7 @@ void iconst_parse(struct c_node_val_int *val,char *str,const unsigned int base) 
         val->bsign);
 }
 
-void iconst_parse_char(struct c_node_val_int *val,char *str) {
+void iconst_parse_char(struct c_node_val_int *val,const char *str) {
     unsigned int shf = 0;
     unsigned int chw;
     uint64_t cval;
