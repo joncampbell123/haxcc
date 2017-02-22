@@ -1,4 +1,6 @@
 
+int abcd = 1234;
+
 void function1(void) {
     int a;
     int x = 246;
