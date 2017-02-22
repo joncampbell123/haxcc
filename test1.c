@@ -4,6 +4,7 @@ long longcat;
 float floatey;
 double doubleback;
 long long longlongcat;
+long double doublelong;
 int long float double this_is_invalid;
 int abcd = 1234;
 

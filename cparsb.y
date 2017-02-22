@@ -13,6 +13,11 @@ int yyparse();
 FILE *yyin;
  
 void yyerror(const char *s);
+
+int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
+int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
+int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
+
 %}
 
 %union {
@@ -35,6 +40,12 @@ void yyerror(const char *s);
 %token  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
 %token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
+
+%token  LONG_LONG
+%token  LONG_DOUBLE
+
+%token  TYPE_SPECIFIER
+%token  DECL_SPECIFIER
 
 %start translation_unit
 %%
@@ -218,8 +229,15 @@ declaration
 declaration_specifiers
     : storage_class_specifier declaration_specifiers
     | storage_class_specifier
-    | type_specifier declaration_specifiers
-    | type_specifier
+    | type_specifier declaration_specifiers {
+        if (!c_node_on_type_spec(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
+        $<node>$ = $<node>2;
+    }
+    | type_specifier {
+        if (!c_node_on_type_spec(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
     | type_qualifier declaration_specifiers
     | type_qualifier
     | function_specifier declaration_specifiers

@@ -9,6 +9,8 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+void yyerror(const char *s);
+
 void c_node_init(struct c_node *node) {
     memset(node,0,sizeof(*node));
 }
@@ -447,6 +449,106 @@ void iconst_parse_char(struct c_node_val_int *val,const char *str) {
         (unsigned long long)val->uint,
         val->bwidth,
         val->bsign);
+}
+
+void c_node_init_decl(struct c_node_decl_spec *ds) {
+    memset(ds,0,sizeof(*ds));
+}
+
+int c_node_typespec_init(struct c_node_type_spec *ts,int token) {
+    /* should be SIGNED, UNSIGNED, INT, LONG, etc. */
+    if (token == UNSIGNED || token == SIGNED) {
+        ts->main_type = 0; // unspecified
+        ts->bsign = (token == SIGNED) ? 1 : 0;
+    }
+    else {
+        ts->main_type = token;
+        ts->bsign = -1; // unspecified
+    }
+
+    return 1;
+}
+
+int c_node_typespec_add(struct c_node_type_spec *ts,int token) {
+    fprintf(stderr,"typespec comb %u and %u\n",ts->main_type,token);
+
+    /* should be SIGNED, UNSIGNED, INT, LONG, etc. */
+    if (token == UNSIGNED || token == SIGNED) {
+        signed char ns = (token == SIGNED) ? 1 : 0;
+
+        if (ts->bsign == -1)
+            ts->bsign = ns;
+        else if (ts->bsign == ns)
+            fprintf(stderr,"warning: unnecessary duplicate signed/unsigned typespec\n");
+        else {
+            yyerror("signed/unsigned duplicate definition");
+            return 0;
+        }
+    }
+    else if (ts->main_type == 0) {
+        /* has not yet been specified */
+        ts->main_type = token;
+    }
+    else if (ts->main_type == LONG && token == LONG) {
+        ts->main_type = LONG_LONG; /* C99 long long */
+    }
+    else if ((ts->main_type == INT && token == LONG) || (ts->main_type == LONG && token == INT)) {
+        /* long int / int long becomes long */
+        ts->main_type = LONG;
+    }
+    else if ((ts->main_type == INT && token == SHORT) || (ts->main_type == SHORT && token == INT)) {
+        /* short int / int short becomes short */
+        ts->main_type = SHORT;
+    }
+    else if ((ts->main_type == DOUBLE && token == LONG) || (ts->main_type == LONG && token == DOUBLE)) {
+        /* long double / double long becomes LONG_DOUBLE token */
+        ts->main_type = LONG_DOUBLE;
+    }
+    else {
+        /* duplicate type specifiers, which is invalid */
+        yyerror("duplicate/multiple type specifiers");
+        return 0;
+    }
+
+    return 1;
+}
+
+int c_node_on_type_spec(struct c_node *typ) { /* convert to TYPE_SPECIFIER */
+    if (typ->token == TYPE_SPECIFIER)
+        return 1;
+
+    if (!c_node_typespec_init(&typ->value.val_type_spec,typ->token))
+        return 0;
+
+    typ->token = TYPE_SPECIFIER;
+    return 1;
+}
+
+int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
+    struct c_node_type_spec ts;
+
+    if (typ->token == DECL_SPECIFIER)
+        return 1;
+
+    /* I'm concerned since in the union the members overlap, that's why the extra copying.
+     * Yes, this design stinks. We'll improve it later. */
+    assert(typ->token == TYPE_SPECIFIER);
+    ts = typ->value.val_type_spec;
+
+    c_node_init_decl(&typ->value.val_decl_spec);
+    typ->value.val_decl_spec.typespec = ts;
+    typ->token = DECL_SPECIFIER;
+    return 1;
+}
+
+int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
+    assert(decl->token == DECL_SPECIFIER);
+    assert(typ->token == TYPE_SPECIFIER);
+
+    if (!c_node_typespec_add(&decl->value.val_decl_spec.typespec,typ->value.val_type_spec.main_type))
+        return 0;
+
+    return 1;
 }
 
 int yyparse();

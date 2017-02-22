@@ -29,6 +29,17 @@ struct c_node {
         // token == ENUMERATION_CONSTANT
         // token == IDENTIFIER
         c_identref_t    val_identifier;
+        // type spec
+        // token == TYPE_SPECIFIER
+        struct c_node_type_spec {
+            int             main_type;
+            signed char     bsign;      // -1=unspec  0=unsigned  1=signed
+        } val_type_spec;
+        // declaration spec
+        // token == DECL_SPECIFIER
+        struct c_node_decl_spec {
+            struct c_node_type_spec     typespec;
+        } val_decl_spec;
         // for anything else, this value is meaningless
     } value;
 };
