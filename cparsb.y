@@ -289,7 +289,7 @@ declaration_specifiers
 init_declarator_list
     : init_declarator
     | init_declarator_list ',' init_declarator {
-        if (!c_node_add_init_decl(&($<node>1),&($<node>2))) YYABORT;
+        if (!c_node_add_init_decl(&($<node>1),&($<node>3))) YYABORT;
         $<node>$ = $<node>1;
     }
     ;
