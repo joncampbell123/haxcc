@@ -43,11 +43,22 @@ struct c_node {
             unsigned int    is_volatile:1;
             unsigned int    is_atomic:1;
         } val_type_qual;
+        // storage class specifier
+        // token == TYPE_QUALIFIER
+        struct c_node_storage_class {
+            unsigned int    is_typedef:1;
+            unsigned int    is_extern:1;
+            unsigned int    is_static:1;
+            unsigned int    is_thread_local:1;
+            unsigned int    is_auto:1;
+            unsigned int    is_register:1;
+        } val_storage_class;
         // declaration spec
         // token == DECL_SPECIFIER
         struct c_node_decl_spec {
             struct c_node_type_spec     typespec;
             struct c_node_type_qual     typequal;
+            struct c_node_storage_class storageclass;
         } val_decl_spec;
         // for anything else, this value is meaningless
     } value;

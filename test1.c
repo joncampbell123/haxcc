@@ -1,6 +1,6 @@
 
 int xyz;
-long longcat;
+static long longcat;
 float floatey;
 double doubleback;
 long long longlongcat;

@@ -19,6 +19,7 @@ int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
 int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
 int c_node_finish_declaration(struct c_node *decl);
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
+int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLASS_SPECIFIER */
 
 %}
 
@@ -49,6 +50,7 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
+%token  STORAGE_CLASS_SPECIFIER
 
 %start translation_unit
 %%
@@ -236,10 +238,14 @@ declaration
 
 declaration_specifiers
     : storage_class_specifier declaration_specifiers {
-        /* TODO */
+        if (!c_node_on_storage_class_spec(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
         $<node>$ = $<node>2;
     }
-    | storage_class_specifier
+    | storage_class_specifier {
+        if (!c_node_on_storage_class_spec(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
     | type_specifier declaration_specifiers {
         if (!c_node_on_type_spec(&($<node>1))) YYABORT;
         if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;

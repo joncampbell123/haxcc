@@ -519,6 +519,85 @@ int c_node_typequal_add_node(struct c_node_type_qual *ts,const struct c_node_typ
     return 1;
 }
 
+int c_node_storageclass_add(struct c_node_storage_class *sc,int token) {
+    if (token == TYPEDEF) {
+        if (sc->is_typedef) {
+            yyerror("typedef specified more than once");
+            return 0;
+        }
+        sc->is_typedef = 1;
+    }
+    if (token == EXTERN) {
+        if (sc->is_extern) {
+            yyerror("extern specified more than once");
+            return 0;
+        }
+        sc->is_extern = 1;
+    }
+    if (token == STATIC) {
+        if (sc->is_static) {
+            yyerror("static specified more than once");
+            return 0;
+        }
+        sc->is_static = 1;
+    }
+    if (token == THREAD_LOCAL) {
+        if (sc->is_thread_local) {
+            yyerror("thread_local specified more than once");
+            return 0;
+        }
+        sc->is_thread_local = 1;
+    }
+    if (token == AUTO) {
+        if (sc->is_auto) {
+            yyerror("auto specified more than once");
+            return 0;
+        }
+        sc->is_auto = 1;
+    }
+    if (token == REGISTER) {
+        if (sc->is_register) {
+            yyerror("register specified more than once");
+            return 0;
+        }
+        sc->is_register = 1;
+    }
+
+    if (sc->is_extern && sc->is_static) {
+        yyerror("cannot specify static and extern at the same time");
+        return 0;
+    }
+
+    return 1;
+}
+
+int c_node_storageclass_add_node(struct c_node_storage_class *ts,const struct c_node_storage_class *ats) {
+    if (ats->is_typedef && !c_node_storageclass_add(ts,TYPEDEF))
+        return 0;
+    if (ats->is_extern && !c_node_storageclass_add(ts,EXTERN))
+        return 0;
+    if (ats->is_static && !c_node_storageclass_add(ts,STATIC))
+        return 0;
+    if (ats->is_thread_local && !c_node_storageclass_add(ts,THREAD_LOCAL))
+        return 0;
+    if (ats->is_auto && !c_node_storageclass_add(ts,AUTO))
+        return 0;
+    if (ats->is_register && !c_node_storageclass_add(ts,REGISTER))
+        return 0;
+
+    return 1;
+}
+
+int c_node_storageclass_init(struct c_node_storage_class *sc,int token) {
+    sc->is_typedef = 0;
+    sc->is_extern = 0;
+    sc->is_static = 0;
+    sc->is_thread_local = 0;
+    sc->is_auto = 0;
+    sc->is_register = 0;
+    return c_node_storageclass_add(sc,token);
+}
+
 int c_node_typequal_init(struct c_node_type_qual *ts,int token) {
     ts->is_restrict = 0;
     ts->is_volatile = 0;
@@ -560,6 +639,23 @@ const char *typespec_token_to_str(const int tok) {
     }
 
     return "?";
+}
+
+void c_node_storageclass_dump(const struct c_node_storage_class * const sc) {
+    if (sc->is_typedef)
+        fprintf(stderr,"typedef ");
+    if (sc->is_extern)
+        fprintf(stderr,"extern ");
+    if (sc->is_static)
+        fprintf(stderr,"static ");
+    if (sc->is_thread_local)
+        fprintf(stderr,"thread_local ");
+    if (sc->is_auto)
+        fprintf(stderr,"auto ");
+    if (sc->is_register)
+        fprintf(stderr,"register ");
+
+    fprintf(stderr,"\n");
 }
 
 void c_node_typequal_dump(const struct c_node_type_qual * const tq) {
@@ -655,6 +751,17 @@ int c_node_on_type_qual(struct c_node *typ) { /* convert to TYPE_QUALIFIER */
     return 1;
 }
 
+int c_node_on_storage_class_spec(struct c_node *stc) {
+    if (stc->token == STORAGE_CLASS_SPECIFIER)
+        return 1;
+
+    if (!c_node_storageclass_init(&stc->value.val_storage_class,stc->token))
+        return 0;
+
+    stc->token = STORAGE_CLASS_SPECIFIER;
+    return 1;
+}
+
 int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
     if (typ->token == DECL_SPECIFIER)
         return 1;
@@ -675,6 +782,14 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
         tq = typ->value.val_type_qual;
         c_node_init_decl(&typ->value.val_decl_spec);
         typ->value.val_decl_spec.typequal = tq;
+        typ->token = DECL_SPECIFIER;
+    }
+    else if (typ->token == STORAGE_CLASS_SPECIFIER) {
+        struct c_node_storage_class sc;
+
+        sc = typ->value.val_storage_class;
+        c_node_init_decl(&typ->value.val_decl_spec);
+        typ->value.val_decl_spec.storageclass = sc;
         typ->token = DECL_SPECIFIER;
     }
     else {
@@ -706,8 +821,13 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
         if (!c_node_typequal_add_node(&decl->value.val_decl_spec.typequal,&typ->value.val_type_qual))
             return 0;
     }
+    else if (typ->token == STORAGE_CLASS_SPECIFIER) {
+        if (!c_node_storageclass_add_node(&decl->value.val_decl_spec.storageclass,&typ->value.val_storage_class))
+            return 0;
+    }
     else {
         yyerror("unexpected node type, adding to decl");
+        fprintf(stderr,"Typ token=%u\n",typ->token);
         return 0;
     }
 
@@ -722,6 +842,8 @@ int c_node_finish_declaration(struct c_node *decl) {
     c_node_typespec_dump(&decl->value.val_decl_spec.typespec);
     fprintf(stderr,"  typequal: ");
     c_node_typequal_dump(&decl->value.val_decl_spec.typequal);
+    fprintf(stderr,"  storageclass: ");
+    c_node_storageclass_dump(&decl->value.val_decl_spec.storageclass);
     fprintf(stderr,"\n");
 
     return 1;
