@@ -14,6 +14,7 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
 int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
 int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
 int c_node_finish_declaration(struct c_node *decl);
@@ -46,6 +47,7 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
 %token  LONG_DOUBLE
 
 %token  TYPE_SPECIFIER
+%token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
 
 %start translation_unit
@@ -248,10 +250,14 @@ declaration_specifiers
         if (!c_node_type_to_decl(&($<node>$))) YYABORT;
     }
     | type_qualifier declaration_specifiers {
-        /* TODO */
+        if (!c_node_on_type_qual(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
         $<node>$ = $<node>2;
     }
-    | type_qualifier
+    | type_qualifier {
+        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
     | function_specifier declaration_specifiers {
         /* TODO */
         $<node>$ = $<node>2;

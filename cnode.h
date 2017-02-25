@@ -35,10 +35,19 @@ struct c_node {
             int             main_type;
             signed char     bsign;      // -1=unspec  0=unsigned  1=signed
         } val_type_spec;
+        // type qualifier
+        // token == TYPE_QUALIFIER
+        struct c_node_type_qual {
+            unsigned int    is_const:1;
+            unsigned int    is_restrict:1;
+            unsigned int    is_volatile:1;
+            unsigned int    is_atomic:1;
+        } val_type_qual;
         // declaration spec
         // token == DECL_SPECIFIER
         struct c_node_decl_spec {
             struct c_node_type_spec     typespec;
+            struct c_node_type_qual     typequal;
         } val_decl_spec;
         // for anything else, this value is meaningless
     } value;

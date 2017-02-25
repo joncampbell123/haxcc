@@ -469,6 +469,64 @@ int c_node_typespec_init(struct c_node_type_spec *ts,int token) {
     return 1;
 }
 
+int c_node_typequal_add(struct c_node_type_qual *ts,int token) {
+    if (token == CONST) {
+        if (ts->is_const) {
+            yyerror("type qualifier const specified more than once");
+            return 0;
+        }
+        ts->is_const = 1;
+    }
+    else if (token == RESTRICT) {
+        if (ts->is_restrict) {
+            yyerror("type qualifier restrict specified more than once");
+            return 0;
+        }
+        ts->is_restrict = 1;
+    }
+    else if (token == VOLATILE) {
+        if (ts->is_volatile) {
+            yyerror("type qualifier volatile specified more than once");
+            return 0;
+        }
+        ts->is_volatile = 1;
+    }
+    else if (token == ATOMIC) {
+        if (ts->is_atomic) {
+            yyerror("type qualifier atomic specified more than once");
+            return 0;
+        }
+        ts->is_atomic = 1;
+    }
+    else {
+        yyerror("unexpected token in type qualifier stage");
+        return 0;
+    }
+
+    return 1;
+}
+
+int c_node_typequal_add_node(struct c_node_type_qual *ts,const struct c_node_type_qual *ats) {
+    if (ats->is_const && !c_node_typequal_add(ts,CONST))
+        return 0;
+    if (ats->is_restrict && !c_node_typequal_add(ts,RESTRICT))
+        return 0;
+    if (ats->is_volatile && !c_node_typequal_add(ts,VOLATILE))
+        return 0;
+    if (ats->is_atomic && !c_node_typequal_add(ts,ATOMIC))
+        return 0;
+
+    return 1;
+}
+
+int c_node_typequal_init(struct c_node_type_qual *ts,int token) {
+    ts->is_restrict = 0;
+    ts->is_volatile = 0;
+    ts->is_atomic = 0;
+    ts->is_const = 0;
+    return c_node_typequal_add(ts,token);
+}
+
 const char *typespec_token_to_str(const int tok) {
     switch (tok) {
         case 0:
@@ -502,6 +560,19 @@ const char *typespec_token_to_str(const int tok) {
     }
 
     return "?";
+}
+
+void c_node_typequal_dump(const struct c_node_type_qual * const tq) {
+    if (tq->is_const)
+        fprintf(stderr,"const ");
+    if (tq->is_restrict)
+        fprintf(stderr,"restrict ");
+    if (tq->is_volatile)
+        fprintf(stderr,"volatile ");
+    if (tq->is_atomic)
+        fprintf(stderr,"atomic ");
+
+    fprintf(stderr,"\n");
 }
 
 void c_node_typespec_dump(const struct c_node_type_spec * const ts) {
@@ -573,39 +644,72 @@ int c_node_on_type_spec(struct c_node *typ) { /* convert to TYPE_SPECIFIER */
     return 1;
 }
 
-int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
-    struct c_node_type_spec ts;
+int c_node_on_type_qual(struct c_node *typ) { /* convert to TYPE_QUALIFIER */
+    if (typ->token == TYPE_QUALIFIER)
+        return 1;
 
+    if (!c_node_typequal_init(&typ->value.val_type_qual,typ->token))
+        return 0;
+
+    typ->token = TYPE_QUALIFIER;
+    return 1;
+}
+
+int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
     if (typ->token == DECL_SPECIFIER)
         return 1;
 
     /* I'm concerned since in the union the members overlap, that's why the extra copying.
      * Yes, this design stinks. We'll improve it later. */
-    assert(typ->token == TYPE_SPECIFIER);
-    ts = typ->value.val_type_spec;
+    if (typ->token == TYPE_SPECIFIER) {
+        struct c_node_type_spec ts;
 
-    c_node_init_decl(&typ->value.val_decl_spec);
-    typ->value.val_decl_spec.typespec = ts;
-    typ->token = DECL_SPECIFIER;
+        ts = typ->value.val_type_spec;
+        c_node_init_decl(&typ->value.val_decl_spec);
+        typ->value.val_decl_spec.typespec = ts;
+        typ->token = DECL_SPECIFIER;
+    }
+    else if (typ->token == TYPE_QUALIFIER) {
+        struct c_node_type_qual tq;
+
+        tq = typ->value.val_type_qual;
+        c_node_init_decl(&typ->value.val_decl_spec);
+        typ->value.val_decl_spec.typequal = tq;
+        typ->token = DECL_SPECIFIER;
+    }
+    else {
+        yyerror("Unexpected type node");
+        return 0;
+    }
+
     return 1;
 }
 
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
-    int add_type;
-
     assert(decl->token == DECL_SPECIFIER);
-    assert(typ->token == TYPE_SPECIFIER);
 
-    add_type = typ->value.val_type_spec.main_type;
-    if (add_type == 0) {
-        if (typ->value.val_type_spec.bsign < 0)
-            return 1;
+    if (typ->token == TYPE_SPECIFIER) {
+        int add_type;
 
-        add_type = typ->value.val_type_spec.bsign > 0 ? SIGNED : UNSIGNED;
+        add_type = typ->value.val_type_spec.main_type;
+        if (add_type == 0) {
+            if (typ->value.val_type_spec.bsign < 0)
+                return 1;
+
+            add_type = typ->value.val_type_spec.bsign > 0 ? SIGNED : UNSIGNED;
+        }
+
+        if (!c_node_typespec_add(&decl->value.val_decl_spec.typespec,add_type))
+            return 0;
     }
-
-    if (!c_node_typespec_add(&decl->value.val_decl_spec.typespec,add_type))
+    else if (typ->token == TYPE_QUALIFIER) {
+        if (!c_node_typequal_add_node(&decl->value.val_decl_spec.typequal,&typ->value.val_type_qual))
+            return 0;
+    }
+    else {
+        yyerror("unexpected node type, adding to decl");
         return 0;
+    }
 
     return 1;
 }
@@ -616,6 +720,8 @@ int c_node_finish_declaration(struct c_node *decl) {
     fprintf(stderr,"Finished declaration:\n");
     fprintf(stderr,"  typespec: ");
     c_node_typespec_dump(&decl->value.val_decl_spec.typespec);
+    fprintf(stderr,"  typequal: ");
+    c_node_typequal_dump(&decl->value.val_decl_spec.typequal);
     fprintf(stderr,"\n");
 
     return 1;
