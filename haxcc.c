@@ -142,6 +142,7 @@ void idents_free_all(void) {
     }
 }
 
+/* TODO: to allow scoping to work, scan backwards from last entry */
 struct identifier_t *idents_find(const char *str) {
     struct identifier_t *id;
     int i=0;
@@ -153,6 +154,16 @@ struct identifier_t *idents_find(const char *str) {
     }
 
     return NULL;
+}
+
+const char *idents_get_name(const c_identref_t x) {
+    struct identifier_t *id;
+
+    if (x >= idents_count)
+        return NULL;
+
+    id = &idents[x];
+    return id->name;
 }
 
 struct identifier_t *idents_alloc(void) {
@@ -171,6 +182,10 @@ struct identifier_t *idents_alloc(void) {
 c_identref_t identifier_parse(const char *str) {
     struct identifier_t *id;
 
+    /* TODO: this should be written to use backwards scan of find.
+     *       if the identifier found is below a "scope" boundary,
+     *       then allow allocating another identifier. the duplicate
+     *       value will be removed when the scope is closed. */
     id = idents_find(str);
     if (id == NULL) {
         id = idents_alloc();
@@ -861,6 +876,67 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
     return 1;
 }
 
+void c_init_decl_node_init(struct c_init_decl_node *i) {
+    memset(i,0,sizeof(*i));
+    i->identifier = c_identref_t_NONE;
+
+}
+
+struct c_init_decl_node *alloc_init_decl_node(void) {
+    struct c_init_decl_node *n = (struct c_init_decl_node*)malloc(sizeof(struct c_init_decl_node));
+    if (n == NULL) return NULL;
+    c_init_decl_node_init(n);
+    return n;
+}
+
+int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl) {
+    assert(decl->token == DECL_SPECIFIER);
+    assert(initdecl->token == INIT_DECL_LIST);
+
+    if (decl->value.val_decl_spec.init_decl_list != NULL) {
+        yyerror("declaration init decl list already initialized");
+        return 0;
+    }
+
+    if (initdecl->value.init_decl_list != NULL) {
+        /* you just move the list from one to the other, done */
+        decl->value.val_decl_spec.init_decl_list =
+            initdecl->value.init_decl_list;
+        initdecl->value.init_decl_list =
+            NULL;
+    }
+
+    return 1;
+}
+
+int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl) {
+    yyerror("add_init_decl not impl");
+    return 0;
+}
+
+int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
+    if (typ->token == INIT_DECL_LIST)
+        return 1;
+
+    if (typ->token == IDENTIFIER) {
+        struct c_init_decl_node *idn = alloc_init_decl_node();
+        if (idn == NULL) {
+            yyerror("unable to alloc init decl node");
+            return 0;
+        }
+
+        idn->identifier = typ->value.val_identifier;
+        typ->value.init_decl_list = idn;
+    }
+    else {
+        yyerror("init decl unexpected node");
+        return 0;
+    }
+
+    typ->token = INIT_DECL_LIST;
+    return 1;
+}
+
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
     assert(decl->token == DECL_SPECIFIER);
 
@@ -899,6 +975,15 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
     return 1;
 }
 
+void c_init_decl_node_dump(struct c_init_decl_node *n) {
+    fprintf(stderr,"init decl entry:");
+    if (n->identifier != c_identref_t_NONE) {
+        const char *name = idents_get_name(n->identifier);
+        if (name != NULL) fprintf(stderr," identifier=\"%s\"",name);
+    }
+    fprintf(stderr,"\n");
+}
+
 int c_node_finish_declaration(struct c_node *decl) {
     assert(decl->token == DECL_SPECIFIER);
 
@@ -911,7 +996,15 @@ int c_node_finish_declaration(struct c_node *decl) {
     c_node_storageclass_dump(&decl->value.val_decl_spec.storageclass);
     fprintf(stderr,"  funcspec: ");
     c_node_funcspec_dump(&decl->value.val_decl_spec.funcspec);
-    fprintf(stderr,"\n");
+    fprintf(stderr,"  init decl:\n");
+
+    {
+        struct c_init_decl_node *n = decl->value.val_decl_spec.init_decl_list;
+        for (;n != NULL;n=n->next) {
+            fprintf(stderr,"    ");
+            c_init_decl_node_dump(n);
+        }
+    }
 
     return 1;
 }

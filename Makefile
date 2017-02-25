@@ -29,3 +29,7 @@ clean:
 
 tests: $(HAXCC)
 	./$(HAXCC) <test1.c
+
+vtests: $(HAXCC)
+	valgrind --leak-check=full --show-reachable=yes --track-origins=yes ./$(HAXCC) <test1.c
+

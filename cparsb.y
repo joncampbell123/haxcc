@@ -14,6 +14,9 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
+int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
+int c_node_on_init_decl(struct c_node *typ); /* convert to INIT_DECL_LIST */
 int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
 int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
 int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
@@ -52,6 +55,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
 %token  FUNC_SPECIFIER
+%token  INIT_DECL_LIST
 %token  STORAGE_CLASS_SPECIFIER
 
 %start translation_unit
@@ -232,8 +236,8 @@ declaration
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
     }
     | declaration_specifiers init_declarator_list ';' {
+        if (!c_node_add_declaration_init_decl(&($<node>1),&($<node>2))) YYABORT;
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        /* TODO: init_declarator_list */
     }
     | static_assert_declaration
     ;
@@ -284,12 +288,21 @@ declaration_specifiers
 
 init_declarator_list
     : init_declarator
-    | init_declarator_list ',' init_declarator
+    | init_declarator_list ',' init_declarator {
+        if (!c_node_add_init_decl(&($<node>1),&($<node>2))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
 
 init_declarator
-    : declarator '=' initializer
-    | declarator
+    : declarator '=' initializer {
+        /* TODO */
+        if (!c_node_on_init_decl(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | declarator {
+        if (!c_node_on_init_decl(&($<node>$))) YYABORT;
+    }
     ;
 
 storage_class_specifier

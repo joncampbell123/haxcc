@@ -3,6 +3,13 @@
 
 #include "cstring.h"
 
+#define c_identref_t_NONE       ((c_identref_t)(~0ULL))
+
+struct c_init_decl_node {
+    c_identref_t                        identifier;
+    struct c_init_decl_node*            next;
+};
+
 struct c_node {
     int /*enum yytokentype*/ token;
     union c_node_val {
@@ -66,7 +73,11 @@ struct c_node {
             struct c_node_type_qual     typequal;
             struct c_node_func_spec     funcspec;
             struct c_node_storage_class storageclass;
+            struct c_init_decl_node*    init_decl_list;
         } val_decl_spec;
+        // init decl
+        // token == INIT_DECL_LIST
+        struct c_init_decl_node*        init_decl_list;
         // for anything else, this value is meaningless
     } value;
 };
