@@ -23,12 +23,12 @@ struct c_node {
         // instead we store a reference to string storage. that way we also keep track
         // whether ANSI or WIDE and we don't lose track of pointers.
         // token == STRING_LITERAL
-        c_stringref_t   val_string;
+        c_stringref_t       val_string;
         // identifier storage, by name. again, by reference only.
         // token == TYPEDEF_NAME
         // token == ENUMERATION_CONSTANT
         // token == IDENTIFIER
-        c_identref_t    val_identifier;
+        c_identref_t        val_identifier;
         // type spec
         // token == TYPE_SPECIFIER
         struct c_node_type_spec {
