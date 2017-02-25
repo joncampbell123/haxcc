@@ -1,5 +1,5 @@
 
-int xyz;
+int xyz,abc,faa,baa,wwwwwww;
 static long longcat;
 float floatey;
 double doubleback;

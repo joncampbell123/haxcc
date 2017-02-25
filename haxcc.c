@@ -909,9 +909,27 @@ int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl
     return 1;
 }
 
+void c_init_decl_append(struct c_node *d,struct c_node *s) {
+    if (s->value.init_decl_list == NULL)
+        return; /* nothing to append */
+
+    if (d->value.init_decl_list != NULL) {
+        struct c_init_decl_node *n = d->value.init_decl_list;
+        while (n->next != NULL) n=n->next;
+        n->next = s->value.init_decl_list;
+        s->value.init_decl_list = NULL;
+    }
+    else {
+        d->value.init_decl_list = s->value.init_decl_list;
+        s->value.init_decl_list = NULL;
+    }
+}
+
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl) {
-    yyerror("add_init_decl not impl");
-    return 0;
+    assert(initdecl->token == INIT_DECL_LIST);
+    assert(decl->token == INIT_DECL_LIST);
+    c_init_decl_append(decl,initdecl);
+    return 1;
 }
 
 int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
