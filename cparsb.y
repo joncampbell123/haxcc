@@ -14,6 +14,7 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
 int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
 int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
 int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
@@ -50,6 +51,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
+%token  FUNC_SPECIFIER
 %token  STORAGE_CLASS_SPECIFIER
 
 %start translation_unit
@@ -265,10 +267,14 @@ declaration_specifiers
         if (!c_node_type_to_decl(&($<node>$))) YYABORT;
     }
     | function_specifier declaration_specifiers {
-        /* TODO */
+        if (!c_node_on_func_spec(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
         $<node>$ = $<node>2;
     }
-    | function_specifier
+    | function_specifier {
+        if (!c_node_on_func_spec(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
     | alignment_specifier declaration_specifiers {
         /* TODO */
         $<node>$ = $<node>2;

@@ -455,6 +455,39 @@ void c_node_init_decl(struct c_node_decl_spec *ds) {
     memset(ds,0,sizeof(*ds));
 }
 
+int c_node_funcspec_add(struct c_node_func_spec *fs,int token) {
+    if (token == INLINE) {
+        if (fs->is_inline) {
+            yyerror("cannot specify inline more than once");
+            return 0;
+        }
+        fs->is_inline = 1;
+    }
+    if (token == NORETURN) {
+        if (fs->is_noreturn) {
+            yyerror("cannot specify noreturn more than once");
+            return 0;
+        }
+        fs->is_noreturn = 1;
+    }
+    return 1;
+}
+
+int c_node_funcspec_add_node(struct c_node_func_spec *fs,const struct c_node_func_spec *afs) {
+    if (afs->is_inline && !c_node_funcspec_add(fs,INLINE))
+        return 0;
+    if (afs->is_noreturn && !c_node_funcspec_add(fs,NORETURN))
+        return 0;
+
+    return 1;
+}
+
+int c_node_funcspec_init(struct c_node_func_spec *fs,int token) {
+    fs->is_inline = 0;
+    fs->is_noreturn = 0;
+    return c_node_funcspec_add(fs,token);
+}
+
 int c_node_typespec_init(struct c_node_type_spec *ts,int token) {
     /* should be SIGNED, UNSIGNED, INT, LONG, etc. */
     if (token == UNSIGNED || token == SIGNED) {
@@ -658,6 +691,15 @@ void c_node_storageclass_dump(const struct c_node_storage_class * const sc) {
     fprintf(stderr,"\n");
 }
 
+void c_node_funcspec_dump(const struct c_node_func_spec * const fs) {
+    if (fs->is_inline)
+        fprintf(stderr,"inline ");
+    if (fs->is_noreturn)
+        fprintf(stderr,"noreturn ");
+
+    fprintf(stderr,"\n");
+}
+
 void c_node_typequal_dump(const struct c_node_type_qual * const tq) {
     if (tq->is_const)
         fprintf(stderr,"const ");
@@ -762,6 +804,17 @@ int c_node_on_storage_class_spec(struct c_node *stc) {
     return 1;
 }
 
+int c_node_on_func_spec(struct c_node *typ) { /* convert to FUNC_SPECIFIER */
+    if (typ->token == FUNC_SPECIFIER)
+        return 1;
+
+    if (!c_node_funcspec_init(&typ->value.val_func_spec,typ->token))
+        return 0;
+
+    typ->token = FUNC_SPECIFIER;
+    return 1;
+}
+
 int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
     if (typ->token == DECL_SPECIFIER)
         return 1;
@@ -790,6 +843,14 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
         sc = typ->value.val_storage_class;
         c_node_init_decl(&typ->value.val_decl_spec);
         typ->value.val_decl_spec.storageclass = sc;
+        typ->token = DECL_SPECIFIER;
+    }
+    else if (typ->token == FUNC_SPECIFIER) {
+        struct c_node_func_spec fs;
+
+        fs = typ->value.val_func_spec;
+        c_node_init_decl(&typ->value.val_decl_spec);
+        typ->value.val_decl_spec.funcspec = fs;
         typ->token = DECL_SPECIFIER;
     }
     else {
@@ -825,6 +886,10 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
         if (!c_node_storageclass_add_node(&decl->value.val_decl_spec.storageclass,&typ->value.val_storage_class))
             return 0;
     }
+    else if (typ->token == FUNC_SPECIFIER) {
+        if (!c_node_funcspec_add_node(&decl->value.val_decl_spec.funcspec,&typ->value.val_func_spec))
+            return 0;
+    }
     else {
         yyerror("unexpected node type, adding to decl");
         fprintf(stderr,"Typ token=%u\n",typ->token);
@@ -844,6 +909,8 @@ int c_node_finish_declaration(struct c_node *decl) {
     c_node_typequal_dump(&decl->value.val_decl_spec.typequal);
     fprintf(stderr,"  storageclass: ");
     c_node_storageclass_dump(&decl->value.val_decl_spec.storageclass);
+    fprintf(stderr,"  funcspec: ");
+    c_node_funcspec_dump(&decl->value.val_decl_spec.funcspec);
     fprintf(stderr,"\n");
 
     return 1;

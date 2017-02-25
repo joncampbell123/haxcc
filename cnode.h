@@ -53,11 +53,18 @@ struct c_node {
             unsigned int    is_auto:1;
             unsigned int    is_register:1;
         } val_storage_class;
+        // function specifier
+        // token == FUNC_SPECIFIER
+        struct c_node_func_spec {
+            unsigned int    is_inline:1;
+            unsigned int    is_noreturn:1;
+        } val_func_spec;
         // declaration spec
         // token == DECL_SPECIFIER
         struct c_node_decl_spec {
             struct c_node_type_spec     typespec;
             struct c_node_type_qual     typequal;
+            struct c_node_func_spec     funcspec;
             struct c_node_storage_class storageclass;
         } val_decl_spec;
         // for anything else, this value is meaningless
