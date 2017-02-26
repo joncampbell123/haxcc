@@ -69,6 +69,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  FUNC_SPECIFIER
 %token  INIT_DECL_LIST
 %token  INITIALIZER
+%token  TYPECAST
 
 %start translation_unit
 %%

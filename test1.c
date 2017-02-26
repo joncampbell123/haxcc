@@ -38,6 +38,7 @@ void function1(void) {
     int val = -1;
     int val2 = 0x111 + -1;
     int val3 = ~0;
+    long vall = (char)val;
     int a = 2 * 4 * 8 * 16;
     int x = 246,xxx = 0x777;
     int y = x,yy = x,zzz = 0x1234,yyy = x;

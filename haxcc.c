@@ -272,10 +272,10 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
         return 0;
     }
 
-    *res = *p1;
     if (p1->token == I_CONSTANT) {/*converting from int*/
         struct c_node_val_int *ic = &(res->value.val_uint);
 
+        *res = *p1;
         if (dcl->typespec.bsign >= 0)
             ic->bsign = dcl->typespec.bsign;
 
@@ -327,6 +327,17 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
             }
         }
 
+        return 1;
+    }
+    else if (p1->token == IDENTIFIER) {
+        res->token = TYPECAST;
+        res->value.typecast_node = malloc(sizeof(struct c_node));
+        if (res->value.typecast_node == NULL) {
+            yyerror("Cannot malloc node");
+            return 0;
+        }
+        *(res->value.typecast_node) = *p1;
+        p1->token = 0;
         return 1;
     }
 
@@ -1282,7 +1293,8 @@ int c_node_convert_to_initializer(struct c_node *decl) {
     if (decl->token == INITIALIZER)
         return 1;
 
-    if (decl->token == IDENTIFIER ||
+    if (decl->token == TYPECAST ||
+        decl->token == IDENTIFIER ||
         decl->token == I_CONSTANT ||
         decl->token == F_CONSTANT ||
         decl->token == STRING_LITERAL ||

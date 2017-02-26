@@ -88,6 +88,9 @@ struct c_node {
         // initializer
         // token == INITIALIZER
         struct c_node_initializer*      initializer;
+        // typecast
+        // token == TYPECAST
+        struct c_node*                  typecast_node;
         // for anything else, this value is meaningless
     } value;
 };
