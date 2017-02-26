@@ -126,7 +126,7 @@ struct identifier_t {
  *      curly braces deeper in the code). Identifiers with the same name
  *      are allowed so long as the scope differs. */
 struct identifier_t     idents[MAX_IDENTS];
-int                     idents_scope_boundary=0;
+int                     idents_scope_boundary=-1; /* -1 = global scope */
 int                     idents_count=0;
 
 c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
