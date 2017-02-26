@@ -235,7 +235,10 @@ int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the shift */
-        res->value.val_uint.uint <<= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint <<= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint <<= p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -258,7 +261,10 @@ int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the shift */
-        res->value.val_uint.uint >>= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint >>= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint >>= p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -281,7 +287,10 @@ int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the multiply */
-        res->value.val_uint.uint *= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint *= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint *= p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -342,7 +351,10 @@ int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2) {
             yyerror("Constant divide by zero, compile time expression eval error");
             return 0;
         }
-        res->value.val_uint.uint /= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint /= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint /= p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -369,7 +381,10 @@ int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2) {
             yyerror("Constant divide by zero (modulus), compile time expression eval error");
             return 0;
         }
-        res->value.val_uint.uint %= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint %= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint %= p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -392,7 +407,10 @@ int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the addition */
-        res->value.val_uint.uint += p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint += p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint += p2->value.val_uint.uint;
 
         /* done */
         return 1;
@@ -415,7 +433,10 @@ int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the subtraction */
-        res->value.val_uint.uint -= p2->value.val_uint.uint;
+        if (res->value.val_uint.bsign)
+            res->value.val_uint.sint -= p2->value.val_uint.sint;
+        else
+            res->value.val_uint.uint -= p2->value.val_uint.uint;
 
         /* done */
         return 1;
