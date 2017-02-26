@@ -86,6 +86,7 @@ struct c_node {
         // token == INIT_DECL_LIST
         struct c_init_decl_node*        init_decl_list;
         // initializer
+        // token == INITIALIZER
         struct c_node_initializer*      initializer;
         // for anything else, this value is meaningless
     } value;
