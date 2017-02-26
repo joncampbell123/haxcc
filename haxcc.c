@@ -17,6 +17,7 @@ void c_node_init(struct c_node *node) {
 
 unsigned char char_width_b = 1;
 unsigned char wchar_width_b = 2;
+unsigned char short_width_b = 2;
 unsigned char int_width_b = 2;
 unsigned char long_width_b = 4;
 unsigned char longlong_width_b = 8;
@@ -206,6 +207,18 @@ c_identref_t identifier_parse(const char *str) {
     return idents_ptr_to_ref(id);
 }
 
+void c_node_autofill_declaration_sign(struct c_node *decl) {
+    if (decl->value.val_decl_spec.typespec.bsign < 0) {
+        if (decl->value.val_decl_spec.typespec.main_type == CHAR ||
+            decl->value.val_decl_spec.typespec.main_type == SHORT ||
+            decl->value.val_decl_spec.typespec.main_type == INT ||
+            decl->value.val_decl_spec.typespec.main_type == LONG ||
+            decl->value.val_decl_spec.typespec.main_type == LONG_LONG) {
+            decl->value.val_decl_spec.typespec.bsign = 1; /* signed by default */
+        }
+    }
+}
+
 struct string_t {
     unsigned char       wchar;      // L prefix
     unsigned char       utf8;       // u8 prefix
@@ -218,6 +231,108 @@ struct string_t {
 
 struct string_t         strings[MAX_STRINGS];
 int                     strings_count=0;
+
+uint64_t width2mask(unsigned char w) {
+    if (w == 0) return 0;
+    return ((uint64_t)1ULL << ((uint64_t)w * (uint64_t)8ULL)) - (uint64_t)1ULL; /* x,8,16,24,32,40,48,56,64 */
+}
+
+uint64_t width2mask_signbit(unsigned char w) {
+    if (w == 0) return 0;
+    return ((uint64_t)1ULL << (((uint64_t)w * (uint64_t)8ULL) - (uint64_t)1ULL)); /* x,7,15,23,31,39,47,55,63 */
+}
+
+int64_t iconst_signextend(int64_t v,unsigned char swidth,unsigned char dwidth) {
+    const unsigned char width = (swidth < dwidth) ? swidth : dwidth;
+    uint64_t sgn = width2mask_signbit(width);
+    uint64_t msk = width2mask(width);
+    return (v & msk) | (sgn ? (~msk) : (uint64_t)0ULL);
+}
+
+uint64_t iconst_extend(uint64_t v,unsigned char swidth,unsigned char dwidth) {
+    const unsigned char width = (swidth < dwidth) ? swidth : dwidth;
+    uint64_t msk = width2mask(width);
+    return v & msk;
+}
+
+/* res = (tc)p1; */
+int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
+    struct c_node_decl_spec *dcl;
+
+    if (tc->token != DECL_SPECIFIER) {
+        yyerror("Typecast is not declspec");
+        return 0;
+    }
+
+    c_node_autofill_declaration_sign(tc);
+
+    dcl = &(tc->value.val_decl_spec);
+    if (dcl->init_decl_list != NULL) {
+        yyerror("Typecast cannot support init decl");
+        return 0;
+    }
+
+    *res = *p1;
+    if (p1->token == I_CONSTANT) {/*converting from int*/
+        struct c_node_val_int *ic = &(res->value.val_uint);
+
+        if (dcl->typespec.bsign >= 0)
+            ic->bsign = dcl->typespec.bsign;
+
+        if (dcl->typespec.main_type != 0) {
+            if (dcl->typespec.main_type == VOID) {
+            }
+            else if (dcl->typespec.main_type == BOOL) {
+                ic->v.uint = (ic->v.uint != (uint64_t)0) ? (uint64_t)(~0ULL) : (uint64_t)0ULL;
+                ic->bwidth = 1;
+            }
+            else if (dcl->typespec.main_type == CHAR) {
+                if (ic->bsign > 0)
+                    ic->v.sint = iconst_signextend(ic->v.sint,ic->bwidth,char_width_b);
+                else
+                    ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth,char_width_b);
+                ic->bwidth = char_width_b;
+            }
+            else if (dcl->typespec.main_type == SHORT) {
+                if (ic->bsign > 0)
+                    ic->v.sint = iconst_signextend(ic->v.sint,ic->bwidth,short_width_b);
+                else
+                    ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth,short_width_b);
+                ic->bwidth = short_width_b;
+            }
+            else if (dcl->typespec.main_type == INT) {
+                if (ic->bsign > 0)
+                    ic->v.sint = iconst_signextend(ic->v.sint,ic->bwidth,int_width_b);
+                else
+                    ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth,int_width_b);
+                ic->bwidth = int_width_b;
+            }
+            else if (dcl->typespec.main_type == LONG) {
+                if (ic->bsign > 0)
+                    ic->v.sint = iconst_signextend(ic->v.sint,ic->bwidth,long_width_b);
+                else
+                    ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth,long_width_b);
+                ic->bwidth = long_width_b;
+            }
+            else if (dcl->typespec.main_type == LONG_LONG) {
+                if (ic->bsign > 0)
+                    ic->v.sint = iconst_signextend(ic->v.sint,ic->bwidth,longlong_width_b);
+                else
+                    ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth,longlong_width_b);
+                ic->bwidth = longlong_width_b;
+            }
+            else {
+                yyerror("Unsupported type -> iconst");
+                return 0;
+            }
+        }
+
+        return 1;
+    }
+
+    yyerror("Unsupported typecast + input");
+    return 0;
+}
 
 /* res = p1 << p2 */
 int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2) {

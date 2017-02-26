@@ -19,6 +19,7 @@ int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1);
 int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
@@ -152,7 +153,9 @@ unary_operator
 
 cast_expression
     : unary_expression
-    | '(' type_name ')' cast_expression
+    | '(' type_name ')' cast_expression {
+        if (!c_node_typecast(&($<node>$),&($<node>2),&($<node>4))) YYABORT;
+    }
     ;
 
 multiplicative_expression
@@ -386,10 +389,24 @@ struct_declaration
     ;
 
 specifier_qualifier_list
-    : type_specifier specifier_qualifier_list
-    | type_specifier
-    | type_qualifier specifier_qualifier_list
-    | type_qualifier
+    : type_specifier specifier_qualifier_list {
+        if (!c_node_on_type_spec(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
+        $<node>$ = $<node>2;
+    }
+    | type_specifier {
+        if (!c_node_on_type_spec(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
+    | type_qualifier specifier_qualifier_list {
+        if (!c_node_on_type_qual(&($<node>1))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
+        $<node>$ = $<node>2;
+    }
+    | type_qualifier {
+        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
     ;
 
 struct_declarator_list
@@ -472,10 +489,16 @@ pointer
     ;
 
 type_qualifier_list
-    : type_qualifier
-    | type_qualifier_list type_qualifier
+    : type_qualifier {
+        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
+        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
+    }
+    | type_qualifier_list type_qualifier {
+        if (!c_node_on_type_qual(&($<node>2))) YYABORT;
+        if (!c_node_add_type_to_decl(&($<node>1),&($<node>2))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
-
 
 parameter_type_list
     : parameter_list ',' ELLIPSIS

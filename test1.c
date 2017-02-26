@@ -28,6 +28,8 @@ extern int duplicate;
 /*extern int duplicate = 12345678;*/
 
 void function1(void) {
+    long what2 = (char)0xFF; /* should sign extend to 0xFFFFFFFFFFFFFFFFULL */
+    int what = (unsigned long)0x4444444ULL;
     int shift1 = -1 >> 4; /* should be -1 */
     int shift2x = ~0 >> 4; /* should be -1 */
     int shift2y = ~0U >> 4U; /* should be ~0 >> 4U. in our compiler, 0x0FFFFFFFFFFFFFFFULL */
