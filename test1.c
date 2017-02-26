@@ -14,6 +14,9 @@ int shift2 = 4 >> 2; /* = 4 / 4 = 1 */
 /*int dividebyzero = 12345678 / 0;*/
 
 void function1(void) {
+    int shift1 = -1 >> 4; /* should be -1 */
+    int shift2x = ~0 >> 4; /* should be -1 */
+    int shift2y = ~0U >> 4U; /* should be ~0 >> 4U. in our compiler, 0x0FFFFFFFFFFFFFFFULL */
     int negnegdiv = -4 / -1; /* = 4 */
     int unegdiv = 4U / -1; /* = -4 */
     int val = -1;
