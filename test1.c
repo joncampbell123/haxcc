@@ -1,4 +1,6 @@
 
+extern int duplicate;
+
 int parens1 = (5);
 int parens2 = ((23));
 int parens3 = (11+22);
@@ -15,7 +17,15 @@ int morecomplex = 10000 + 2000 + 300 + 40 + 5 - 11111;
 int modu = 12345 % 100;
 int shifty = 4 << 4; /* = 4 * 16 = 64 */
 int shift2 = 4 >> 2; /* = 4 / 4 = 1 */
+/*extern register er_contradiction;*/
+/*extern static es_contradiction;*/
+int duplicate = 12345;
+/*int duplicate = 12345;*/
 /*int dividebyzero = 12345678 / 0;*/
+
+extern int duplicate;
+
+/*extern int duplicate = 12345678;*/
 
 void function1(void) {
     int shift1 = -1 >> 4; /* should be -1 */

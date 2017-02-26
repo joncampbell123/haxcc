@@ -116,6 +116,8 @@ uint64_t strescp(const char ** const s) {
 }
 
 struct identifier_t {
+    unsigned int        declared:1;     /* once declared, it is an error to declare again with different type and storage */
+    unsigned int        defined:1;      /* once defined, it is an error to define again */
     char*               name;
 };
 
@@ -128,6 +130,39 @@ struct identifier_t {
 struct identifier_t     idents[MAX_IDENTS];
 int                     idents_scope_boundary=-1; /* -1 = global scope */
 int                     idents_count=0;
+
+/* variable definition code needs to know if an identifier match
+ * is in scope or out of scope. if it's in scope, and defined,
+ * then we need to throw a duplicate definition error. if it's
+ * in scope and not defined, then this ident code just created
+ * it. if it's out of scope, then a new identifier needs to be
+ * made with the same name in scope to shadow it. the in-scope
+ * identifier will be discarded when the scope closes. */
+int idents_in_scope(const c_identref_t id) {
+    if (idents_scope_boundary < 0)
+        return 1;
+    if (id >= idents_count)
+        return 0;
+
+    return (id >= (c_identref_t)idents_scope_boundary);
+}
+
+int idents_is_defined(const c_identref_t id) {
+    if (id >= idents_count)
+        return 0;
+
+    return idents[id].defined;
+}
+
+int idents_mark_defined(const c_identref_t id) {
+    if (id >= idents_count)
+        return 0;
+    if (idents[id].defined)
+        return 0;
+
+    idents[id].defined = 1;
+    return 1;
+}
 
 c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
     return (c_identref_t)(id - &idents[0]);
@@ -142,6 +177,13 @@ void idents_free_item(struct identifier_t *s) {
 
 void idents_free_all(void) {
     while (idents_count > 0) {
+        idents_count--;
+        idents_free_item(&idents[idents_count]);
+    }
+}
+
+void idents_free_up_to(const c_identref_t base) {
+    while (idents_count > base) {
         idents_count--;
         idents_free_item(&idents[idents_count]);
     }
@@ -162,6 +204,13 @@ struct identifier_t *idents_find(const char *str) {
     }
 
     return NULL;
+}
+
+struct identifier_t *idents_get(const c_identref_t id) {
+    if (id >= idents_count)
+        return NULL;
+
+    return &idents[id];
 }
 
 const char *idents_get_name(const c_identref_t x) {
@@ -185,6 +234,27 @@ struct identifier_t *idents_alloc(void) {
     id = &idents[idents_count++];
     memset(id,0,sizeof(*id));
     return id;
+}
+
+struct identifier_t *idents_dup_alloc(const c_identref_t id) {
+    struct identifier_t *o,*n;
+
+    if (id >= idents_count)
+        return NULL;
+
+    o = &idents[id];
+    if (o->name == NULL)
+        return NULL;
+
+    n = idents_alloc();
+    if (n == NULL)
+        return NULL;
+
+    n->name = strdup(o->name);
+    if (n->name == NULL)
+        return NULL;
+
+    return n;
 }
 
 c_identref_t identifier_parse(const char *str) {
@@ -1307,9 +1377,7 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
     fprintf(stderr,"\n");
 }
 
-int c_node_finish_declaration(struct c_node *decl) {
-    assert(decl->token == DECL_SPECIFIER);
-
+void c_node_dump_declaration(struct c_node *decl) {
     fprintf(stderr,"Finished declaration:\n");
     fprintf(stderr,"  typespec: ");
     c_node_typespec_dump(&decl->value.val_decl_spec.typespec);
@@ -1326,6 +1394,76 @@ int c_node_finish_declaration(struct c_node *decl) {
         for (;n != NULL;n=n->next) {
             fprintf(stderr,"    ");
             c_init_decl_node_dump(n);
+        }
+    }
+}
+
+int c_node_finish_declaration(struct c_node *decl) {
+    assert(decl->token == DECL_SPECIFIER);
+
+    c_node_dump_declaration(decl);
+
+    /* obvious logical contraditions */
+    if (decl->value.val_decl_spec.storageclass.is_extern &&
+        decl->value.val_decl_spec.storageclass.is_static) {
+        yyerror("you can't declare something extern and static");
+        return 0;
+    }
+    if (decl->value.val_decl_spec.storageclass.is_extern &&
+        decl->value.val_decl_spec.storageclass.is_register) {
+        yyerror("you can't declare something extern and register");
+        return 0;
+    }
+
+    {
+        struct c_init_decl_node *n = decl->value.val_decl_spec.init_decl_list;
+        struct identifier_t *id;
+
+        for (;n != NULL;n=n->next) {
+            if (n->identifier != c_identref_t_NONE) {
+                /* scoping check.
+                 * you can define a variable in an inner scope that shadows an outer scope */
+                if (!idents_in_scope(n->identifier)) { /* <- FIXME: UNTESTED */
+                    fprintf(stderr,"Declaration with identifier that's out of scope, making shadow now\n");
+                    id = idents_dup_alloc(n->identifier);
+                    if (id == NULL) {
+                        yyerror("unable to shadow identifier");
+                        return 0;
+                    }
+
+                    n->identifier = idents_ptr_to_ref(id);
+                }
+
+                id = idents_get(n->identifier);
+                if (id == NULL) {
+                    yyerror("decl finish, failed to get ident");
+                    return 0;
+                }
+
+                if (id->declared) {
+                    /* TODO: If already declared, throw an error if new declaration attempts to change the type and storage */
+                }
+
+                if (decl->value.val_decl_spec.storageclass.is_extern) {
+                    id->declared = 1;   /* declared, not defined. it is not an error to declare "extern" something already defined */
+
+                    /* throw an error if an "extern" symbol is given an initializer */
+                    if (n->initializer != NULL) {
+                        yyerror("extern declaration with initializer");
+                        return 0;
+                    }
+                }
+                else {
+                    if (id->defined) {
+                        /* this was already defined, so throw a duplicate definition error */
+                        yyerror("identifier already defined, duplicate definition");
+                        return 0;
+                    }
+
+                    id->declared = 1;
+                    id->defined = 1;    /* TODO: this is OK for variables. must not set if function without a body! */
+                }
+            }
         }
     }
 
