@@ -90,7 +90,10 @@ struct c_node {
         struct c_node_initializer*      initializer;
         // typecast
         // token == TYPECAST
-        struct c_node*                  typecast_node;
+        struct c_node_typecast_node {
+            struct c_node_decl_spec     decl_spec;
+            struct c_node*              typecast_node;
+        } val_typecast_node;
         // for anything else, this value is meaningless
     } value;
 };

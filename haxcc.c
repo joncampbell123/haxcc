@@ -331,12 +331,13 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
     }
     else if (p1->token == IDENTIFIER) {
         res->token = TYPECAST;
-        res->value.typecast_node = malloc(sizeof(struct c_node));
-        if (res->value.typecast_node == NULL) {
+        res->value.val_typecast_node.typecast_node = malloc(sizeof(struct c_node));
+        if (res->value.val_typecast_node.typecast_node == NULL) {
             yyerror("Cannot malloc node");
             return 0;
         }
-        *(res->value.typecast_node) = *p1;
+        *(res->value.val_typecast_node.typecast_node) = *p1;
+        res->value.val_typecast_node.decl_spec = *dcl;
         p1->token = 0;
         return 1;
     }
@@ -1402,6 +1403,35 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
     return 1;
 }
 
+void c_node_dump_decl_struct(struct c_node_decl_spec *dcl);
+
+void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
+    fprintf(stderr,"{ ");
+
+    if (n->token == I_CONSTANT) {
+        fprintf(stderr,"iconst=0x%llx bs=%u bw=%u ",
+                (unsigned long long)n->value.val_uint.v.uint,
+                n->value.val_uint.bsign,
+                n->value.val_uint.bwidth);
+    }
+    else if (n->token == IDENTIFIER) {
+        const char *name = idents_get_name(n->value.val_identifier);
+        fprintf(stderr,"ident(%lu)=\"%s\" ",(unsigned long)n->value.val_identifier,name?name:"(null)");
+    }
+    else if (n->token == TYPECAST) {
+        assert(n->value.val_typecast_node.typecast_node != NULL);
+        c_init_decl_node_initializer_dump(n->value.val_typecast_node.typecast_node,level+1);
+
+        fprintf(stderr,"decl:\n");
+        c_node_dump_decl_struct(&(n->value.val_typecast_node.decl_spec));
+    }
+    else {
+        fprintf(stderr,"tok=%u ",n->token);
+    }
+
+    fprintf(stderr,"} ");
+}
+
 void c_init_decl_node_dump(struct c_init_decl_node *n) {
     fprintf(stderr,"init decl entry:");
     if (n->identifier != c_identref_t_NONE) {
@@ -1411,46 +1441,36 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
     if (n->initializer != NULL) {
         struct c_node_initializer *in = n->initializer;
 
-        fprintf(stderr," { ");
-        for (;in != NULL;in=in->next) {
-            if (in->node.token == I_CONSTANT) {
-                fprintf(stderr,"iconst=0x%llx bs=%u bw=%u ",
-                    (unsigned long long)in->node.value.val_uint.v.uint,
-                    in->node.value.val_uint.bsign,
-                    in->node.value.val_uint.bwidth);
-            }
-            else if (in->node.token == IDENTIFIER) {
-                const char *name = idents_get_name(in->node.value.val_identifier);
-                fprintf(stderr,"ident(%lu)=\"%s\" ",(unsigned long)in->node.value.val_identifier,name?name:"(null)");
-            }
-            else {
-                fprintf(stderr,"tok=%u ",in->node.token);
-            }
-        }
-        fprintf(stderr,"}");
+        fprintf(stderr," ");
+        for (;in != NULL;in=in->next)
+            c_init_decl_node_initializer_dump(&(in->node),0);
     }
     fprintf(stderr,"\n");
 }
 
-void c_node_dump_declaration(struct c_node *decl) {
-    fprintf(stderr,"Finished declaration:\n");
+void c_node_dump_decl_struct(struct c_node_decl_spec *dcl) {
     fprintf(stderr,"  typespec: ");
-    c_node_typespec_dump(&decl->value.val_decl_spec.typespec);
+    c_node_typespec_dump(&dcl->typespec);
     fprintf(stderr,"  typequal: ");
-    c_node_typequal_dump(&decl->value.val_decl_spec.typequal);
+    c_node_typequal_dump(&dcl->typequal);
     fprintf(stderr,"  storageclass: ");
-    c_node_storageclass_dump(&decl->value.val_decl_spec.storageclass);
+    c_node_storageclass_dump(&dcl->storageclass);
     fprintf(stderr,"  funcspec: ");
-    c_node_funcspec_dump(&decl->value.val_decl_spec.funcspec);
+    c_node_funcspec_dump(&dcl->funcspec);
     fprintf(stderr,"  init decl:\n");
 
     {
-        struct c_init_decl_node *n = decl->value.val_decl_spec.init_decl_list;
+        struct c_init_decl_node *n = dcl->init_decl_list;
         for (;n != NULL;n=n->next) {
             fprintf(stderr,"    ");
             c_init_decl_node_dump(n);
         }
     }
+}
+
+void c_node_dump_declaration(struct c_node *decl) {
+    fprintf(stderr,"Finished declaration:\n");
+    c_node_dump_decl_struct(&decl->value.val_decl_spec);
 }
 
 int c_node_finish_declaration(struct c_node *decl) {
