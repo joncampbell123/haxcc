@@ -17,6 +17,7 @@ void yyerror(const char *s);
 int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
@@ -128,7 +129,9 @@ unary_expression
     : postfix_expression
     | INC_OP unary_expression
     | DEC_OP unary_expression
-    | unary_operator cast_expression
+    | unary_operator cast_expression {
+        if (!c_node_unaryop(&($<node>$),&($<node>1),&($<node>2))) YYABORT;
+    }
     | SIZEOF unary_expression
     | SIZEOF '(' type_name ')'
     | ALIGNOF '(' type_name ')'

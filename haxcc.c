@@ -245,6 +245,29 @@ int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2) {
     return 0;
 }
 
+/* res = <operator>p1 */
+int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1) {
+    if (op->token == '+') {
+        /* does nothing */
+        *res = *p1;
+        return 1;
+    }
+    else if (op->token == '-') { /* negation */
+        if (p1->token == I_CONSTANT) {
+            *res = *p1;
+            res->value.val_uint.bsign = 1; /* negation makes it signed */
+            res->value.val_uint.sint = -(res->value.val_uint.sint);
+            return 1;
+        }
+
+        yyerror("Unsupported negate");
+        return 0;
+    }
+
+    yyerror("Unsupported unary operator");
+    return 0;
+}
+
 /* res = p1 / p2 */
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2) {
     if (p1->token == I_CONSTANT && p2->token == I_CONSTANT) {
