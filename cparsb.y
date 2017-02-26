@@ -15,7 +15,9 @@ FILE *yyin;
 void yyerror(const char *s);
 
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
+int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
+int c_node_convert_to_initializer(struct c_node *decl);
 int c_node_on_init_decl(struct c_node *typ); /* convert to INIT_DECL_LIST */
 int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
 int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
@@ -51,12 +53,13 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  LONG_LONG
 %token  LONG_DOUBLE
 
+%token  STORAGE_CLASS_SPECIFIER
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
 %token  FUNC_SPECIFIER
 %token  INIT_DECL_LIST
-%token  STORAGE_CLASS_SPECIFIER
+%token  INITIALIZER
 
 %start translation_unit
 %%
@@ -296,8 +299,9 @@ init_declarator_list
 
 init_declarator
     : declarator '=' initializer {
-        /* TODO */
+        if (!c_node_convert_to_initializer(&($<node>3))) YYABORT;
         if (!c_node_on_init_decl(&($<node>1))) YYABORT;
+        if (!c_node_init_decl_attach_initializer(&($<node>1),&($<node>3))) YYABORT;
         $<node>$ = $<node>1;
     }
     | declarator {

@@ -5,7 +5,11 @@
 
 #define c_identref_t_NONE       ((c_identref_t)(~0ULL))
 
+struct c_node;
+struct c_node_initializer;
+
 struct c_init_decl_node {
+    struct c_node_initializer*          initializer;
     c_identref_t                        identifier;
     struct c_init_decl_node*            next;
 };
@@ -78,7 +82,14 @@ struct c_node {
         // init decl
         // token == INIT_DECL_LIST
         struct c_init_decl_node*        init_decl_list;
+        // initializer
+        struct c_node_initializer*      initializer;
         // for anything else, this value is meaningless
     } value;
+};
+
+struct c_node_initializer {
+    struct c_node                       node;
+    struct c_node_initializer*          next;
 };
 

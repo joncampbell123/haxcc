@@ -909,6 +909,67 @@ int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl
     return 1;
 }
 
+void init_c_node_initializer(struct c_node_initializer *n) {
+    memset(n,0,sizeof(*n));
+}
+
+struct c_node_initializer *alloc_c_node_initializer(void) {
+    struct c_node_initializer *n = (struct c_node_initializer*)malloc(sizeof(struct c_node_initializer));
+    if (n == NULL) return NULL;
+    init_c_node_initializer(n);
+    return n;
+}
+
+int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init) {
+    assert(decl->token == INIT_DECL_LIST);
+    assert(init->token == INITIALIZER);
+
+    if (init->value.initializer == NULL)
+        return 1;
+
+    if (decl->value.init_decl_list == NULL) {
+        yyerror("init decl list == NULL nothing to attach initializer to");
+        return 0;
+    }
+    if (decl->value.init_decl_list->next != NULL) {
+        yyerror("init decl list has more than one element, cannot attach initializer to");
+        return 0;
+    }
+    decl->value.init_decl_list->initializer = init->value.initializer;
+    init->value.initializer = NULL;
+    return 1;
+}
+
+int c_node_convert_to_initializer(struct c_node *decl) {
+    struct c_node_initializer *cinit;
+
+    if (decl->token == INITIALIZER)
+        return 1;
+
+    if (decl->token == IDENTIFIER ||
+        decl->token == I_CONSTANT ||
+        decl->token == F_CONSTANT ||
+        decl->token == STRING_LITERAL ||
+        decl->token == ENUMERATION_CONSTANT) {
+        cinit = alloc_c_node_initializer();
+        if (cinit == NULL) {
+            yyerror("cannot alloc initializer");
+            return 0;
+        }
+
+        cinit->node = *decl;
+        decl->value.initializer = cinit;
+    }
+    else {
+        fprintf(stderr,"init tok=%u\n",decl->token);
+        yyerror("initializer not supported");
+        return 0;
+    }
+
+    decl->token = INITIALIZER;
+    return 1;
+}
+
 void c_init_decl_append(struct c_node *d,struct c_node *s) {
     if (s->value.init_decl_list == NULL)
         return; /* nothing to append */
@@ -998,6 +1059,24 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
     if (n->identifier != c_identref_t_NONE) {
         const char *name = idents_get_name(n->identifier);
         if (name != NULL) fprintf(stderr," identifier=\"%s\"",name);
+    }
+    if (n->initializer != NULL) {
+        struct c_node_initializer *in = n->initializer;
+
+        fprintf(stderr," { ");
+        for (;in != NULL;in=in->next) {
+            if (in->node.token == I_CONSTANT) {
+                fprintf(stderr,"iconst=0x%llx ",(unsigned long long)in->node.value.val_uint.uint);
+            }
+            else if (in->node.token == IDENTIFIER) {
+                const char *name = idents_get_name(in->node.value.val_identifier);
+                fprintf(stderr,"ident=\"%s\" ",name?name:"(null)");
+            }
+            else {
+                fprintf(stderr,"tok=%u ",in->node.token);
+            }
+        }
+        fprintf(stderr,"}");
     }
     fprintf(stderr,"\n");
 }
