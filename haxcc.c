@@ -263,6 +263,17 @@ int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1) {
         yyerror("Unsupported negate");
         return 0;
     }
+    else if (op->token == '~') { /* bitwise NOT */
+        if (p1->token == I_CONSTANT) {
+            *res = *p1;
+            res->value.val_uint.uint = ~(res->value.val_uint.uint);
+            return 1;
+        }
+
+        yyerror("Unsupported bitwise NOT");
+        return 0;
+    }
+
 
     yyerror("Unsupported unary operator");
     return 0;
