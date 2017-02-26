@@ -222,6 +222,52 @@ struct string_t {
 struct string_t         strings[MAX_STRINGS];
 int                     strings_count=0;
 
+/* res = p1 + p2 */
+int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2) {
+    if (p1->token == I_CONSTANT && p2->token == I_CONSTANT) {
+        *res = *p1;
+
+        /* promote the result to the larger of the two sizes */
+        if (res->value.val_uint.bwidth < p2->value.val_uint.bwidth)
+            res->value.val_uint.bwidth = p2->value.val_uint.bwidth;
+
+        /* if the second one is signed, then the result of the first one is signed */
+        if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
+
+        /* do the addition */
+        res->value.val_uint.uint += p2->value.val_uint.uint;
+
+        /* done */
+        return 1;
+    }
+
+    yyerror("Unsupported addition");
+    return 0;
+}
+
+/* res = p1 - p2 */
+int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2) {
+    if (p1->token == I_CONSTANT && p2->token == I_CONSTANT) {
+        *res = *p1;
+
+        /* promote the result to the larger of the two sizes */
+        if (res->value.val_uint.bwidth < p2->value.val_uint.bwidth)
+            res->value.val_uint.bwidth = p2->value.val_uint.bwidth;
+
+        /* if the second one is signed, then the result of the first one is signed */
+        if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
+
+        /* do the subtraction */
+        res->value.val_uint.uint -= p2->value.val_uint.uint;
+
+        /* done */
+        return 1;
+    }
+
+    yyerror("Unsupported subtraction");
+    return 0;
+}
+
 void strings_free_item(struct string_t *s) {
     if (s->bytes != NULL) {
         free(s->bytes);

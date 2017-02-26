@@ -14,6 +14,8 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
@@ -152,8 +154,12 @@ multiplicative_expression
 
 additive_expression
     : multiplicative_expression
-    | additive_expression '+' multiplicative_expression
-    | additive_expression '-' multiplicative_expression
+    | additive_expression '+' multiplicative_expression {
+        if (!c_node_add(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
+    }
+    | additive_expression '-' multiplicative_expression {
+        if (!c_node_sub(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
+    }
     ;
 
 shift_expression

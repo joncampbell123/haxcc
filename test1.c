@@ -5,7 +5,9 @@ float floatey;
 double doubleback;
 long long longlongcat;
 long double doublelong;
-int abcd = 1234;
+int abcd = 0x1234 + 0x1111;
+int efgh = 0x1234 - 0x1111;
+int morecomplex = 10000 + 2000 + 300 + 40 + 5 - 11111;
 
 void function1(void) {
     int a;
