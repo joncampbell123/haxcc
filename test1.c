@@ -9,6 +9,8 @@ int abcd = 0x1234 + 0x1111;
 int efgh = 0x1234 - 0x1111;
 int morecomplex = 10000 + 2000 + 300 + 40 + 5 - 11111;
 int modu = 12345 % 100;
+int shifty = 4 << 4; /* = 4 * 16 = 64 */
+int shift2 = 4 >> 2; /* = 4 / 4 = 1 */
 /*int dividebyzero = 12345678 / 0;*/
 
 void function1(void) {

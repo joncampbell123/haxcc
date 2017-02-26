@@ -20,6 +20,8 @@ int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
@@ -176,8 +178,12 @@ additive_expression
 
 shift_expression
     : additive_expression
-    | shift_expression LEFT_OP additive_expression
-    | shift_expression RIGHT_OP additive_expression
+    | shift_expression LEFT_OP additive_expression {
+        if (!c_node_shift_left(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
+    }
+    | shift_expression RIGHT_OP additive_expression {
+        if (!c_node_shift_right(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
+    }
     ;
 
 relational_expression
