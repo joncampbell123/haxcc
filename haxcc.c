@@ -121,7 +121,12 @@ struct identifier_t {
 
 #define MAX_IDENTS      32768
 
+/* NTS: The purpose of the scope boundary is to define where identifiers
+ *      were declared since entry into a new scope (such as function, or
+ *      curly braces deeper in the code). Identifiers with the same name
+ *      are allowed so long as the scope differs. */
 struct identifier_t     idents[MAX_IDENTS];
+int                     idents_scope_boundary=0;
 int                     idents_count=0;
 
 c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
@@ -142,13 +147,16 @@ void idents_free_all(void) {
     }
 }
 
-/* TODO: to allow scoping to work, scan backwards from last entry */
+/* NTS: We scan backwards from the end, in order for identifiers to match
+ *      first within scope, then out of scope. For example, if "x" exists
+ *      at the global scope, but shadowed by parameter "x" in function scope
+ *      and "x" shadowed again in a deeper scope. */
 struct identifier_t *idents_find(const char *str) {
     struct identifier_t *id;
-    int i=0;
+    int i=idents_count-1;
 
-    while (i < idents_count) {
-        id = &idents[i++];
+    while (i >= 0) {
+        id = &idents[i--];
         if (id->name && !strcmp(str,id->name))
             return id;
     }
@@ -182,28 +190,19 @@ struct identifier_t *idents_alloc(void) {
 c_identref_t identifier_parse(const char *str) {
     struct identifier_t *id;
 
-    /* TODO: this should be written to use backwards scan of find.
-     *       if the identifier found is below a "scope" boundary,
-     *       then allow allocating another identifier. the duplicate
-     *       value will be removed when the scope is closed. */
     id = idents_find(str);
     if (id == NULL) {
         id = idents_alloc();
         if (id == NULL) {
             fprintf(stderr,"Cannot alloc identifier\n");
-            return 0; // FIXME
+            return c_identref_t_NONE;
         }
 
         id->name = strdup(str);
         if (id->name == NULL) {
             fprintf(stderr,"Cannot strdup ident name\n");
-            return 0; // FIXME
+            return c_identref_t_NONE;
         }
-
-        fprintf(stderr,"Identifier '%s' (new)\n",id->name);
-    }
-    else {
-        fprintf(stderr,"Identifier '%s' (already)\n",id->name);
     }
 
     return idents_ptr_to_ref(id);
@@ -1282,7 +1281,7 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
     fprintf(stderr,"init decl entry:");
     if (n->identifier != c_identref_t_NONE) {
         const char *name = idents_get_name(n->identifier);
-        if (name != NULL) fprintf(stderr," identifier=\"%s\"",name);
+        if (name != NULL) fprintf(stderr," identifier(%lu)=\"%s\"",(unsigned long)n->identifier,name);
     }
     if (n->initializer != NULL) {
         struct c_node_initializer *in = n->initializer;
@@ -1290,11 +1289,14 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
         fprintf(stderr," { ");
         for (;in != NULL;in=in->next) {
             if (in->node.token == I_CONSTANT) {
-                fprintf(stderr,"iconst=0x%llx ",(unsigned long long)in->node.value.val_uint.v.uint);
+                fprintf(stderr,"iconst=0x%llx bs=%u bw=%u ",
+                    (unsigned long long)in->node.value.val_uint.v.uint,
+                    in->node.value.val_uint.bsign,
+                    in->node.value.val_uint.bwidth);
             }
             else if (in->node.token == IDENTIFIER) {
                 const char *name = idents_get_name(in->node.value.val_identifier);
-                fprintf(stderr,"ident=\"%s\" ",name?name:"(null)");
+                fprintf(stderr,"ident(%lu)=\"%s\" ",(unsigned long)in->node.value.val_identifier,name?name:"(null)");
             }
             else {
                 fprintf(stderr,"tok=%u ",in->node.token);
