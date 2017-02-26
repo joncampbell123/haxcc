@@ -76,7 +76,9 @@ primary_expression
     : IDENTIFIER
     | constant
     | string
-    | '(' expression ')'
+    | '(' expression ')' {
+        $<node>$ = $<node>2;
+    }
     | generic_selection
     ;
 

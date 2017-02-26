@@ -1,4 +1,8 @@
 
+int parens1 = (5);
+int parens2 = ((23));
+int parens3 = (11+22);
+int parens4 = (11+(22+33));
 int xyz,abc,faa,baa = 10 * 0x111,wwwwwww;
 static long longcat;
 float floatey;
