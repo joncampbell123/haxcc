@@ -329,7 +329,7 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
 
         return 1;
     }
-    else if (p1->token == IDENTIFIER) {
+    else if (p1->token == IDENTIFIER || p1->token == TYPECAST) {
         res->token = TYPECAST;
         res->value.val_typecast_node.typecast_node = malloc(sizeof(struct c_node));
         if (res->value.val_typecast_node.typecast_node == NULL) {
@@ -342,6 +342,8 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
         return 1;
     }
 
+    fprintf(stderr,"typecast tok=%u input tok=%u\n",
+        tc->token,p1->token);
     yyerror("Unsupported typecast + input");
     return 0;
 }
@@ -1420,6 +1422,8 @@ void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
     }
     else if (n->token == TYPECAST) {
         assert(n->value.val_typecast_node.typecast_node != NULL);
+
+        fprintf(stderr,"typecast ");
         c_init_decl_node_initializer_dump(n->value.val_typecast_node.typecast_node,level+1);
 
         fprintf(stderr,"decl:\n");
