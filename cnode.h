@@ -23,7 +23,7 @@ struct c_node {
             union {
                 uint64_t    uint;
                 int64_t     sint;
-            };
+            } v;
             unsigned char   bwidth;     // width, in bytes
             unsigned char   bsign;      // 1=signed 0=unsigned
         } val_uint;

@@ -236,9 +236,9 @@ int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2) {
 
         /* do the shift */
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint <<= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint <<= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint <<= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint <<= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -262,9 +262,9 @@ int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2) {
 
         /* do the shift */
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint >>= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint >>= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint >>= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint >>= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -288,9 +288,9 @@ int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2) {
 
         /* do the multiply */
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint *= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint *= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint *= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint *= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -311,7 +311,7 @@ int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1) {
         if (p1->token == I_CONSTANT) {
             *res = *p1;
             res->value.val_uint.bsign = 1; /* negation makes it signed */
-            res->value.val_uint.sint = -(res->value.val_uint.sint);
+            res->value.val_uint.v.sint = -(res->value.val_uint.v.sint);
             return 1;
         }
 
@@ -321,7 +321,7 @@ int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1) {
     else if (op->token == '~') { /* bitwise NOT */
         if (p1->token == I_CONSTANT) {
             *res = *p1;
-            res->value.val_uint.uint = ~(res->value.val_uint.uint);
+            res->value.val_uint.v.uint = ~(res->value.val_uint.v.uint);
             return 1;
         }
 
@@ -347,14 +347,14 @@ int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the divide. watch out for divide by zero */
-        if (p2->value.val_uint.uint == 0) {
+        if (p2->value.val_uint.v.uint == 0) {
             yyerror("Constant divide by zero, compile time expression eval error");
             return 0;
         }
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint /= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint /= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint /= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint /= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -377,14 +377,14 @@ int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2) {
         if (p2->value.val_uint.bsign) res->value.val_uint.bsign = 1;
 
         /* do the divide. watch out for divide by zero */
-        if (p2->value.val_uint.uint == 0) {
+        if (p2->value.val_uint.v.uint == 0) {
             yyerror("Constant divide by zero (modulus), compile time expression eval error");
             return 0;
         }
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint %= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint %= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint %= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint %= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -408,9 +408,9 @@ int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2) {
 
         /* do the addition */
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint += p2->value.val_uint.sint;
+            res->value.val_uint.v.sint += p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint += p2->value.val_uint.uint;
+            res->value.val_uint.v.uint += p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -434,9 +434,9 @@ int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2) {
 
         /* do the subtraction */
         if (res->value.val_uint.bsign)
-            res->value.val_uint.sint -= p2->value.val_uint.sint;
+            res->value.val_uint.v.sint -= p2->value.val_uint.v.sint;
         else
-            res->value.val_uint.uint -= p2->value.val_uint.uint;
+            res->value.val_uint.v.uint -= p2->value.val_uint.v.uint;
 
         /* done */
         return 1;
@@ -608,7 +608,7 @@ void iconst_parse(struct c_node_val_int *val,const char *str,const unsigned int 
     // will never begin with minus sign
     //
     // may end in L, l, U, u, LL, ll, etc.
-    val->uint = (uint64_t)strtoul(str,(char**)(&str),0);
+    val->v.uint = (uint64_t)strtoul(str,(char**)(&str),0);
     val->bwidth = int_width_b; // default width by default
     val->bsign = 1; // signed by default
 
@@ -628,7 +628,7 @@ void iconst_parse(struct c_node_val_int *val,const char *str,const unsigned int 
     }
 
     fprintf(stderr,"Integer const 0x%llX w=%u s=%u\n",
-        (unsigned long long)val->uint,
+        (unsigned long long)val->v.uint,
         val->bwidth,
         val->bsign);
 }
@@ -669,7 +669,7 @@ void iconst_parse_char(struct c_node_val_int *val,const char *str) {
     //        assign a 32-bit const that becomes the char sequence 'R','I','F','F' in the
     //        native byte order.
     chw = val->bwidth;
-    val->uint = 0;
+    val->v.uint = 0;
     while (*str) {
         if (*str == '\'')
             break;
@@ -680,12 +680,12 @@ void iconst_parse_char(struct c_node_val_int *val,const char *str) {
         }
 
         cval = strescp(&str);
-        val->uint += (uint64_t)cval << ((uint64_t)shf * (uint64_t)8U);
+        val->v.uint += (uint64_t)cval << ((uint64_t)shf * (uint64_t)8U);
         shf += chw;
     }
 
     fprintf(stderr,"Integer const 0x%llX w=%u s=%u\n",
-        (unsigned long long)val->uint,
+        (unsigned long long)val->v.uint,
         val->bwidth,
         val->bsign);
 }
@@ -1290,7 +1290,7 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
         fprintf(stderr," { ");
         for (;in != NULL;in=in->next) {
             if (in->node.token == I_CONSTANT) {
-                fprintf(stderr,"iconst=0x%llx ",(unsigned long long)in->node.value.val_uint.uint);
+                fprintf(stderr,"iconst=0x%llx ",(unsigned long long)in->node.value.val_uint.v.uint);
             }
             else if (in->node.token == IDENTIFIER) {
                 const char *name = idents_get_name(in->node.value.val_identifier);
