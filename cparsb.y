@@ -17,6 +17,7 @@ void yyerror(const char *s);
 int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
@@ -155,7 +156,9 @@ multiplicative_expression
     | multiplicative_expression '/' cast_expression {
         if (!c_node_divide(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
     }
-    | multiplicative_expression '%' cast_expression
+    | multiplicative_expression '%' cast_expression {
+        if (!c_node_modulus(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
+    }
     ;
 
 additive_expression
