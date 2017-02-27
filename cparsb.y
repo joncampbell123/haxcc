@@ -610,8 +610,12 @@ labeled_statement
     ;
 
 compound_statement
-    : '{' '}'
-    | '{'  block_item_list '}'
+    : '{' '}' {
+        $<node>$ = $<node>1; /* TODO: need to return a node with token = 0 or something to indicate empty */
+    }
+    | '{'  block_item_list '}' {
+        $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */
+    }
     ;
 
 block_item_list
