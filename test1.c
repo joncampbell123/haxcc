@@ -28,6 +28,7 @@ extern int duplicate;
 /*extern int duplicate = 12345678;*/
 
 void function1(void) {
+    long whatwhat = (unsigned int)((char)0xFF);
     long what2 = (char)0xFF; /* should sign extend to 0xFFFFFFFFFFFFFFFFULL */
     int what = (unsigned long)0x4444444ULL;
     int shift1 = -1 >> 4; /* should be -1 */
