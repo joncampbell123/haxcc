@@ -39,6 +39,7 @@ void function1(void) {
     int val = -1;
     int val2 = 0x111 + -1;
     int val3 = ~0;
+    unsigned long long typecastia = (unsigned char)((long)((unsigned short)((char)((unsigned char)((unsigned int)val)))));
     long vall = (unsigned long)((char)val);
     int a = 2 * 4 * 8 * 16;
     int x = 246,xxx = 0x777;
