@@ -63,6 +63,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  LONG_DOUBLE
 
 %token  STORAGE_CLASS_SPECIFIER
+%token  BLOCK_ITEM_EMPTY
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
@@ -611,7 +612,7 @@ labeled_statement
 
 compound_statement
     : '{' '}' {
-        $<node>$ = $<node>1; /* TODO: need to return a node with token = 0 or something to indicate empty */
+        $<node>$.token = BLOCK_ITEM_EMPTY;
     }
     | '{'  block_item_list '}' {
         $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */

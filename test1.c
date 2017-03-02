@@ -47,5 +47,7 @@ void function1(void) {
     int z = notdefined;
     const unsigned long xx = 0x12345678UL;
     const unsigned long long m = 0x123456789ABCDEFULL;
+
+    { }
 }
 
