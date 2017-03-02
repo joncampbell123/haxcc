@@ -48,6 +48,12 @@ void function1(void) {
     const unsigned long xx = 0x12345678UL;
     const unsigned long long m = 0x123456789ABCDEFULL;
 
-    { }
+    {
+    }
+
+    {
+        int x = 123;
+        long y = 0x1111UL;
+    }
 }
 

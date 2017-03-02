@@ -281,6 +281,97 @@ void ic_sign_extend_iconst(struct c_node_val_int *ic,struct c_node_decl_spec *dc
         ic->v.uint = iconst_extend(ic->v.uint,ic->bwidth);
 }
 
+int c_init_block_item(struct c_node *res) {
+    res->token = BLOCK_ITEM;
+    res->value.block_item_list = NULL;
+    return 1;
+}
+
+int c_convert_to_block_item_list(struct c_node *res) {
+    struct c_block_item_node *bn;
+
+    if (res->token == BLOCK_ITEM)
+        return 1;
+
+    bn = malloc(sizeof(*bn));
+    if (bn == NULL) return 0;
+    memset(bn,0,sizeof(*bn));
+    bn->node = *res;
+    bn->next = NULL;
+
+    res->token = BLOCK_ITEM;
+    res->value.block_item_list = bn;
+    return 1;
+}
+
+void c_node_dump_declaration(struct c_node *decl);
+
+int c_convert_to_compound_statement(struct c_node *res) {
+    if (res->token == BLOCK_ITEM) {
+        struct c_node *nr = malloc(sizeof(*nr));
+        if (nr == NULL) return 0;
+        *nr = *res;
+
+        res->token = COMPOUND_STATEMENT;
+        res->value.compound_statement_root = nr;
+        return 1;
+    }
+    else if (res->token == COMPOUND_STATEMENT) {
+        return 1;
+    }
+
+    yyerror("Unexpected convert to compound statement");
+    return 0;
+}
+
+int c_dump_block_item_list(struct c_node *res) {
+    if (res->token == BLOCK_ITEM) {
+        struct c_block_item_node *scan = res->value.block_item_list;
+
+        fprintf(stderr,"-----Block item list:\n");
+        for (;scan != NULL;scan=scan->next) {
+            if (scan->node.token == DECL_SPECIFIER)
+                c_node_dump_declaration(&(scan->node));
+            else if (scan->node.token == COMPOUND_STATEMENT && scan->node.value.compound_statement_root != NULL)
+                c_dump_block_item_list(scan->node.value.compound_statement_root);
+            else
+                fprintf(stderr,"block item token=%u\n",scan->node.token);
+        }
+        fprintf(stderr,"-----Block item list end\n");
+
+        return 1;
+    }
+
+    yyerror("Unexpected dump block item list for node that isn't it");
+    return 0;
+}
+
+int c_add_block_item_list(struct c_node *res,struct c_node *n) {
+    if (res->token == BLOCK_ITEM && n->token == BLOCK_ITEM) {
+        if (n->value.block_item_list == NULL)
+            return 1; /* nothing to add */
+
+        if (res->value.block_item_list == NULL) {
+            res->value.block_item_list = n->value.block_item_list;
+            n->value.block_item_list = NULL;
+            return 1; /* transfer */
+        }
+
+        /* attach to end of linked list */
+        {
+            struct c_block_item_node *scan = res->value.block_item_list;
+            while (scan->next != NULL) scan = scan->next;
+            scan->next = n->value.block_item_list;
+            n->value.block_item_list = NULL;
+        }
+
+        return 1;
+    }
+
+    yyerror("add_block_item_list fail");
+    return 0;
+}
+
 /* res = (tc)p1; */
 int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
     struct c_node_decl_spec *dcl;
@@ -1478,6 +1569,8 @@ void c_node_dump_decl_struct(struct c_node_decl_spec *dcl) {
 }
 
 void c_node_dump_declaration(struct c_node *decl) {
+    assert(decl->token == DECL_SPECIFIER);
+
     fprintf(stderr,"Finished declaration:\n");
     c_node_dump_decl_struct(&decl->value.val_decl_spec);
 }

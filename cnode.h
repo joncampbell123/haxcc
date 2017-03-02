@@ -6,6 +6,7 @@
 #define c_identref_t_NONE       ((c_identref_t)(~0ULL))
 
 struct c_node;
+struct c_block_item_node;
 struct c_node_initializer;
 
 struct c_init_decl_node {
@@ -94,6 +95,12 @@ struct c_node {
             struct c_node_decl_spec     decl_spec;
             struct c_node*              typecast_node;
         } val_typecast_node;
+        // block item
+        // token == BLOCK_ITEM
+        struct c_block_item_node*       block_item_list;
+        // compount statement root (directed at block item)
+        // token == COMPOUND_STATEMENT
+        struct c_node*                  compound_statement_root;
         // for anything else, this value is meaningless
     } value;
 };
@@ -101,5 +108,10 @@ struct c_node {
 struct c_node_initializer {
     struct c_node                       node;
     struct c_node_initializer*          next;
+};
+
+struct c_block_item_node {
+    struct c_node                       node;
+    struct c_block_item_node*           next;
 };
 

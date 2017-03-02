@@ -14,6 +14,11 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+int c_init_block_item(struct c_node *res);
+int c_dump_block_item_list(struct c_node *res);
+int c_convert_to_block_item_list(struct c_node *res);
+int c_convert_to_compound_statement(struct c_node *res);
+int c_add_block_item_list(struct c_node *res,struct c_node *n);
 int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
@@ -63,13 +68,14 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  LONG_DOUBLE
 
 %token  STORAGE_CLASS_SPECIFIER
-%token  BLOCK_ITEM_EMPTY
+%token  COMPOUND_STATEMENT
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
 %token  FUNC_SPECIFIER
 %token  INIT_DECL_LIST
 %token  INITIALIZER
+%token  BLOCK_ITEM
 %token  TYPECAST
 
 %start translation_unit
@@ -268,10 +274,12 @@ constant_expression
 declaration
     : declaration_specifiers ';' {
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     | declaration_specifiers init_declarator_list ';' {
         if (!c_node_add_declaration_init_decl(&($<node>1),&($<node>2))) YYABORT;
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     | static_assert_declaration
     ;
@@ -514,13 +522,18 @@ parameter_list
 
 parameter_declaration
     : declaration_specifiers declarator {
+        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     | declaration_specifiers abstract_declarator {
+        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     | declaration_specifiers {
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     ;
 
@@ -612,16 +625,28 @@ labeled_statement
 
 compound_statement
     : '{' '}' {
-        $<node>$.token = BLOCK_ITEM_EMPTY;
+        if (!c_init_block_item(&($<node>$))) YYABORT;
+        if (!c_dump_block_item_list(&($<node>$))) YYABORT;
+        if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
     }
     | '{'  block_item_list '}' {
         $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */
+        if (!c_dump_block_item_list(&($<node>$))) YYABORT;
+        if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
     }
     ;
 
 block_item_list
-    : block_item
-    | block_item_list block_item
+    : block_item {
+        if (!c_convert_to_block_item_list(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | block_item_list block_item {
+        if (!c_convert_to_block_item_list(&($<node>1))) YYABORT;
+        if (!c_convert_to_block_item_list(&($<node>2))) YYABORT;
+        if (!c_add_block_item_list(&($<node>1),&($<node>2))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
 
 block_item
@@ -669,10 +694,14 @@ external_declaration
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement {
+        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     | declaration_specifiers declarator compound_statement {
+        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
     }
     ;
 
