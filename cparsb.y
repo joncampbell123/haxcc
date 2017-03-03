@@ -23,6 +23,7 @@ int c_convert_to_compound_statement(struct c_node *res);
 int c_add_block_item_list(struct c_node *res,struct c_node *n);
 int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
@@ -33,8 +34,9 @@ int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
 int c_node_external_declaration_link(struct c_node *decl,struct c_node *nextdecl);
-int c_node_convert_to_external_declaration(struct c_node *decl);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
+int c_node_convert_to_external_declaration(struct c_node *decl);
+int c_node_init_function_definition(struct c_node *decl);
 int c_node_convert_to_initializer(struct c_node *decl);
 int c_node_on_init_decl(struct c_node *typ); /* convert to INIT_DECL_LIST */
 int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
@@ -73,6 +75,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 
 %token  STORAGE_CLASS_SPECIFIER
 %token  COMPOUND_STATEMENT
+%token  FUNC_DEFINITION
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
@@ -708,14 +711,14 @@ external_declaration
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement {
-        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
+        if (!c_node_init_function_definition(&($<node>$))) YYABORT;
+        if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
     }
     | declaration_specifiers declarator compound_statement {
-        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
+        if (!c_node_init_function_definition(&($<node>$))) YYABORT;
+        if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
     }
     ;
 

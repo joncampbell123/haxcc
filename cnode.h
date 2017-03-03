@@ -105,6 +105,11 @@ struct c_node {
         // external declaration
         // token == EXTERNAL_DECL
         struct c_external_decl_node*    external_decl_list;
+        // function definition
+        // token == FUNC_DEFINITION
+        struct c_node_func_def {
+            struct c_node_decl_spec*    decl_spec;
+        } value_func_def;
         // for anything else, this value is meaningless
     } value;
 };

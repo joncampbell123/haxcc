@@ -474,7 +474,7 @@ int c_node_convert_to_external_declaration(struct c_node *decl) {
     if (decl->token == EXTERNAL_DECL)
         return 1;
 
-    if (decl->token == DECL_SPECIFIER || decl->token == FUNC_SPECIFIER) {
+    if (decl->token == DECL_SPECIFIER || decl->token == FUNC_SPECIFIER || decl->token == FUNC_DEFINITION) {
         struct c_external_decl_node *nn;
 
         nn = malloc(sizeof(*nn));
@@ -1642,6 +1642,32 @@ int c_node_finish_declaration(struct c_node *decl) {
     return 1;
 }
 
+void c_node_dump_func_def(struct c_node_func_def *f) {
+    fprintf(stderr,"--------function def declspec\n");
+    if (f->decl_spec != NULL)
+        c_node_dump_decl_struct(f->decl_spec);
+    else
+        fprintf(stderr,"           (none)\n");
+}
+
+int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl) {
+    struct c_node_decl_spec *sd;
+
+    assert(res->token == FUNC_DEFINITION);
+    assert(decl->token == DECL_SPECIFIER);
+
+    if (res->value.value_func_def.decl_spec != NULL) {
+        yyerror("function definition already has declspec");
+        return 0;
+    }
+
+    sd = malloc(sizeof(*sd));
+    if (sd == NULL) return 0;
+    *sd = decl->value.val_decl_spec;
+    res->value.value_func_def.decl_spec = sd;
+    return 1;
+}
+
 int c_dump_external_decl_list(struct c_node *node) {
     struct c_external_decl_node *n;
 
@@ -1653,7 +1679,12 @@ int c_dump_external_decl_list(struct c_node *node) {
             fprintf(stderr,"---decl specifier\n");
             c_node_dump_decl_struct(&(n->node.value.val_decl_spec));
         }
+        else if (n->node.token == FUNC_DEFINITION) {
+            fprintf(stderr,"---func definition\n");
+            c_node_dump_func_def(&(n->node.value.value_func_def));
+        }
         else {
+            fprintf(stderr,"-------\n");
             fprintf(stderr,"  tok=%u\n",n->node.token);
         }
     }
@@ -1662,26 +1693,41 @@ int c_dump_external_decl_list(struct c_node *node) {
     return 1;
 }
 
+void c_init_func_definition(struct c_node_func_def *f) {
+    f->decl_spec = NULL;
+}
+
+int c_node_init_function_definition(struct c_node *decl) {
+    decl->token = FUNC_DEFINITION;
+    c_init_func_definition(&(decl->value.value_func_def));
+    return 1;
+}
+
 int yyparse();
 
 int main(int argc, char **argv) {
+    int res;
+
     // debug
     extern int yydebug;
     yydebug = 1;
 
     // parse through the input until there is no more:
+    res = 0;
     yyin = stdin;
     do {
-        yyparse();
+        if ((res=yyparse()) != 0) break;
     } while (!feof(yyin));
     yylex_destroy();
 
-    if (last_translation_unit.token != 0) {
-        assert(last_translation_unit.token == EXTERNAL_DECL);
-        c_dump_external_decl_list(&last_translation_unit);
-    }
-    else {
-        fprintf(stderr,"Warning, empty source file\n");
+    if (res == 0) {
+        if (last_translation_unit.token != 0) {
+            assert(last_translation_unit.token == EXTERNAL_DECL);
+            c_dump_external_decl_list(&last_translation_unit);
+        }
+        else {
+            fprintf(stderr,"Warning, empty source file\n");
+        }
     }
 
     strings_free_all();
