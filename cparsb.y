@@ -14,6 +14,8 @@ FILE *yyin;
  
 void yyerror(const char *s);
 
+extern struct c_node last_translation_unit;
+
 int c_init_block_item(struct c_node *res);
 int c_dump_block_item_list(struct c_node *res);
 int c_convert_to_block_item_list(struct c_node *res);
@@ -30,6 +32,8 @@ int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
+int c_node_external_declaration_link(struct c_node *decl,struct c_node *nextdecl);
+int c_node_convert_to_external_declaration(struct c_node *decl);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_convert_to_initializer(struct c_node *decl);
 int c_node_on_init_decl(struct c_node *typ); /* convert to INIT_DECL_LIST */
@@ -74,6 +78,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  DECL_SPECIFIER
 %token  FUNC_SPECIFIER
 %token  INIT_DECL_LIST
+%token  EXTERNAL_DECL
 %token  INITIALIZER
 %token  BLOCK_ITEM
 %token  TYPECAST
@@ -683,8 +688,17 @@ jump_statement
     ;
 
 translation_unit
-    : external_declaration
-    | translation_unit external_declaration
+    : external_declaration {
+        if (!c_node_convert_to_external_declaration(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+        last_translation_unit = $<node>$;
+    }
+    | translation_unit external_declaration {
+        if (!c_node_convert_to_external_declaration(&($<node>2))) YYABORT;
+        if (!c_node_external_declaration_link(&($<node>1),&($<node>2))) YYABORT;
+        $<node>$ = $<node>1;
+        last_translation_unit = $<node>$;
+    }
     ;
 
 external_declaration

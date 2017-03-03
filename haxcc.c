@@ -11,6 +11,8 @@
 
 void yyerror(const char *s);
 
+struct c_node last_translation_unit = { 0 };
+
 void c_node_init(struct c_node *node) {
     memset(node,0,sizeof(*node));
 }
@@ -441,6 +443,51 @@ int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1) {
     fprintf(stderr,"typecast tok=%u input tok=%u\n",
         tc->token,p1->token);
     yyerror("Unsupported typecast + input");
+    return 0;
+}
+
+int c_node_external_declaration_link(struct c_node *decl,struct c_node *nextdecl) {
+    if (decl->token == EXTERNAL_DECL || nextdecl->token == EXTERNAL_DECL) {
+        if (nextdecl->value.external_decl_list == NULL)
+            return 1;
+
+        if (decl->value.external_decl_list == NULL) {
+            decl->value.external_decl_list = nextdecl->value.external_decl_list;
+            nextdecl->value.external_decl_list = NULL;
+        }
+        else {
+            struct c_external_decl_node *n = decl->value.external_decl_list;
+            while (n->next != NULL) n = n->next;
+            n->next = nextdecl->value.external_decl_list;
+            nextdecl->value.external_decl_list = NULL;
+        }
+
+        return 1;
+    }
+
+    fprintf(stderr,"tok=%u nexttok=%u\n",decl->token,nextdecl->token);
+    yyerror("failed to link external decl");
+    return 0;
+}
+
+int c_node_convert_to_external_declaration(struct c_node *decl) {
+    if (decl->token == EXTERNAL_DECL)
+        return 1;
+
+    if (decl->token == DECL_SPECIFIER || decl->token == FUNC_SPECIFIER) {
+        struct c_external_decl_node *nn;
+
+        nn = malloc(sizeof(*nn));
+        if (nn == NULL) return 0;
+        nn->node = *decl;
+        nn->next = NULL;
+        decl->token = EXTERNAL_DECL;
+        decl->value.external_decl_list = nn;
+        return 1;
+    }
+
+    fprintf(stderr,"tok=%u\n",decl->token);
+    yyerror("failed to convert to external decl");
     return 0;
 }
 
@@ -1595,6 +1642,26 @@ int c_node_finish_declaration(struct c_node *decl) {
     return 1;
 }
 
+int c_dump_external_decl_list(struct c_node *node) {
+    struct c_external_decl_node *n;
+
+    fprintf(stderr,"----external decl list\n");
+    assert(node->token == EXTERNAL_DECL);
+    n = node->value.external_decl_list;
+    for (;n != NULL;n=n->next) {
+        if (n->node.token == DECL_SPECIFIER) {
+            fprintf(stderr,"---decl specifier\n");
+            c_node_dump_decl_struct(&(n->node.value.val_decl_spec));
+        }
+        else {
+            fprintf(stderr,"  tok=%u\n",n->node.token);
+        }
+    }
+
+    fprintf(stderr,"----external decl list end\n");
+    return 1;
+}
+
 int yyparse();
 
 int main(int argc, char **argv) {
@@ -1608,6 +1675,14 @@ int main(int argc, char **argv) {
         yyparse();
     } while (!feof(yyin));
     yylex_destroy();
+
+    if (last_translation_unit.token != 0) {
+        assert(last_translation_unit.token == EXTERNAL_DECL);
+        c_dump_external_decl_list(&last_translation_unit);
+    }
+    else {
+        fprintf(stderr,"Warning, empty source file\n");
+    }
 
     strings_free_all();
     idents_free_all();

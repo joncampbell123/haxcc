@@ -8,6 +8,7 @@
 struct c_node;
 struct c_block_item_node;
 struct c_node_initializer;
+struct c_external_decl_node;
 
 struct c_init_decl_node {
     struct c_node_initializer*          initializer;
@@ -101,6 +102,9 @@ struct c_node {
         // compount statement root (directed at block item)
         // token == COMPOUND_STATEMENT
         struct c_node*                  compound_statement_root;
+        // external declaration
+        // token == EXTERNAL_DECL
+        struct c_external_decl_node*    external_decl_list;
         // for anything else, this value is meaningless
     } value;
 };
@@ -113,5 +117,10 @@ struct c_node_initializer {
 struct c_block_item_node {
     struct c_node                       node;
     struct c_block_item_node*           next;
+};
+
+struct c_external_decl_node {
+    struct c_node                       node;
+    struct c_external_decl_node*        next;
 };
 
