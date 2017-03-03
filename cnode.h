@@ -110,6 +110,7 @@ struct c_node {
         struct c_node_func_def {
             struct c_node_decl_spec*    decl_spec;
             struct c_node*              declarator;
+            struct c_node*              compound_statement;
         } value_func_def;
         // for anything else, this value is meaningless
     } value;

@@ -1657,6 +1657,30 @@ void c_node_dump_func_def(struct c_node_func_def *f) {
     else {
         fprintf(stderr,"           (none)\n");
     }
+    fprintf(stderr,"--------function compound statement\n");
+    if (f->compound_statement != NULL) {
+        struct c_node *nn = f->compound_statement;
+
+        assert(nn->token == BLOCK_ITEM);
+        c_dump_block_item_list(nn);
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
+}
+
+int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst) {
+    assert(res->token == FUNC_DEFINITION);
+    assert(cst->token == COMPOUND_STATEMENT);
+
+    if (res->value.value_func_def.compound_statement != NULL) {
+        yyerror("function definition already has compound statement");
+        return 0;
+    }
+
+    res->value.value_func_def.compound_statement = cst->value.compound_statement_root;
+    cst->value.compound_statement_root = NULL;
+    return 1;
 }
 
 int c_node_funcdef_add_declarator(struct c_node *res,struct c_node *decl) {
@@ -1720,7 +1744,7 @@ int c_dump_external_decl_list(struct c_node *node) {
 }
 
 void c_init_func_definition(struct c_node_func_def *f) {
-    f->decl_spec = NULL;
+    memset(f,0,sizeof(*f));
 }
 
 int c_node_init_function_definition(struct c_node *decl) {

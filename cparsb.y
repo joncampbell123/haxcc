@@ -35,6 +35,7 @@ int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
 int c_node_external_declaration_link(struct c_node *decl,struct c_node *nextdecl);
+int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst);
 int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
 int c_node_convert_to_external_declaration(struct c_node *decl);
 int c_node_init_function_definition(struct c_node *decl);
@@ -716,12 +717,14 @@ function_definition
         if (!c_node_init_function_definition(&($<node>$))) YYABORT;
         if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
+        if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>4))) YYABORT;
     }
     | declaration_specifiers declarator compound_statement {
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
         if (!c_node_init_function_definition(&($<node>$))) YYABORT;
         if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
+        if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>3))) YYABORT;
     }
     ;
 
