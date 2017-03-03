@@ -1771,6 +1771,8 @@ int main(int argc, char **argv) {
     yylex_destroy();
 
     if (res == 0) {
+        fprintf(stderr,"End of parsing!\n");
+        fprintf(stderr,"Here is a dump of the in-memory tree:\n");
         if (last_translation_unit.token != 0) {
             assert(last_translation_unit.token == EXTERNAL_DECL);
             c_dump_external_decl_list(&last_translation_unit);
