@@ -7,6 +7,7 @@
 
 struct c_node;
 struct c_block_item_node;
+struct c_param_decl_list;
 struct c_node_initializer;
 struct c_external_decl_node;
 
@@ -112,6 +113,15 @@ struct c_node {
             struct c_node*              declarator;
             struct c_node*              compound_statement;
         } value_func_def;
+        // parameter declaration
+        // token == PARAM_DECL
+        struct c_node_param_decl {
+            struct c_node_decl_spec*    decl_spec;
+            struct c_node*              declarator;
+        } value_param_decl;
+        // parameter declaration list
+        // token == PARAM_DECL_LIST
+        struct c_param_decl_list*       param_decl_list;
         // for anything else, this value is meaningless
     } value;
 };
@@ -129,5 +139,10 @@ struct c_block_item_node {
 struct c_external_decl_node {
     struct c_node                       node;
     struct c_external_decl_node*        next;
+};
+
+struct c_param_decl_list {
+    struct c_node                       node;
+    struct c_param_decl_list*           next;
 };
 

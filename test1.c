@@ -62,3 +62,7 @@ void function2(int x,long y,char) {
     long b = (long)x;
 }
 
+char function3(int a,long b,...) {
+    long c = 444L;
+}
+

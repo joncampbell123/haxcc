@@ -1622,6 +1622,132 @@ void c_node_dump_declaration(struct c_node *decl) {
     c_node_dump_decl_struct(&decl->value.val_decl_spec);
 }
 
+int c_node_init_param_decl(struct c_node *res) {
+    struct c_node cpy;
+
+    memset(&cpy,0,sizeof(cpy));
+    cpy.token = PARAM_DECL;
+    *res = cpy;
+    return 1;
+}
+
+int c_node_add_param_decl_declspec(struct c_node *res,struct c_node *decl) {
+    assert(res->token == PARAM_DECL);
+    assert(decl->token == DECL_SPECIFIER);
+
+    if (res->value.value_param_decl.decl_spec != NULL) {
+        yyerror("param decl already has declspec");
+        return 0;
+    }
+    res->value.value_param_decl.decl_spec = malloc(sizeof(struct c_node_decl_spec));
+    if (res->value.value_param_decl.decl_spec == NULL) return 0;
+    *(res->value.value_param_decl.decl_spec) = decl->value.val_decl_spec;
+    return 1;
+}
+
+int c_dump_param_decl(struct c_node *res) {
+    struct c_node_param_decl *p;
+
+    assert(res->token == PARAM_DECL);
+
+    p = &res->value.value_param_decl;
+
+    fprintf(stderr,"--------param declspec\n");
+    if (p->decl_spec != NULL)
+        c_node_dump_decl_struct(p->decl_spec);
+    else
+        fprintf(stderr,"           (none)\n");
+
+    fprintf(stderr,"--------param declarator\n");
+    if (p->declarator != NULL) {
+        c_init_decl_node_initializer_dump(p->declarator,0);
+        fprintf(stderr,"\n");
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
+
+    return 1;
+}
+
+int c_dump_param_decl_list(struct c_node *res) {
+    struct c_param_decl_list *n;
+
+    assert(res->token == PARAM_DECL_LIST);
+
+    fprintf(stderr,"----------parameter declaration list\n");
+    for (n=res->value.param_decl_list;n != NULL;n=n->next) {
+        if (n->node.token == PARAM_DECL) {
+            fprintf(stderr,"-----------param decl\n");
+            c_dump_param_decl(&(n->node));
+        }
+        else if (n->node.token == ELLIPSIS) {
+            fprintf(stderr,"-----------param ellipsis\n");
+        }
+        else {
+            fprintf(stderr,"-----------------\n");
+            fprintf(stderr,"    tok=%u\n",n->node.token);
+        }
+    }
+    fprintf(stderr,"----------end param decl list\n");
+    return 1;
+}
+
+int c_node_convert_to_param_decl_list(struct c_node *res) {
+    struct c_param_decl_list *l;
+
+    if (res->token == PARAM_DECL || res->token == ELLIPSIS) {
+        l = malloc(sizeof(*l));
+        if (l == NULL) return 0;
+        l->node = *res;
+        l->next = NULL;
+
+        res->token = PARAM_DECL_LIST;
+        res->value.param_decl_list = l;
+    }
+    else {
+        yyerror("cannot convert to param decl list");
+        return 0;
+    }
+
+    return 1;
+}
+
+int c_node_param_decl_list_add(struct c_node *res,struct c_node *par) {
+    struct c_param_decl_list *n;
+
+    assert(res->token == PARAM_DECL_LIST);
+    assert(par->token == PARAM_DECL_LIST);
+
+    if (par->value.param_decl_list == NULL)
+        return 1;
+
+    if (res->value.param_decl_list == NULL) {
+        res->value.param_decl_list = par->value.param_decl_list;
+        par->value.param_decl_list = NULL;
+        return 1;
+    }
+
+    n = res->value.param_decl_list;
+    while (n->next != NULL) n = n->next;
+    n->next = par->value.param_decl_list;
+    par->value.param_decl_list = NULL;
+    return 1;
+}
+
+int c_node_add_param_decl_declarator(struct c_node *res,struct c_node *decl) {
+    assert(res->token == PARAM_DECL);
+
+    if (res->value.value_param_decl.declarator != NULL) {
+        yyerror("param decl already has declarator");
+        return 0;
+    }
+    res->value.value_param_decl.declarator = malloc(sizeof(struct c_node));
+    if (res->value.value_param_decl.declarator == NULL) return 0;
+    *(res->value.value_param_decl.declarator) = *decl;
+    return 1;
+}
+
 int c_node_finish_declaration(struct c_node *decl) {
     assert(decl->token == DECL_SPECIFIER);
 

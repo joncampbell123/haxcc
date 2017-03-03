@@ -16,7 +16,11 @@ void yyerror(const char *s);
 
 extern struct c_node last_translation_unit;
 
+int c_dump_param_decl_list(struct c_node *res);
+int c_node_convert_to_param_decl_list(struct c_node *res);
+int c_node_param_decl_list_add(struct c_node *res,struct c_node *par);
 int c_init_block_item(struct c_node *res);
+int c_node_init_param_decl(struct c_node *res);
 int c_dump_block_item_list(struct c_node *res);
 int c_convert_to_block_item_list(struct c_node *res);
 int c_convert_to_compound_statement(struct c_node *res);
@@ -26,10 +30,12 @@ int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_funcdef_add_declarator(struct c_node *res,struct c_node *decl);
+int c_node_add_param_decl_declspec(struct c_node *res,struct c_node *decl);
 int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1);
 int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
+int c_node_add_param_decl_declarator(struct c_node *res,struct c_node *decl);
 int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
@@ -78,6 +84,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  STORAGE_CLASS_SPECIFIER
 %token  COMPOUND_STATEMENT
 %token  FUNC_DEFINITION
+%token  PARAM_DECL_LIST
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  DECL_SPECIFIER
@@ -86,6 +93,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  EXTERNAL_DECL
 %token  INITIALIZER
 %token  BLOCK_ITEM
+%token  PARAM_DECL
 %token  TYPECAST
 
 %start translation_unit
@@ -496,7 +504,11 @@ direct_declarator
     | direct_declarator '[' type_qualifier_list assignment_expression ']'
     | direct_declarator '[' type_qualifier_list ']'
     | direct_declarator '[' assignment_expression ']'
-    | direct_declarator '(' parameter_type_list ')'
+    | direct_declarator '(' parameter_type_list ')' {
+        /* TODO */
+        c_dump_param_decl_list(&($<node>3));
+        $<node>$ = $<node>1;
+    }
     | direct_declarator '(' ')'
     | direct_declarator '(' identifier_list ')'
     ;
@@ -521,29 +533,43 @@ type_qualifier_list
     ;
 
 parameter_type_list
-    : parameter_list ',' ELLIPSIS
-    | parameter_list
+    : parameter_list ',' ELLIPSIS {
+        if (!c_node_convert_to_param_decl_list(&($<node>3))) YYABORT;
+        if (!c_node_param_decl_list_add(&($<node>1),&($<node>3))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | parameter_list {
+        $<node>$ = $<node>1;
+    }
     ;
 
 parameter_list
-    : parameter_declaration
-    | parameter_list ',' parameter_declaration
+    : parameter_declaration {
+        if (!c_node_convert_to_param_decl_list(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | parameter_list ',' parameter_declaration {
+        if (!c_node_convert_to_param_decl_list(&($<node>3))) YYABORT;
+        if (!c_node_param_decl_list_add(&($<node>1),&($<node>3))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
 
 parameter_declaration
     : declaration_specifiers declarator {
-        /* TODO */
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
+        if (!c_node_init_param_decl(&($<node>$))) YYABORT;
+        if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
+        if (!c_node_add_param_decl_declarator(&($<node>$),&($<node>2))) YYABORT;
     }
     | declaration_specifiers abstract_declarator {
         /* TODO */
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
+        YYABORT;
     }
     | declaration_specifiers {
         if (!c_node_finish_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
+        if (!c_node_init_param_decl(&($<node>$))) YYABORT;
+        if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
     }
     ;
 
