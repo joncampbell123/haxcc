@@ -57,3 +57,8 @@ void function1(void) {
     }
 }
 
+void function2(int x,long y,char) {
+    int a = (int)y;
+    long b = (long)x;
+}
+
