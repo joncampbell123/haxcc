@@ -1667,6 +1667,7 @@ void c_node_dump_func_def(struct c_node_func_def *f) {
     else {
         fprintf(stderr,"           (none)\n");
     }
+    fprintf(stderr,"--------end of func def------\n");
 }
 
 int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst) {
