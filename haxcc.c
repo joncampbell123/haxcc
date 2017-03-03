@@ -1648,6 +1648,32 @@ void c_node_dump_func_def(struct c_node_func_def *f) {
         c_node_dump_decl_struct(f->decl_spec);
     else
         fprintf(stderr,"           (none)\n");
+
+    fprintf(stderr,"--------function declarator\n");
+    if (f->declarator != NULL) {
+        c_init_decl_node_initializer_dump(f->declarator,0);
+        fprintf(stderr,"\n");
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
+}
+
+int c_node_funcdef_add_declarator(struct c_node *res,struct c_node *decl) {
+    struct c_node *nn;
+
+    assert(res->token == FUNC_DEFINITION);
+
+    if (res->value.value_func_def.declarator != NULL) {
+        yyerror("function definition already has declarator");
+        return 0;
+    }
+
+    nn = malloc(sizeof(*nn));
+    if (nn == NULL) return 0;
+    *nn = *decl;
+    res->value.value_func_def.declarator = nn;
+    return 1;
 }
 
 int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl) {
