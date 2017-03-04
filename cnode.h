@@ -6,6 +6,7 @@
 #define c_identref_t_NONE       ((c_identref_t)(~0ULL))
 
 struct c_node;
+struct c_node_ident_list;
 struct c_block_item_node;
 struct c_param_decl_list;
 struct c_node_initializer;
@@ -128,8 +129,16 @@ struct c_node {
             struct c_node*              declarator;
             struct c_node*              param_list;
         } value_func_decl;
+        // identifier list
+        // token == IDENTIFIER_LIST
+        struct c_node_ident_list*       ident_list;
         // for anything else, this value is meaningless
     } value;
+};
+
+struct c_node_ident_list {
+    struct c_node                       node;
+    struct c_node_ident_list*           next;
 };
 
 struct c_node_initializer {

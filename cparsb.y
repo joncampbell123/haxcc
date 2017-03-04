@@ -57,6 +57,8 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 int c_init_function_decl(struct c_node *decl);
 int c_function_decl_set_declarator(struct c_node *decl,struct c_node *declar);
 int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist);
+int c_node_convert_to_identifier_list(struct c_node *decl);
+int c_node_add_to_identifier_list(struct c_node *decl,struct c_node *ident);
 
 %}
 
@@ -87,6 +89,7 @@ int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist);
 %token  STORAGE_CLASS_SPECIFIER
 %token  COMPOUND_STATEMENT
 %token  FUNC_DEFINITION
+%token  IDENTIFIER_LIST
 %token  PARAM_DECL_LIST
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
@@ -585,8 +588,15 @@ parameter_declaration
     ;
 
 identifier_list
-    : IDENTIFIER
-    | identifier_list ',' IDENTIFIER
+    : IDENTIFIER {
+        if (!c_node_convert_to_identifier_list(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | identifier_list ',' IDENTIFIER {
+        if (!c_node_convert_to_identifier_list(&($<node>3))) YYABORT;
+        if (!c_node_add_to_identifier_list(&($<node>1),&($<node>3))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
 
 type_name

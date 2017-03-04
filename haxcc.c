@@ -1550,6 +1550,7 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
 
 int c_dump_param_decl(struct c_node *res);
 int c_dump_param_decl_list(struct c_node *res);
+void c_dump_identifier_list(struct c_node *res);
 void c_node_dump_decl_struct(struct c_node_decl_spec *dcl);
 void c_init_decl_node_initializer_dump(struct c_node *n,int level);
 
@@ -1565,6 +1566,8 @@ void c_func_decl_dump(struct c_node_func_decl *d) {
     if (d->param_list != NULL) {
         if (d->param_list->token == PARAM_DECL_LIST)
             c_dump_param_decl_list(d->param_list);
+        else if (d->param_list->token == IDENTIFIER_LIST)
+            c_dump_identifier_list(d->param_list);
         else
             fprintf(stderr,"tok=%u\n",d->param_list->token);
     }
@@ -1652,6 +1655,41 @@ void c_node_dump_declaration(struct c_node *decl) {
     c_node_dump_decl_struct(&decl->value.val_decl_spec);
 }
 
+int c_node_convert_to_identifier_list(struct c_node *decl) {
+    struct c_node_ident_list *l;
+
+    if (decl->token == IDENTIFIER_LIST) return 1;
+    assert(decl->token == IDENTIFIER);
+
+    l = malloc(sizeof(*l));
+    if (l == NULL) return 0;
+    l->node = *decl;
+    l->next = NULL;
+
+    decl->token = IDENTIFIER_LIST;
+    decl->value.ident_list = l;
+    return 1;
+}
+
+int c_node_add_to_identifier_list(struct c_node *decl,struct c_node *ident) {
+    struct c_node_ident_list *l;
+
+    assert(decl->token == IDENTIFIER_LIST);
+    assert(ident->token == IDENTIFIER_LIST);
+
+    if (decl->value.ident_list == NULL) {
+        decl->value.ident_list = ident->value.ident_list;
+        ident->value.ident_list = NULL;
+        return 1;
+    }
+
+    l = decl->value.ident_list;
+    while (l->next != NULL) l = l->next;
+    l->next = ident->value.ident_list;
+    ident->value.ident_list = NULL;
+    return 1;
+}
+
 int c_node_init_param_decl(struct c_node *res) {
     struct c_node cpy;
 
@@ -1736,6 +1774,18 @@ int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist) {
     *n = *plist;
     decl->value.value_func_decl.param_list = n;
     return 1;
+}
+
+void c_dump_identifier_list(struct c_node *res) {
+    struct c_node_ident_list *l;
+
+    assert(res->token == IDENTIFIER_LIST);
+
+    fprintf(stderr,"----------identifier list\n");
+    for (l=res->value.ident_list;l != NULL;l=l->next) {
+        c_init_decl_node_initializer_dump(&(l->node),0);
+    }
+    fprintf(stderr,"----------end identifier list\n");
 }
 
 int c_dump_param_decl_list(struct c_node *res) {
