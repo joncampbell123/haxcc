@@ -16,6 +16,7 @@ struct c_external_decl_node;
 struct c_init_decl_node {
     struct c_node_initializer*          initializer;
     c_identref_t                        identifier;
+    struct c_node*                      identifier_other;
     struct c_init_decl_node*            next;
 };
 

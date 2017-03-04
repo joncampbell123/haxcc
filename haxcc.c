@@ -1372,7 +1372,6 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
 void c_init_decl_node_init(struct c_init_decl_node *i) {
     memset(i,0,sizeof(*i));
     i->identifier = c_identref_t_NONE;
-
 }
 
 struct c_init_decl_node *alloc_init_decl_node(void) {
@@ -1535,6 +1534,22 @@ int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
         idn->identifier = typ->value.val_identifier;
         typ->value.init_decl_list = idn;
     }
+    else if (typ->token == FUNC_DECL) {
+        struct c_init_decl_node *idn = alloc_init_decl_node();
+        struct c_node *n;
+
+        if (idn == NULL) {
+            yyerror("unable to alloc init decl node");
+            return 0;
+        }
+
+        n = malloc(sizeof(*n));
+        if (n == NULL) return 0;
+        *n = *typ;
+
+        idn->identifier_other = n;
+        typ->value.init_decl_list = idn;
+    }
     else {
         yyerror("init decl unexpected node");
         return 0;
@@ -1651,6 +1666,9 @@ void c_init_decl_node_dump(struct c_init_decl_node *n) {
     if (n->identifier != c_identref_t_NONE) {
         const char *name = idents_get_name(n->identifier);
         if (name != NULL) fprintf(stderr," identifier(%lu)=\"%s\"",(unsigned long)n->identifier,name);
+    }
+    if (n->identifier_other != NULL) {
+        c_init_decl_node_initializer_dump(n->identifier_other,0);
     }
     if (n->initializer != NULL) {
         struct c_node_initializer *in = n->initializer;

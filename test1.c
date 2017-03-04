@@ -78,3 +78,6 @@ char c;
     long y = b;
 }
 
+long func_decl1();
+int func_decl2(int a,long b);
+
