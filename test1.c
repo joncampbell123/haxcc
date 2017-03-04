@@ -81,3 +81,6 @@ char c;
 long func_decl1();
 int func_decl2(int a,long b);
 
+/* this is legal apparently, even GCC accepts it, though it shows a warning */
+void func_oldstyle1(a,b,c);
+
