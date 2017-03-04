@@ -119,6 +119,8 @@ uint64_t strescp(const char ** const s) {
 }
 
 struct identifier_t {
+    unsigned int        taken:1;
+    unsigned int        deleted:1;
     char*               name;
 };
 
@@ -151,7 +153,7 @@ struct identifier_t *idents_find(const char *str) {
 
     while (i >= 0) {
         id = &idents[i--];
-        if (id->name && !strcmp(str,id->name))
+        if (!id->deleted && id->name && !strcmp(str,id->name))
             return id;
     }
 
@@ -163,6 +165,27 @@ struct identifier_t *idents_get(const c_identref_t id) {
         return NULL;
 
     return &idents[id];
+}
+
+int idents_is_taken(const c_identref_t id) {
+    if (id >= idents_count)
+        return 0;
+
+    return idents[id].taken;
+}
+
+void idents_mark_taken(const c_identref_t id) {
+    if (id >= idents_count)
+        return;
+
+    idents[id].taken = 1;
+}
+
+void idents_delete(const c_identref_t id) {
+    if (id >= idents_count)
+        return;
+
+    idents[id].deleted = 1;
 }
 
 const char *idents_get_name(const c_identref_t x) {
@@ -188,24 +211,38 @@ struct identifier_t *idents_alloc(void) {
     return id;
 }
 
+c_identref_t identifier_new(const char *str) {
+    struct identifier_t *id;
+
+    id = idents_alloc();
+    if (id == NULL) {
+        fprintf(stderr,"Cannot alloc identifier\n");
+        return c_identref_t_NONE;
+    }
+
+    id->name = strdup(str);
+    if (id->name == NULL) {
+        fprintf(stderr,"Cannot strdup ident name\n");
+        return c_identref_t_NONE;
+    }
+
+    return idents_ptr_to_ref(id);
+}
+
+c_identref_t identifier_new_by_id(const c_identref_t eidref) {
+    struct identifier_t *eid;
+
+    eid = idents_get(eidref);
+    if (eid == NULL) return c_identref_t_NONE;
+    if (eid->name == NULL) return c_identref_t_NONE;
+    return identifier_new(eid->name);
+}
+
 c_identref_t identifier_parse(const char *str) {
     struct identifier_t *id;
 
     id = idents_find(str);
-    if (id == NULL) {
-        id = idents_alloc();
-        if (id == NULL) {
-            fprintf(stderr,"Cannot alloc identifier\n");
-            return c_identref_t_NONE;
-        }
-
-        id->name = strdup(str);
-        if (id->name == NULL) {
-            fprintf(stderr,"Cannot strdup ident name\n");
-            return c_identref_t_NONE;
-        }
-    }
-
+    if (id == NULL) return identifier_new(str);
     return idents_ptr_to_ref(id);
 }
 
@@ -1520,6 +1557,35 @@ int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl) {
     return 1;
 }
 
+int declarator_mark_identifier_as_taken(struct c_node *typ) {
+    if (typ->token == IDENTIFIER) {
+        if (idents_is_taken(typ->value.val_identifier)) {
+            typ->value.val_identifier = identifier_new_by_id(typ->value.val_identifier);
+            if (typ->value.val_identifier == c_identref_t_NONE) {
+                yyerror("unable to alloc dupl decl node");
+                return 0;
+            }
+        }
+
+        idents_mark_taken(typ->value.val_identifier);
+    }
+    else {
+        fprintf(stderr,"declarator mark identifier unsupported tok=%u\n",typ->token);
+        return 0;
+    }
+
+    return 1;
+}
+
+int function_decl_mark_identifier_as_taken(struct c_node *typ) {
+    assert(typ->token == FUNC_DECL);
+
+    if (typ->value.value_func_decl.declarator == NULL) /* nothing to mark */
+        return 0;
+
+    return declarator_mark_identifier_as_taken(typ->value.value_func_decl.declarator);
+}
+
 int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
     if (typ->token == INIT_DECL_LIST)
         return 1;
@@ -1531,6 +1597,15 @@ int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
             return 0;
         }
 
+        if (idents_is_taken(typ->value.val_identifier)) {
+            typ->value.val_identifier = identifier_new_by_id(typ->value.val_identifier);
+            if (typ->value.val_identifier == c_identref_t_NONE) {
+                yyerror("unable to alloc dupl decl node");
+                return 0;
+            }
+        }
+
+        idents_mark_taken(typ->value.val_identifier);
         idn->identifier = typ->value.val_identifier;
         typ->value.init_decl_list = idn;
     }
@@ -1546,6 +1621,12 @@ int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
         n = malloc(sizeof(*n));
         if (n == NULL) return 0;
         *n = *typ;
+
+        /* dig into the function decl and mark the identifier as taken */
+        if (!function_decl_mark_identifier_as_taken(n)) {
+            yyerror("unable to mark decl as token");
+            return 0;
+        }
 
         idn->identifier_other = n;
         typ->value.init_decl_list = idn;

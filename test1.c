@@ -63,10 +63,15 @@ void function1(void) {
 void function2(int x,long y,char) {
     int a = (int)y;
     long b = (long)x;
+    int pabcd = abcd; /* <- ID should refer to global */
+    int abcd = 0x1234; /* <- deliberate shadow */
+    int refabcd = abcd; /* <- ID should refer to shadow, not global */
+    /* abcd shadow in this scope should be deleted. reference should refer to global again */
 }
 
 char function3(int a,long b,...) {
     long c = 444L;
+    int refabcd = abcd; /* <- ID should refer to global */
 }
 
 long oldstyle_function(a,b,c)
@@ -76,10 +81,12 @@ char c;
 {
     long x = a;
     long y = b;
+    long a = b; /* <- ref to "b" should show "b" with same ID */
 }
 
 long func_decl1();
 int func_decl2(int a,long b);
+int func_decl2(int a,long b); /* <- should cause new identifier ID */
 
 /* this is legal apparently, even GCC accepts it, though it shows a warning */
 void func_oldstyle1(a,b,c);
