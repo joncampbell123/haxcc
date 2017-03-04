@@ -1548,7 +1548,32 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
     return 1;
 }
 
+int c_dump_param_decl(struct c_node *res);
+int c_dump_param_decl_list(struct c_node *res);
 void c_node_dump_decl_struct(struct c_node_decl_spec *dcl);
+void c_init_decl_node_initializer_dump(struct c_node *n,int level);
+
+void c_func_decl_dump(struct c_node_func_decl *d) {
+    fprintf(stderr,"----------function decl: declarator\n");
+    if (d->declarator != NULL) {
+        c_init_decl_node_initializer_dump(d->declarator,0);
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
+    fprintf(stderr,"----------function decl: param list\n");
+    if (d->param_list != NULL) {
+        if (d->param_list->token == PARAM_DECL_LIST)
+            c_dump_param_decl_list(d->param_list);
+        else
+            fprintf(stderr,"tok=%u\n",d->param_list->token);
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
+
+    fprintf(stderr,"----------function decl end\n");
+}
 
 void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
     fprintf(stderr,"{ ");
@@ -1562,6 +1587,11 @@ void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
     else if (n->token == IDENTIFIER) {
         const char *name = idents_get_name(n->value.val_identifier);
         fprintf(stderr,"ident(%lu)=\"%s\" ",(unsigned long)n->value.val_identifier,name?name:"(null)");
+    }
+    else if (n->token == FUNC_DECL) {
+        fprintf(stderr,"function_decl(\n");
+        c_func_decl_dump(&(n->value.value_func_decl));
+        fprintf(stderr,") ");
     }
     else if (n->token == TYPECAST) {
         assert(n->value.val_typecast_node.typecast_node != NULL);
@@ -1667,6 +1697,44 @@ int c_dump_param_decl(struct c_node *res) {
         fprintf(stderr,"           (none)\n");
     }
 
+    return 1;
+}
+
+int c_init_function_decl(struct c_node *decl) {
+    memset(decl,0,sizeof(*decl));
+    decl->token = FUNC_DECL;
+    return 1;
+}
+
+int c_function_decl_set_declarator(struct c_node *decl,struct c_node *declar) {
+    struct c_node *n;
+
+    assert(decl->token == FUNC_DECL);
+    if (decl->value.value_func_decl.declarator != NULL) {
+        yyerror("function decl already has declarator");
+        return 0;
+    }
+
+    n = malloc(sizeof(*n));
+    if (n == NULL) return 0;
+    *n = *declar;
+    decl->value.value_func_decl.declarator = n;
+    return 1;
+}
+
+int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist) {
+    struct c_node *n;
+
+    assert(decl->token == FUNC_DECL);
+    if (decl->value.value_func_decl.param_list != NULL) {
+        yyerror("function decl already has param list");
+        return 0;
+    }
+
+    n = malloc(sizeof(*n));
+    if (n == NULL) return 0;
+    *n = *plist;
+    decl->value.value_func_decl.param_list = n;
     return 1;
 }
 

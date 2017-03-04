@@ -66,3 +66,12 @@ char function3(int a,long b,...) {
     long c = 444L;
 }
 
+long oldstyle_function(a,b,c)
+int a;
+long b;
+char c;
+{
+    long x = a;
+    long y = b;
+}
+

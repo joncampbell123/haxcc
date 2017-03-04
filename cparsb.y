@@ -54,6 +54,9 @@ int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_S
 int c_node_finish_declaration(struct c_node *decl);
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
 int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLASS_SPECIFIER */
+int c_init_function_decl(struct c_node *decl);
+int c_function_decl_set_declarator(struct c_node *decl,struct c_node *declar);
+int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist);
 
 %}
 
@@ -94,6 +97,7 @@ int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLAS
 %token  INITIALIZER
 %token  BLOCK_ITEM
 %token  PARAM_DECL
+%token  FUNC_DECL
 %token  TYPECAST
 
 %start translation_unit
@@ -505,12 +509,19 @@ direct_declarator
     | direct_declarator '[' type_qualifier_list ']'
     | direct_declarator '[' assignment_expression ']'
     | direct_declarator '(' parameter_type_list ')' {
-        /* TODO */
-        c_dump_param_decl_list(&($<node>3));
-        $<node>$ = $<node>1;
+        if (!c_init_function_decl(&($<node>$))) YYABORT;
+        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
+        if (!c_function_decl_set_param_list(&($<node>$),&($<node>3))) YYABORT;
     }
-    | direct_declarator '(' ')'
-    | direct_declarator '(' identifier_list ')'
+    | direct_declarator '(' ')' {
+        if (!c_init_function_decl(&($<node>$))) YYABORT;
+        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
+    }
+    | direct_declarator '(' identifier_list ')' {
+        if (!c_init_function_decl(&($<node>$))) YYABORT;
+        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
+        if (!c_function_decl_set_param_list(&($<node>$),&($<node>3))) YYABORT;
+    }
     ;
 
 pointer

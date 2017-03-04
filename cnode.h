@@ -122,6 +122,12 @@ struct c_node {
         // parameter declaration list
         // token == PARAM_DECL_LIST
         struct c_param_decl_list*       param_decl_list;
+        // function declaration
+        // token == FUNC_DECL
+        struct c_node_func_decl {
+            struct c_node*              declarator;
+            struct c_node*              param_list;
+        } value_func_decl;
         // for anything else, this value is meaningless
     } value;
 };
