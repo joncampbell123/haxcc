@@ -1586,6 +1586,55 @@ int function_decl_mark_identifier_as_taken(struct c_node *typ) {
     return declarator_mark_identifier_as_taken(typ->value.value_func_decl.declarator);
 }
 
+int c_compound_statement_delete_identifiers(struct c_node *res);
+
+int c_decl_spec_delete_identifiers(struct c_node *res) {
+    struct c_init_decl_node *inn;
+
+    assert(res->token == DECL_SPECIFIER);
+    for (inn=res->value.val_decl_spec.init_decl_list;inn != NULL;inn=inn->next) {
+        if (inn->identifier != c_identref_t_NONE)
+            idents_delete(inn->identifier);
+    }
+
+    return 1;
+}
+
+/* delete all identifiers in the block item */
+int c_block_item_delete_identifiers(struct c_node *res) {
+    struct c_block_item_node *bn;
+
+    assert(res->token == BLOCK_ITEM);
+    for (bn=res->value.block_item_list;bn != NULL;bn=bn->next) {
+        if (bn->node.token == COMPOUND_STATEMENT) {
+            if (!c_compound_statement_delete_identifiers(&(bn->node)))
+                return 0;
+        }
+        else if (bn->node.token == DECL_SPECIFIER) {
+            if (!c_decl_spec_delete_identifiers(&(bn->node)))
+                return 0;
+        }
+        else {
+            fprintf(stderr,"delete id tok=%u\n",bn->node.token);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/* delete all identifiers in the compound statment, to complete "leaving scope" */
+int c_compound_statement_delete_identifiers(struct c_node *res) {
+    assert(res->token == COMPOUND_STATEMENT);
+
+    if (res->value.compound_statement_root != NULL) {
+        /* it's supposed to be a BLOCK_ITEM */
+        return c_block_item_delete_identifiers(res->value.compound_statement_root);
+    }
+
+    return 1;
+}
+
 int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
     if (typ->token == INIT_DECL_LIST)
         return 1;
