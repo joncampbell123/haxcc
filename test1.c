@@ -27,6 +27,9 @@ extern int duplicate;
 
 /*extern int duplicate = 12345678;*/
 
+long function0() {
+}
+
 void function1(void) {
     long whatwhat = (unsigned int)((char)0xFF);
     long what2 = (char)0xFF; /* should sign extend to 0xFFFFFFFFFFFFFFFFULL */
