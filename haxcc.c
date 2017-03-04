@@ -1464,6 +1464,40 @@ int c_node_convert_to_initializer(struct c_node *decl) {
     return 1;
 }
 
+int c_node_convert_to_decl_list(struct c_node *decl) {
+    struct c_node_decl_list *n;
+
+    if (decl->token == DECL_LIST)
+        return 1;
+
+    n = malloc(sizeof(*n));
+    if (n == NULL) return 0;
+    n->node = *decl;
+    n->next = NULL;
+    decl->token = DECL_LIST;
+    decl->value.decl_list = n;
+    return 1;
+}
+
+int c_node_add_to_decl_list(struct c_node *dlist,struct c_node *decl) {
+    struct c_node_decl_list *n;
+
+    assert(dlist->token == DECL_LIST);
+    assert(decl->token == DECL_LIST);
+
+    if (dlist->value.decl_list == NULL) {
+        dlist->value.decl_list = decl->value.decl_list;
+        decl->value.decl_list = NULL;
+        return 1;
+    }
+
+    n = dlist->value.decl_list;
+    while (n->next != NULL) n = n->next;
+    n->next = decl->value.decl_list;
+    decl->value.decl_list = NULL;
+    return 1;
+}
+
 void c_init_decl_append(struct c_node *d,struct c_node *s) {
     if (s->value.init_decl_list == NULL)
         return; /* nothing to append */
@@ -1549,6 +1583,7 @@ int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ) {
 }
 
 int c_dump_param_decl(struct c_node *res);
+int c_dump_func_decl_list(struct c_node *res);
 int c_dump_param_decl_list(struct c_node *res);
 void c_dump_identifier_list(struct c_node *res);
 void c_node_dump_decl_struct(struct c_node_decl_spec *dcl);
@@ -1574,7 +1609,6 @@ void c_func_decl_dump(struct c_node_func_decl *d) {
     else {
         fprintf(stderr,"           (none)\n");
     }
-
     fprintf(stderr,"----------function decl end\n");
 }
 
@@ -1788,6 +1822,25 @@ void c_dump_identifier_list(struct c_node *res) {
     fprintf(stderr,"----------end identifier list\n");
 }
 
+int c_dump_func_decl_list(struct c_node *res) {
+    struct c_node_decl_list *n;
+
+    assert(res->token == DECL_LIST);
+
+    fprintf(stderr,"----------parameter declaration list\n");
+    for (n=res->value.decl_list;n != NULL;n=n->next) {
+        if (n->node.token == DECL_SPECIFIER) {
+            c_node_dump_declaration(&(n->node));
+        }
+        else {
+            fprintf(stderr,"-----------------\n");
+            fprintf(stderr,"    tok=%u\n",n->node.token);
+        }
+    }
+    fprintf(stderr,"----------end param decl list\n");
+    return 1;
+}
+
 int c_dump_param_decl_list(struct c_node *res) {
     struct c_param_decl_list *n;
 
@@ -1901,6 +1954,13 @@ void c_node_dump_func_def(struct c_node_func_def *f) {
     else {
         fprintf(stderr,"           (none)\n");
     }
+    fprintf(stderr,"--------function decl list\n");
+    if (f->decl_list != NULL) {
+        c_dump_func_decl_list(f->decl_list);
+    }
+    else {
+        fprintf(stderr,"           (none)\n");
+    }
     fprintf(stderr,"--------function compound statement\n");
     if (f->compound_statement != NULL) {
         struct c_node *nn = f->compound_statement;
@@ -1925,6 +1985,23 @@ int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst)
 
     res->value.value_func_def.compound_statement = cst->value.compound_statement_root;
     cst->value.compound_statement_root = NULL;
+    return 1;
+}
+
+int c_node_funcdef_add_decl_list(struct c_node *res,struct c_node *decl) {
+    struct c_node *nn;
+
+    assert(res->token == FUNC_DEFINITION);
+
+    if (res->value.value_func_def.decl_list != NULL) {
+        yyerror("function definition already has decl_list");
+        return 0;
+    }
+
+    nn = malloc(sizeof(*nn));
+    if (nn == NULL) return 0;
+    *nn = *decl;
+    res->value.value_func_def.decl_list = nn;
     return 1;
 }
 

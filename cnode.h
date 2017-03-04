@@ -6,6 +6,7 @@
 #define c_identref_t_NONE       ((c_identref_t)(~0ULL))
 
 struct c_node;
+struct c_node_decl_list;
 struct c_node_ident_list;
 struct c_block_item_node;
 struct c_param_decl_list;
@@ -112,6 +113,7 @@ struct c_node {
         struct c_node_func_def {
             struct c_node_decl_spec*    decl_spec;
             struct c_node*              declarator;
+            struct c_node*              decl_list; /* older C function style */
             struct c_node*              compound_statement;
         } value_func_def;
         // parameter declaration
@@ -132,8 +134,16 @@ struct c_node {
         // identifier list
         // token == IDENTIFIER_LIST
         struct c_node_ident_list*       ident_list;
+        // declarator list
+        // token == DECL_LIST
+        struct c_node_decl_list*        decl_list;
         // for anything else, this value is meaningless
     } value;
+};
+
+struct c_node_decl_list {
+    struct c_node                       node;
+    struct c_node_decl_list*            next;
 };
 
 struct c_node_ident_list {

@@ -30,6 +30,7 @@ int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl);
 int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_funcdef_add_declarator(struct c_node *res,struct c_node *decl);
+int c_node_funcdef_add_decl_list(struct c_node *res,struct c_node *decl);
 int c_node_add_param_decl_declspec(struct c_node *res,struct c_node *decl);
 int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
 int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
@@ -59,6 +60,8 @@ int c_function_decl_set_declarator(struct c_node *decl,struct c_node *declar);
 int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist);
 int c_node_convert_to_identifier_list(struct c_node *decl);
 int c_node_add_to_identifier_list(struct c_node *decl,struct c_node *ident);
+int c_node_convert_to_decl_list(struct c_node *decl);
+int c_node_add_to_decl_list(struct c_node *dlist,struct c_node *decl);
 
 %}
 
@@ -100,6 +103,7 @@ int c_node_add_to_identifier_list(struct c_node *decl,struct c_node *ident);
 %token  INITIALIZER
 %token  BLOCK_ITEM
 %token  PARAM_DECL
+%token  DECL_LIST
 %token  FUNC_DECL
 %token  TYPECAST
 
@@ -764,6 +768,7 @@ function_definition
         if (!c_node_init_function_definition(&($<node>$))) YYABORT;
         if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
+        if (!c_node_funcdef_add_decl_list(&($<node>$),&($<node>3))) YYABORT;
         if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>4))) YYABORT;
     }
     | declaration_specifiers declarator compound_statement {
@@ -776,8 +781,15 @@ function_definition
     ;
 
 declaration_list
-    : declaration
-    | declaration_list declaration
+    : declaration {
+        if (!c_node_convert_to_decl_list(&($<node>1))) YYABORT;
+        $<node>$ = $<node>1;
+    }
+    | declaration_list declaration {
+        if (!c_node_convert_to_decl_list(&($<node>2))) YYABORT;
+        if (!c_node_add_to_decl_list(&($<node>1),&($<node>2))) YYABORT;
+        $<node>$ = $<node>1;
+    }
     ;
 
 %%
