@@ -28,11 +28,13 @@ extern int duplicate;
 /*extern int duplicate = 12345678;*/
 
 long function0() {
-    int olddup = duplicate;
+    int olddup = duplicate; /* olddup init from global scope */
     int duplicate = 12345; /* shadow */
+    int newdup = duplicate; /* newdup init from local scope */
 }
 
 void function1(void) {
+    int olddup = duplicate; /* init from global scope */
     long whatwhat = (unsigned int)((char)0xFF);
     long what2 = (char)0xFF; /* should sign extend to 0xFFFFFFFFFFFFFFFFULL */
     int what = (unsigned long)0x4444444ULL;

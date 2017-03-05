@@ -2133,7 +2133,7 @@ int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst)
         return 0;
     }
 
-    res->value.value_func_def.compound_statement = cst->value.compound_statement_root;
+    res->value.value_func_def.compound_statement = cst->value.compound_statement_root; /* root->token == BLOCK_ITEM */
     cst->value.compound_statement_root = NULL;
     return 1;
 }
@@ -2287,6 +2287,72 @@ int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
                 }
             }
         }
+
+        if (inn->initializer != NULL) {
+            struct c_node_initializer *init;
+            struct identifier_t *id;
+
+            for (init=inn->initializer;init != NULL;init=init->next) {
+                struct c_node *ic = &(init->node);
+
+                if (ic->token == IDENTIFIER) {
+                    /* look up the identifier. the lookup function scans backwards, so the most
+                     * recent scope takes precedence. do NOT create the identifier if it doesn't exist. */
+                    if (ic->value.val_identifier.name != NULL && ic->value.val_identifier.id == c_identref_t_NONE) {
+                        id = idents_find(ic->value.val_identifier.name,0);
+                        if (id != NULL) ic->value.val_identifier.id = idents_ptr_to_ref(id);
+                    }
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+
+int c_second_pass_func_definition(struct c_node_func_def *fdef) {
+    if (fdef->declarator != NULL && fdef->decl_spec != NULL) {
+        /* declare the function definition at the current scope */
+        if (fdef->declarator->token == FUNC_DECL) {
+            if (fdef->declarator->value.value_func_decl.declarator != NULL) {
+                struct c_node *fdcl = fdef->declarator->value.value_func_decl.declarator;
+                if (fdcl->token == IDENTIFIER) {
+                    if (!c_second_pass_decl_specifier_identifier(fdef->decl_spec,&(fdcl->value.val_identifier),NULL)) /* FIXME */
+                        return 0;
+                }
+            }
+        }
+
+        {
+            /* then save scope boundary and set new boundary at end of ident allocation list so far */
+            int old_idents_scope_begin = idents_scope_begin;
+            idents_scope_begin = idents_count;
+
+            /* TODO: scan parameter and identifier lists and declare them, allowing shadowing */
+
+            /* run through compound statement. token type should be BLOCK_ITEM. */
+            if (fdef->compound_statement != NULL && fdef->compound_statement->token == BLOCK_ITEM) {
+                struct c_block_item_node *bn;
+
+                for (bn=fdef->compound_statement->value.block_item_list;bn != NULL;bn=bn->next) {
+                    if (bn->node.token == DECL_SPECIFIER) {
+                        if (!c_second_pass_decl_specifier(&(bn->node.value.val_decl_spec)))
+                            return 0;
+                    }
+                }
+            }
+
+            /* mark all identifiers past new boundary deleted */
+            {
+                int x;
+
+                for (x=idents_scope_begin;x < idents_count;x++)
+                    idents[x].deleted = 1;
+            }
+
+            /* restore old scope */
+            idents_scope_begin = old_idents_scope_begin;
+        }
     }
 
     return 1;
@@ -2306,7 +2372,8 @@ int c_second_pass_global_scope(struct c_node *node) {
                 return 0;
         }
         else if (n->node.token == FUNC_DEFINITION) {
-//            c_node_dump_func_def(&(n->node.value.value_func_def),indent+2);
+            if (!c_second_pass_func_definition(&(n->node.value.value_func_def)))
+                return 0;
         }
     }
 
