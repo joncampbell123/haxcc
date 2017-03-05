@@ -2267,6 +2267,23 @@ int c_second_pass_decl_specifier_identifier(struct c_node_decl_spec *dcl,struct 
     return 1;
 }
 
+int c_second_pass_typecast(struct c_node *tc) {
+    if (tc->token == TYPECAST) {
+        if (!c_second_pass_typecast(tc->value.val_typecast_node.typecast_node))
+            return 0;
+    }
+    else if (tc->token == IDENTIFIER) {
+        struct identifier_t *id;
+
+        if (tc->value.val_identifier.name != NULL && tc->value.val_identifier.id == c_identref_t_NONE) {
+            id = idents_find(tc->value.val_identifier.name,0);
+            if (id != NULL) tc->value.val_identifier.id = idents_ptr_to_ref(id);
+        }
+    }
+
+    return 1;
+}
+
 int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
     struct c_init_decl_node *inn;
 
@@ -2302,6 +2319,9 @@ int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
                         id = idents_find(ic->value.val_identifier.name,0);
                         if (id != NULL) ic->value.val_identifier.id = idents_ptr_to_ref(id);
                     }
+                }
+                else if (ic->token == TYPECAST) {
+                    if (!c_second_pass_typecast(ic->value.val_typecast_node.typecast_node)) return 0;
                 }
             }
         }
