@@ -2417,7 +2417,8 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
         {
             /* then save scope boundary and set new boundary at end of ident allocation list so far */
             int old_idents_scope_begin = idents_scope_begin;
-            idents_scope_begin = idents_count;
+            int this_scope_begins = idents_count;
+            idents_scope_begin = this_scope_begins;
 
             /* declare the parameter list inside the scope.
              * if it's an identifier list (old C style) then declare each as not defined. */
@@ -2453,7 +2454,21 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
                 }
             }
 
-            /* TODO: scan parameter and identifier lists and declare them, allowing shadowing */
+            if (fdef->decl_list != NULL) {
+                if (fdef->decl_list->token == DECL_LIST) {
+                    struct c_node_decl_list *dl;
+
+                    for (dl=fdef->decl_list->value.decl_list;dl != NULL;dl=dl->next) {
+                        if (dl->node.token == DECL_SPECIFIER) {
+                            if (!c_second_pass_decl_specifier(&(dl->node.value.val_decl_spec)))
+                                return 0;
+                        }
+                    }
+                }
+            }
+
+            /* allow parameter list shadowing by moving the boundary again */
+            idents_scope_begin = idents_count;
 
             /* run through compound statement. token type should be BLOCK_ITEM. */
             if (fdef->compound_statement != NULL && fdef->compound_statement->token == BLOCK_ITEM) {
@@ -2465,7 +2480,7 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
             {
                 int x;
 
-                for (x=idents_scope_begin;x < idents_count;x++)
+                for (x=this_scope_begins;x < idents_count;x++)
                     idents[x].deleted = 1;
             }
 

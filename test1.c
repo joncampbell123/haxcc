@@ -82,6 +82,9 @@ void function2(int x,long y,char) {
 char function3(int a,long b,...) {
     long c = 444L;
     int refabcd = abcd; /* <- ID should refer to global */
+    int oa = a; /* copy from param "a" */
+    int a = 1455; /* shadows parameter "a" */
+    int na = a; /* copy from new "a" */
 }
 
 long oldstyle_function(a,b,c)
@@ -91,7 +94,7 @@ char c;
 {
     long x = a;
     long y = b;
-    long a = b; /* <- ref to "b" should show "b" with same ID */
+    long a = b; /* <- ref to "b" should show "b" with same ID. we declare "a" in a way that shadows parameter "a". */
 }
 
 long func_decl1();
