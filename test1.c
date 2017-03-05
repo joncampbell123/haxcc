@@ -28,6 +28,8 @@ extern int duplicate;
 /*extern int duplicate = 12345678;*/
 
 long function0() {
+    int olddup = duplicate;
+    int duplicate = 12345; /* shadow */
 }
 
 void function1(void) {

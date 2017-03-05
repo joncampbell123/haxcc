@@ -119,6 +119,7 @@ uint64_t strescp(const char ** const s) {
 }
 
 struct identifier_t {
+    unsigned int        defined:1;
     unsigned int        deleted:1;
     char*               name;
 };
@@ -126,6 +127,7 @@ struct identifier_t {
 #define MAX_IDENTS      32768
 
 struct identifier_t     idents[MAX_IDENTS];
+int                     idents_scope_begin=0;
 int                     idents_count=0;
 
 c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
@@ -146,11 +148,11 @@ void idents_free_all(void) {
     }
 }
 
-struct identifier_t *idents_find(const char *str) {
+struct identifier_t *idents_find(const char *str,int stop_at) {
     struct identifier_t *id;
     int i=idents_count-1;
 
-    while (i >= 0) {
+    while (i >= stop_at) {
         id = &idents[i--];
         if (!id->deleted && id->name && !strcmp(str,id->name))
             return id;
@@ -233,7 +235,7 @@ c_identref_t identifier_new_by_id(const c_identref_t eidref) {
 void identifier_parse(struct c_node *node,const char *str) {
     struct identifier_t *id;
 
-    id = idents_find(str);
+    id = idents_find(str,0);
     if (id != NULL) {
         node->value.val_identifier.name = NULL;
         node->value.val_identifier.id = idents_ptr_to_ref(id);
@@ -2215,6 +2217,75 @@ int c_dump_external_decl_list(struct c_node *node,int indent) {
     return 1;
 }
 
+int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
+    struct c_init_decl_node *inn;
+    struct identifier_t *id;
+
+    /* declaring variables */
+    for (inn=dcl->init_decl_list;inn != NULL;inn=inn->next) {
+        if (inn->identifier.name != NULL && inn->identifier.id == c_identref_t_NONE) {
+            /* if we find the same identifier in scope, throw an error.
+             * we search in such a way that the same identifier out of scope does not throw an error,
+             * and we allocate a new identifier of the same name within scope (shadowing). the
+             * shadow will be marked deleted on leaving scope, allowing the outer scope's identifier
+             * to match again. note that global scope declarations are never marked deleted. */
+            id = idents_find(inn->identifier.name,idents_scope_begin);
+            if (id != NULL) {
+                if (dcl->storageclass.is_extern) {
+                    /* do nothing, defined or not, this is just an extern */
+                    /* TODO: in the future, throw an error if extern statement's data type differs from what is associated with the identifier */
+                }
+                else if (id->defined) {
+                    fprintf(stderr,"Decl specifier: identifier '%s' already defined in the same scope.\n",inn->identifier.name);
+                    return 0;
+                }
+            }
+            else {
+                id = idents_alloc();
+                if (id == NULL) return 0;
+
+                id->name = strdup(inn->identifier.name);
+                if (id->name == NULL) {
+                    fprintf(stderr,"Cannot strdup ident name\n");
+                    return 0;
+                }
+
+                /* TODO: register the data type to the identifier */
+            }
+
+            /* the identifier is marked defined if it's not "extern" */
+            if (!dcl->storageclass.is_extern) {
+                id->defined = 1;
+            }
+
+            inn->identifier.id = idents_ptr_to_ref(id);
+        }
+    }
+
+    return 1;
+}
+
+int c_second_pass_global_scope(struct c_node *node) {
+    struct c_external_decl_node *n;
+
+    assert(node->token == EXTERNAL_DECL);
+
+    idents_free_all();
+    idents_scope_begin = 0;
+    n = node->value.external_decl_list;
+    for (;n != NULL;n=n->next) {
+        if (n->node.token == DECL_SPECIFIER) {
+            if (!c_second_pass_decl_specifier(&(n->node.value.val_decl_spec)))
+                return 0;
+        }
+        else if (n->node.token == FUNC_DEFINITION) {
+//            c_node_dump_func_def(&(n->node.value.value_func_def),indent+2);
+        }
+    }
+
+    return 1;
+}
+
 void c_init_func_definition(struct c_node_func_def *f) {
     memset(f,0,sizeof(*f));
 }
@@ -2243,6 +2314,16 @@ int main(int argc, char **argv) {
     yylex_destroy();
 
     if (res == 0) {
+        if (last_translation_unit.token != 0) {
+            fprintf(stderr,"Running second pass\n");
+            if (!c_second_pass_global_scope(&last_translation_unit)) {
+                fprintf(stderr,"Second pass failed\n");
+                res = 1;
+            }
+        }
+    }
+
+    if (res == 0) {
         fprintf(stderr,"End of parsing!\n");
         fprintf(stderr,"Here is a dump of the in-memory tree:\n");
         if (last_translation_unit.token != 0) {
@@ -2256,5 +2337,6 @@ int main(int argc, char **argv) {
 
     strings_free_all();
     idents_free_all();
+    return (res != 0) ? 1 : 0;
 }
 
