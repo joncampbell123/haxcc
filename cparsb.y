@@ -16,7 +16,6 @@ void yyerror(const char *s);
 
 extern struct c_node last_translation_unit;
 
-int c_dump_block_item_list(struct c_node *res,int indent);
 int c_node_convert_to_param_decl_list(struct c_node *res);
 int c_node_finish_declaration(struct c_node *decl,int indent);
 int c_node_param_decl_list_add(struct c_node *res,struct c_node *par);
@@ -686,12 +685,10 @@ labeled_statement
 compound_statement
     : '{' '}' {
         if (!c_init_block_item(&($<node>$))) YYABORT;
-        if (!c_dump_block_item_list(&($<node>$),0)) YYABORT;
         if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
     }
     | '{'  block_item_list '}' {
         $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */
-        if (!c_dump_block_item_list(&($<node>$),0)) YYABORT;
         if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
     }
     ;

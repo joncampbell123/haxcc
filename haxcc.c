@@ -2065,8 +2065,6 @@ int c_node_add_param_decl_declarator(struct c_node *res,struct c_node *decl) {
 int c_node_finish_declaration(struct c_node *decl,int indent) {
     assert(decl->token == DECL_SPECIFIER);
 
-    c_node_dump_declaration(decl,indent);
-
     /* obvious logical contraditions */
     if (decl->value.val_decl_spec.storageclass.is_extern &&
         decl->value.val_decl_spec.storageclass.is_static) {
