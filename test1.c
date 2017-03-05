@@ -2,10 +2,15 @@
 extern int duplicate;
 
 int parens1 = (5);
+char misalign1 = 2;
 int parens2 = ((23));
+char parpad1 = 4,parpad2 = 2;
 int parens3 = (11+22);
 int parens4 = (11+(22+33));
 int xyz,abc,faa,baa = 10 * 0x111,wwwwwww;
+const char constval1 = 123;
+const int constval2 = 22848;
+long longcatns = 123;
 static long longcat;
 float floatey;
 double doubleback;

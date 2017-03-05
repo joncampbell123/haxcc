@@ -9,6 +9,90 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+struct c_segment_list {
+    char*                       symbol_name;
+    struct c_node_identifier    identifier;
+    unsigned char               align;
+    unsigned int                size;
+    struct c_segment_list*      next;
+    unsigned int                refcount;
+};
+
+enum {
+    DATA_SEG,
+    CONST_SEG,
+    BSS_SEG,
+    MAX_SEGMENTS
+};
+
+const char *segnames[MAX_SEGMENTS] = {
+    "DATA",
+    "CONST",
+    "BSS"
+};
+
+char *symbol_name_mangle(const char *s) {
+    char *r;
+
+    if (s == NULL)
+        return NULL;
+
+    /* change name to _name */
+    {
+        size_t l = strlen(s);
+        r = malloc(l+1+1); /* _ + name + NUL */
+        if (r == NULL) return NULL;
+
+        r[0] = '_';             /* _ */
+        memcpy(r+1,s,l+1);      /* name + NUL */
+    }
+
+    return r;
+}
+
+struct c_segment_list*          seg_alloc[MAX_SEGMENTS] = {NULL};
+
+struct c_segment_list *c_segment_list_alloc(void) {
+    struct c_segment_list *n;
+
+    n = malloc(sizeof(*n));
+    if (n == NULL) return NULL;
+    memset(n,0,sizeof(*n));
+    n->identifier.id = c_identref_t_NONE;
+
+    return n;
+}
+
+int c_segment_list_add(struct c_segment_list **l,struct c_segment_list **n) {
+    struct c_segment_list *ll;
+
+    if (l == NULL)
+        return 0;
+    if (n == NULL)
+        return 1;
+    if (*n == NULL)
+        return 1;
+
+    if (*l == NULL) {
+        *l = *n;
+        return 1;
+    }
+
+    ll = *l;
+    while (ll->next != NULL) ll = ll->next;
+    ll->next = *n;
+    *n = NULL;
+    return 1;
+}
+
+int c_segment_list_set_symbol_name(struct c_segment_list *l,const char *name) {
+    if (l->symbol_name != NULL)
+        return 0;
+
+    l->symbol_name = strdup(name);
+    return 1;
+}
+
 void yyerror(const char *s);
 
 struct c_node last_translation_unit = { 0 };
@@ -119,14 +203,16 @@ uint64_t strescp(const char ** const s) {
 }
 
 struct identifier_t {
-    unsigned int        defined:1;
-    unsigned int        deleted:1;
-    char*               name;
+    struct c_segment_list*  seg_alloc;
+    unsigned int            defined:1;
+    unsigned int            deleted:1;
+    char*                   name;
 };
 
 #define MAX_IDENTS      32768
 
 struct identifier_t     idents[MAX_IDENTS];
+char                    idents_scope_global=1;
 int                     idents_scope_begin=0;
 int                     idents_count=0;
 
@@ -2303,6 +2389,79 @@ int c_second_pass_typecast(struct c_node *tc) {
     return 1;
 }
 
+int c_varalloc_pass_decl_specifier_global(struct c_node_decl_spec *dcl) {
+    struct c_init_decl_node *inn;
+    struct c_segment_list *sl;
+    struct identifier_t *id;
+    int chosen_seg;
+    char *sname;
+
+    if (dcl->storageclass.is_extern)
+        return 1; /* nothing to do */
+
+    /* declaring variables */
+    for (inn=dcl->init_decl_list;inn != NULL;inn=inn->next) {
+        if (inn->initializer != NULL) {
+            if (dcl->typequal.is_const)
+                chosen_seg = CONST_SEG;
+            else
+                chosen_seg = DATA_SEG;
+        }
+        else {
+            /* undefined const? don't bother */
+            if (dcl->typequal.is_const)
+                continue;
+
+            /* not initialized. need to store in BSS */
+            chosen_seg = BSS_SEG;
+        }
+
+        if (inn->identifier.name == NULL || inn->identifier.id == c_identref_t_NONE)
+            continue;
+
+        sl = c_segment_list_alloc();
+        if (sl == NULL) return 0;
+        sl->identifier = inn->identifier;
+
+        if (dcl->typespec.main_type == CHAR ||
+            dcl->typespec.main_type == BOOL) {
+            sl->align = sl->size = 1;
+        }
+        else if (dcl->typespec.main_type == SHORT) {
+            sl->align = sl->size = short_width_b;
+        }
+         else if (dcl->typespec.main_type == INT) {
+            sl->align = sl->size = int_width_b;
+        }
+        else if (dcl->typespec.main_type == LONG) {
+            sl->align = sl->size = long_width_b;
+        }
+        else if (dcl->typespec.main_type == LONG_LONG) {
+            sl->align = sl->size = longlong_width_b;
+        }
+        else {
+            continue;
+        }
+
+        sname = symbol_name_mangle(inn->identifier.name);
+        if (sname == NULL) return 0;
+
+        if (!c_segment_list_set_symbol_name(sl,sname))
+            return 0;
+
+        free(sname);
+
+        id = idents_get(inn->identifier.id);
+        if (id == NULL) return 0;
+        id->seg_alloc = sl;
+
+        if (!c_segment_list_add(&seg_alloc[chosen_seg],&sl))
+            return 0;
+    }
+
+    return 1;
+}
+
 int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
     struct c_init_decl_node *inn;
 
@@ -2352,6 +2511,7 @@ int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
 int c_second_pass_block_item(struct c_node *bnc);
 
 int c_second_pass_compound_statement(struct c_node *cc) {
+    char old_idents_scope_global = idents_scope_global;
     int old_idents_scope_begin = idents_scope_begin;
     int ret;
 
@@ -2362,6 +2522,7 @@ int c_second_pass_compound_statement(struct c_node *cc) {
     if (cc->value.compound_statement_root->token != BLOCK_ITEM)
         return 1;
 
+    idents_scope_global = 0;
     idents_scope_begin = idents_count;
 
     ret = c_second_pass_block_item(cc->value.compound_statement_root);
@@ -2375,6 +2536,7 @@ int c_second_pass_compound_statement(struct c_node *cc) {
     }
 
     /* restore old scope */
+    idents_scope_global = old_idents_scope_global;
     idents_scope_begin = old_idents_scope_begin;
     return ret;
 }
@@ -2416,8 +2578,11 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
 
         {
             /* then save scope boundary and set new boundary at end of ident allocation list so far */
+            char old_idents_scope_global = idents_scope_global;
             int old_idents_scope_begin = idents_scope_begin;
             int this_scope_begins = idents_count;
+
+            idents_scope_global = 0;
             idents_scope_begin = this_scope_begins;
 
             /* declare the parameter list inside the scope.
@@ -2485,7 +2650,23 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
             }
 
             /* restore old scope */
+            idents_scope_global = old_idents_scope_global;
             idents_scope_begin = old_idents_scope_begin;
+        }
+    }
+
+    return 1;
+}
+
+int c_varalloc_pass_global_scope(struct c_node *node) {
+    struct c_external_decl_node *n;
+
+    assert(node->token == EXTERNAL_DECL);
+
+    for (n=node->value.external_decl_list;n != NULL;n=n->next) {
+        if (n->node.token == DECL_SPECIFIER) {
+            if (!c_varalloc_pass_decl_specifier_global(&(n->node.value.val_decl_spec)))
+                return 0;
         }
     }
 
@@ -2499,6 +2680,7 @@ int c_second_pass_global_scope(struct c_node *node) {
 
     idents_free_all();
     idents_scope_begin = 0;
+    idents_scope_global = 1;
     n = node->value.external_decl_list;
     for (;n != NULL;n=n->next) {
         if (n->node.token == DECL_SPECIFIER) {
@@ -2552,6 +2734,16 @@ int main(int argc, char **argv) {
     }
 
     if (res == 0) {
+        if (last_translation_unit.token != 0) {
+            fprintf(stderr,"Running variable allocation pass\n");
+            if (!c_varalloc_pass_global_scope(&last_translation_unit)) {
+                fprintf(stderr,"Var alloc pass failed\n");
+                res = 1;
+            }
+        }
+    }
+
+    if (res == 0) {
         fprintf(stderr,"End of parsing!\n");
         fprintf(stderr,"Here is a dump of the in-memory tree:\n");
         if (last_translation_unit.token != 0) {
@@ -2560,6 +2752,34 @@ int main(int argc, char **argv) {
         }
         else {
             fprintf(stderr,"Warning, empty source file\n");
+        }
+    }
+
+    {
+        unsigned int sn;
+        unsigned int offset;
+        struct c_segment_list *sl;
+
+        for (sn=0;sn < MAX_SEGMENTS;sn++) {
+            fprintf(stderr,"Contents of segment %s\n",segnames[sn]);
+
+            offset = 0;
+            for (sl=seg_alloc[sn];sl!=NULL;sl=sl->next) {
+                if (sl->align > 0) {
+                    offset +=   (unsigned int)sl->align - 1;
+                    offset &= ~((unsigned int)sl->align - 1);
+                }
+
+                fprintf(stderr,"  @0x%08x sz=0x%04x align=0x%02x '%s' from identifier(%ld) = '%s'\n",
+                    offset,
+                    sl->size,
+                    sl->align,
+                    sl->symbol_name?sl->symbol_name:"(null)",
+                    (long)sl->identifier.id,
+                    sl->identifier.name?sl->identifier.name:"(null)");
+
+                offset += sl->size;
+            }
         }
     }
 
