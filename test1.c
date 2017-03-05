@@ -10,6 +10,7 @@ int parens4 = (11+(22+33));
 int xyz,abc,faa,baa = 10 * 0x111,wwwwwww;
 const char constval1 = 123;
 const int constval2 = 22848;
+const char constval3 = 3333;
 long longcatns = 123;
 static long longcat;
 float floatey;

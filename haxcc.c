@@ -9,10 +9,15 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+/* if set: global variables (and statically declared in scope) are reordered
+ *         to pack them more tightly together and minimize gaps caused by
+ *         data type alignment */
+unsigned int opt_reorder_global_variables_align_packing = 1;
+
 struct c_segment_list {
     char*                       symbol_name;
     struct c_node_identifier    identifier;
-    unsigned char               align;
+    unsigned char               align;          /* must be a power of 2 */
     unsigned int                size;
     struct c_segment_list*      next;
     unsigned int                refcount;
@@ -2743,6 +2748,76 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* data type alignment can leave gaps in segments, reorder entries to try and reduce that */
+    if (opt_reorder_global_variables_align_packing) {
+        unsigned int sn;
+        unsigned int offset;
+        struct c_segment_list *sl,*psl;
+
+        for (sn=0;sn < MAX_SEGMENTS;sn++) {
+            offset = 0;
+            psl = NULL;
+            for (sl=seg_alloc[sn];sl!=NULL;psl=sl,sl=sl->next) {
+align_again:
+                if (sl->align > 0) {
+                    unsigned int mask = (unsigned int)sl->align - 1;
+                    unsigned int misalign = offset & mask;
+                    if (misalign != 0) {
+                        unsigned int needtofill = mask + 1 - misalign;
+
+                        fprintf(stderr,"Symbol '%s' size %u alignment-related gap %u bytes at 0x%08x prior to symbol\n",
+                            sl->symbol_name,sl->size,needtofill,offset);
+
+                        /* scan forward to find a symbol that fits. try to do so in a way
+                         * that keeps the alignment of the object we fit. */
+                        {
+                            unsigned char found = 0;
+                            struct c_segment_list *pl,*cl;
+
+                            pl = sl;
+                            cl = sl->next;
+                            while (cl != NULL) {
+                                unsigned int nmask = 0;
+                                if (cl->align > 0) nmask = (unsigned int)cl->align - 1;
+
+                                /* if object fits and alignment fits */
+                                if (cl->size <= needtofill && (offset & nmask) == 0) {
+                                    struct c_segment_list *fl = cl;
+
+                                    fprintf(stderr,"Using symbol '%s' size %u to fill the gap\n",
+                                        fl->symbol_name,fl->size);
+
+                                    /* remove node from list. clear next ptr in node we're moving. */
+                                    pl->next = cl->next;
+
+                                    /* insert before this node */
+                                    fl->next = sl;
+                                    psl->next = sl = fl;
+
+                                    /* done */
+                                    found = 1;
+                                    break;
+                                }
+
+                                pl = cl;
+                                cl = cl->next;
+                            }
+
+                            if (found) goto align_again;
+                        }
+
+                        /* did not find. align and continue. */
+                        fprintf(stderr,"Unable to fill gap.\n");
+                        offset +=  mask;
+                        offset &= ~mask;
+                    }
+                }
+
+                offset += sl->size;
+            }
+        }
+    }
+
     if (res == 0) {
         fprintf(stderr,"End of parsing!\n");
         fprintf(stderr,"Here is a dump of the in-memory tree:\n");
@@ -2766,8 +2841,17 @@ int main(int argc, char **argv) {
             offset = 0;
             for (sl=seg_alloc[sn];sl!=NULL;sl=sl->next) {
                 if (sl->align > 0) {
-                    offset +=   (unsigned int)sl->align - 1;
-                    offset &= ~((unsigned int)sl->align - 1);
+                    unsigned int mask = (unsigned int)sl->align - 1;
+                    unsigned int misalign = offset & mask;
+                    if (misalign != 0) {
+                        unsigned int gapsize = mask + 1 - misalign;
+
+                        fprintf(stderr,"  @0x%08x sz=0x%04x            [alignment gap]\n",
+                            offset,
+                            gapsize);
+
+                        offset += gapsize;
+                    }
                 }
 
                 fprintf(stderr,"  @0x%08x sz=0x%04x align=0x%02x '%s' from identifier(%ld) = '%s'\n",
