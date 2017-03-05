@@ -18,6 +18,7 @@ extern struct c_node last_translation_unit;
 
 int c_dump_block_item_list(struct c_node *res,int indent);
 int c_node_convert_to_param_decl_list(struct c_node *res);
+int c_node_finish_declaration(struct c_node *decl,int indent);
 int c_node_param_decl_list_add(struct c_node *res,struct c_node *par);
 int c_init_block_item(struct c_node *res);
 int c_node_init_param_decl(struct c_node *res);
@@ -51,7 +52,6 @@ int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
 int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
 int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
 int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
-int c_node_finish_declaration(struct c_node *decl);
 int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
 int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLASS_SPECIFIER */
 int c_init_function_decl(struct c_node *decl);
@@ -301,12 +301,12 @@ constant_expression
 
 declaration
     : declaration_specifiers ';' {
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         $<node>$ = $<node>1;
     }
     | declaration_specifiers init_declarator_list ';' {
         if (!c_node_add_declaration_init_decl(&($<node>1),&($<node>2))) YYABORT;
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         $<node>$ = $<node>1;
     }
     | static_assert_declaration
@@ -574,7 +574,7 @@ parameter_list
 
 parameter_declaration
     : declaration_specifiers declarator {
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         if (!c_node_init_param_decl(&($<node>$))) YYABORT;
         if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_add_param_decl_declarator(&($<node>$),&($<node>2))) YYABORT;
@@ -584,7 +584,7 @@ parameter_declaration
         YYABORT;
     }
     | declaration_specifiers {
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         if (!c_node_init_param_decl(&($<node>$))) YYABORT;
         if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
     }
@@ -763,7 +763,7 @@ external_declaration
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement {
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         if (!c_node_init_function_definition(&($<node>$))) YYABORT;
         if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
@@ -771,7 +771,7 @@ function_definition
         if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>4))) YYABORT;
     }
     | declaration_specifiers declarator compound_statement {
-        if (!c_node_finish_declaration(&($<node>1))) YYABORT;
+        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
         if (!c_node_init_function_definition(&($<node>$))) YYABORT;
         if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
         if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
