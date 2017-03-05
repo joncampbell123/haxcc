@@ -88,7 +88,7 @@ char c;
 
 long func_decl1();
 int func_decl2(int a,long b);
-int func_decl2(int a,long b); /* <- should cause new identifier ID */
+int func_decl2(int a,long b); /* duplicate declaration, not definition. not an error */
 
 /* this is legal apparently, even GCC accepts it, though it shows a warning */
 void func_oldstyle1(a,b,c);

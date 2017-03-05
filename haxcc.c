@@ -2217,50 +2217,75 @@ int c_dump_external_decl_list(struct c_node *node,int indent) {
     return 1;
 }
 
+int c_second_pass_decl_specifier_identifier(struct c_node_decl_spec *dcl,struct c_node_identifier *ident,struct c_node *parent_node) {
+    unsigned char is_func_decl = 0;
+    struct identifier_t *id;
+
+    /* function declarations are treated as if extern */
+    if (parent_node != NULL) {
+        if (parent_node->token == FUNC_DECL)
+            is_func_decl = 1;
+    }
+
+    /* if we find the same identifier in scope, throw an error.
+     * we search in such a way that the same identifier out of scope does not throw an error,
+     * and we allocate a new identifier of the same name within scope (shadowing). the
+     * shadow will be marked deleted on leaving scope, allowing the outer scope's identifier
+     * to match again. note that global scope declarations are never marked deleted. */
+    id = idents_find(ident->name,idents_scope_begin);
+    if (id != NULL) {
+        if (dcl->storageclass.is_extern || is_func_decl) {
+            /* do nothing, defined or not, this is just an extern */
+            /* TODO: in the future, throw an error if extern statement's data type differs from what is associated with the identifier */
+        }
+        else if (id->defined) {
+            fprintf(stderr,"Decl specifier: identifier '%s' already defined in the same scope.\n",ident->name);
+            return 0;
+        }
+    }
+    else {
+        id = idents_alloc();
+        if (id == NULL) return 0;
+
+        id->name = strdup(ident->name);
+        if (id->name == NULL) {
+            fprintf(stderr,"Cannot strdup ident name\n");
+            return 0;
+        }
+
+        /* TODO: register the data type to the identifier */
+    }
+
+    /* TODO: throw an error if extern/static confusion (static declaration after extern decl or vice versa) */
+
+    /* the identifier is marked defined if it's not "extern" */
+    if (!dcl->storageclass.is_extern && !is_func_decl) {
+        id->defined = 1;
+    }
+
+    ident->id = idents_ptr_to_ref(id);
+    return 1;
+}
+
 int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
     struct c_init_decl_node *inn;
-    struct identifier_t *id;
 
     /* declaring variables */
     for (inn=dcl->init_decl_list;inn != NULL;inn=inn->next) {
         if (inn->identifier.name != NULL && inn->identifier.id == c_identref_t_NONE) {
-            /* if we find the same identifier in scope, throw an error.
-             * we search in such a way that the same identifier out of scope does not throw an error,
-             * and we allocate a new identifier of the same name within scope (shadowing). the
-             * shadow will be marked deleted on leaving scope, allowing the outer scope's identifier
-             * to match again. note that global scope declarations are never marked deleted. */
-            id = idents_find(inn->identifier.name,idents_scope_begin);
-            if (id != NULL) {
-                if (dcl->storageclass.is_extern) {
-                    /* do nothing, defined or not, this is just an extern */
-                    /* TODO: in the future, throw an error if extern statement's data type differs from what is associated with the identifier */
-                }
-                else if (id->defined) {
-                    fprintf(stderr,"Decl specifier: identifier '%s' already defined in the same scope.\n",inn->identifier.name);
-                    return 0;
+            if (!c_second_pass_decl_specifier_identifier(dcl,&(inn->identifier),NULL))
+                return 0;
+        }
+        else if (inn->identifier_other != NULL) {
+            if (inn->identifier_other->token == FUNC_DECL) {
+                if (inn->identifier_other->value.value_func_decl.declarator != NULL) {
+                    struct c_node *fdcl = inn->identifier_other->value.value_func_decl.declarator;
+                    if (fdcl->token == IDENTIFIER) {
+                        if (!c_second_pass_decl_specifier_identifier(dcl,&(fdcl->value.val_identifier),inn->identifier_other))
+                            return 0;
+                    }
                 }
             }
-            else {
-                id = idents_alloc();
-                if (id == NULL) return 0;
-
-                id->name = strdup(inn->identifier.name);
-                if (id->name == NULL) {
-                    fprintf(stderr,"Cannot strdup ident name\n");
-                    return 0;
-                }
-
-                /* TODO: register the data type to the identifier */
-            }
-
-            /* TODO: throw an error if extern/static confusion (static declaration after extern decl or vice versa) */
-
-            /* the identifier is marked defined if it's not "extern" */
-            if (!dcl->storageclass.is_extern) {
-                id->defined = 1;
-            }
-
-            inn->identifier.id = idents_ptr_to_ref(id);
         }
     }
 
