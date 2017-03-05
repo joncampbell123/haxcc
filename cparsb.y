@@ -25,7 +25,6 @@ int c_dump_block_item_list(struct c_node *res);
 int c_convert_to_block_item_list(struct c_node *res);
 int c_convert_to_compound_statement(struct c_node *res);
 int c_add_block_item_list(struct c_node *res,struct c_node *n);
-int c_compound_statement_delete_identifiers(struct c_node *res);
 int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
 int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl);
@@ -695,7 +694,6 @@ compound_statement
         $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */
         if (!c_dump_block_item_list(&($<node>$))) YYABORT;
         if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
-        if (!c_compound_statement_delete_identifiers(&($<node>$))) YYABORT;
     }
     ;
 

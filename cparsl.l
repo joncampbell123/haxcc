@@ -29,7 +29,7 @@ long line_num = 1;
 
 extern void c_node_init(struct c_node *node);
 extern c_stringref_t sconst_parse(const char *str);
-extern c_identref_t identifier_parse(const char *str);
+extern void identifier_parse(struct c_node *node,const char *str);
 extern void fconst_parse(struct c_node_val_float *val,const char *str);
 extern void iconst_parse(struct c_node_val_int *val,const char *str,const unsigned int base);
 extern void iconst_parse_char(struct c_node_val_int *val,const char *str);
@@ -94,7 +94,7 @@ static int check_type(void);
 "_Thread_local"                         { c_node_init(&yylval.node); return yylval.node.token=THREAD_LOCAL; }
 "__func__"                              { c_node_init(&yylval.node); return yylval.node.token=FUNC_NAME; }
 
-{L}{A}*                 { c_node_init(&yylval.node); yylval.node.value.val_identifier=identifier_parse(yytext); return yylval.node.token=check_type(); }
+{L}{A}*                 { c_node_init(&yylval.node); identifier_parse(&yylval.node,yytext); return yylval.node.token=check_type(); }
 
 {HP}{H}+{IS}?               { c_node_init(&yylval.node); iconst_parse(&yylval.node.value.val_uint,yytext,16); return yylval.node.token=I_CONSTANT; }
 {NZ}{D}*{IS}?               { c_node_init(&yylval.node); iconst_parse(&yylval.node.value.val_uint,yytext,10); return yylval.node.token=I_CONSTANT; }

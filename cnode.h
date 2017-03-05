@@ -13,9 +13,14 @@ struct c_param_decl_list;
 struct c_node_initializer;
 struct c_external_decl_node;
 
+struct c_node_identifier {
+    c_identref_t    id;
+    char*           name;
+};
+
 struct c_init_decl_node {
     struct c_node_initializer*          initializer;
-    c_identref_t                        identifier;
+    struct c_node_identifier            identifier;
     struct c_node*                      identifier_other;
     struct c_init_decl_node*            next;
 };
@@ -44,11 +49,11 @@ struct c_node {
         // whether ANSI or WIDE and we don't lose track of pointers.
         // token == STRING_LITERAL
         c_stringref_t       val_string;
-        // identifier storage, by name. again, by reference only.
+        // identifier storage, by identifier ref OR name
         // token == TYPEDEF_NAME
         // token == ENUMERATION_CONSTANT
         // token == IDENTIFIER
-        c_identref_t        val_identifier;
+        struct c_node_identifier val_identifier;
         // type spec
         // token == TYPE_SPECIFIER
         struct c_node_type_spec {

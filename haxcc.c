@@ -119,7 +119,6 @@ uint64_t strescp(const char ** const s) {
 }
 
 struct identifier_t {
-    unsigned int        taken:1;
     unsigned int        deleted:1;
     char*               name;
 };
@@ -167,20 +166,6 @@ struct identifier_t *idents_get(const c_identref_t id) {
     return &idents[id];
 }
 
-int idents_is_taken(const c_identref_t id) {
-    if (id >= idents_count)
-        return 0;
-
-    return idents[id].taken;
-}
-
-void idents_mark_taken(const c_identref_t id) {
-    if (id >= idents_count)
-        return;
-
-    idents[id].taken = 1;
-}
-
 void idents_delete(const c_identref_t id) {
     if (id >= idents_count)
         return;
@@ -188,13 +173,20 @@ void idents_delete(const c_identref_t id) {
     idents[id].deleted = 1;
 }
 
-const char *idents_get_name(const c_identref_t x) {
+const char *idents_get_name_by_id(const c_identref_t x) {
     struct identifier_t *id;
 
     if (x >= idents_count)
         return NULL;
 
     id = &idents[x];
+    return id->name;
+}
+
+const char *idents_get_name(struct c_node_identifier *id) {
+    if (id->id != c_identref_t_NONE)
+        return idents_get_name_by_id(id->id);
+
     return id->name;
 }
 
@@ -238,12 +230,18 @@ c_identref_t identifier_new_by_id(const c_identref_t eidref) {
     return identifier_new(eid->name);
 }
 
-c_identref_t identifier_parse(const char *str) {
+void identifier_parse(struct c_node *node,const char *str) {
     struct identifier_t *id;
 
     id = idents_find(str);
-    if (id == NULL) return identifier_new(str);
-    return idents_ptr_to_ref(id);
+    if (id != NULL) {
+        node->value.val_identifier.name = NULL;
+        node->value.val_identifier.id = idents_ptr_to_ref(id);
+    }
+    else {
+        node->value.val_identifier.name = strdup(str);
+        node->value.val_identifier.id = c_identref_t_NONE;
+    }
 }
 
 void c_node_autofill_declaration_sign(struct c_node *decl) {
@@ -1408,7 +1406,7 @@ int c_node_type_to_decl(struct c_node *typ) { /* convert TYPE_SPECIFIER to DECL_
 
 void c_init_decl_node_init(struct c_init_decl_node *i) {
     memset(i,0,sizeof(*i));
-    i->identifier = c_identref_t_NONE;
+    i->identifier.id = c_identref_t_NONE;
 }
 
 struct c_init_decl_node *alloc_init_decl_node(void) {
@@ -1557,84 +1555,6 @@ int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl) {
     return 1;
 }
 
-int declarator_mark_identifier_as_taken(struct c_node *typ) {
-    if (typ->token == IDENTIFIER) {
-        if (idents_is_taken(typ->value.val_identifier)) {
-            typ->value.val_identifier = identifier_new_by_id(typ->value.val_identifier);
-            if (typ->value.val_identifier == c_identref_t_NONE) {
-                yyerror("unable to alloc dupl decl node");
-                return 0;
-            }
-        }
-
-        idents_mark_taken(typ->value.val_identifier);
-    }
-    else {
-        fprintf(stderr,"declarator mark identifier unsupported tok=%u\n",typ->token);
-        return 0;
-    }
-
-    return 1;
-}
-
-int function_decl_mark_identifier_as_taken(struct c_node *typ) {
-    assert(typ->token == FUNC_DECL);
-
-    if (typ->value.value_func_decl.declarator == NULL) /* nothing to mark */
-        return 0;
-
-    return declarator_mark_identifier_as_taken(typ->value.value_func_decl.declarator);
-}
-
-int c_compound_statement_delete_identifiers(struct c_node *res);
-
-int c_decl_spec_delete_identifiers(struct c_node *res) {
-    struct c_init_decl_node *inn;
-
-    assert(res->token == DECL_SPECIFIER);
-    for (inn=res->value.val_decl_spec.init_decl_list;inn != NULL;inn=inn->next) {
-        if (inn->identifier != c_identref_t_NONE)
-            idents_delete(inn->identifier);
-    }
-
-    return 1;
-}
-
-/* delete all identifiers in the block item */
-int c_block_item_delete_identifiers(struct c_node *res) {
-    struct c_block_item_node *bn;
-
-    assert(res->token == BLOCK_ITEM);
-    for (bn=res->value.block_item_list;bn != NULL;bn=bn->next) {
-        if (bn->node.token == COMPOUND_STATEMENT) {
-            if (!c_compound_statement_delete_identifiers(&(bn->node)))
-                return 0;
-        }
-        else if (bn->node.token == DECL_SPECIFIER) {
-            if (!c_decl_spec_delete_identifiers(&(bn->node)))
-                return 0;
-        }
-        else {
-            fprintf(stderr,"delete id tok=%u\n",bn->node.token);
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-/* delete all identifiers in the compound statment, to complete "leaving scope" */
-int c_compound_statement_delete_identifiers(struct c_node *res) {
-    assert(res->token == COMPOUND_STATEMENT);
-
-    if (res->value.compound_statement_root != NULL) {
-        /* it's supposed to be a BLOCK_ITEM */
-        return c_block_item_delete_identifiers(res->value.compound_statement_root);
-    }
-
-    return 1;
-}
-
 int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
     if (typ->token == INIT_DECL_LIST)
         return 1;
@@ -1646,15 +1566,6 @@ int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
             return 0;
         }
 
-        if (idents_is_taken(typ->value.val_identifier)) {
-            typ->value.val_identifier = identifier_new_by_id(typ->value.val_identifier);
-            if (typ->value.val_identifier == c_identref_t_NONE) {
-                yyerror("unable to alloc dupl decl node");
-                return 0;
-            }
-        }
-
-        idents_mark_taken(typ->value.val_identifier);
         idn->identifier = typ->value.val_identifier;
         typ->value.init_decl_list = idn;
     }
@@ -1670,12 +1581,6 @@ int c_node_on_init_decl(struct c_node *typ) { /* convert to INIT_DECL_LIST */
         n = malloc(sizeof(*n));
         if (n == NULL) return 0;
         *n = *typ;
-
-        /* dig into the function decl and mark the identifier as taken */
-        if (!function_decl_mark_identifier_as_taken(n)) {
-            yyerror("unable to mark decl as token");
-            return 0;
-        }
 
         idn->identifier_other = n;
         typ->value.init_decl_list = idn;
@@ -1767,8 +1672,8 @@ void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
                 n->value.val_uint.bwidth);
     }
     else if (n->token == IDENTIFIER) {
-        const char *name = idents_get_name(n->value.val_identifier);
-        fprintf(stderr,"ident(%lu)=\"%s\" ",(unsigned long)n->value.val_identifier,name?name:"(null)");
+        const char *name = idents_get_name(&(n->value.val_identifier));
+        fprintf(stderr,"ident(%ld)=\"%s\" ",(long)n->value.val_identifier.id,name?name:"(null)");
     }
     else if (n->token == FUNC_DECL) {
         fprintf(stderr,"function_decl(\n");
@@ -1793,9 +1698,9 @@ void c_init_decl_node_initializer_dump(struct c_node *n,int level) {
 
 void c_init_decl_node_dump(struct c_init_decl_node *n) {
     fprintf(stderr,"init decl entry:");
-    if (n->identifier != c_identref_t_NONE) {
-        const char *name = idents_get_name(n->identifier);
-        if (name != NULL) fprintf(stderr," identifier(%lu)=\"%s\"",(unsigned long)n->identifier,name);
+    if (n->identifier.id != c_identref_t_NONE || n->identifier.name != NULL) {
+        const char *name = idents_get_name(&(n->identifier));
+        if (name != NULL) fprintf(stderr," identifier(%ld)=\"%s\"",(long)n->identifier.id,name);
     }
     if (n->identifier_other != NULL) {
         c_init_decl_node_initializer_dump(n->identifier_other,0);
