@@ -2310,6 +2310,58 @@ int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
     return 1;
 }
 
+int c_second_pass_block_item(struct c_node *bnc);
+
+int c_second_pass_compound_statement(struct c_node *cc) {
+    int old_idents_scope_begin = idents_scope_begin;
+    int ret;
+
+    assert(cc->token == COMPOUND_STATEMENT);
+
+    if (cc->value.compound_statement_root == NULL)
+        return 1;
+    if (cc->value.compound_statement_root->token != BLOCK_ITEM)
+        return 1;
+
+    idents_scope_begin = idents_count;
+
+    ret = c_second_pass_block_item(cc->value.compound_statement_root);
+
+    /* mark all identifiers past new boundary deleted */
+    {
+        int x;
+
+        for (x=idents_scope_begin;x < idents_count;x++)
+            idents[x].deleted = 1;
+    }
+
+    /* restore old scope */
+    idents_scope_begin = old_idents_scope_begin;
+    return ret;
+}
+
+int c_second_pass_block_item(struct c_node *bnc) {
+    struct c_block_item_node *bn;
+
+    assert(bnc->token == BLOCK_ITEM);
+    for (bn=bnc->value.block_item_list;bn != NULL;bn=bn->next) {
+        if (bn->node.token == DECL_SPECIFIER) {
+            if (!c_second_pass_decl_specifier(&(bn->node.value.val_decl_spec)))
+                return 0;
+        }
+        else if (bn->node.token == BLOCK_ITEM) {
+            if (!c_second_pass_block_item(&(bn->node)))
+                return 0;
+        }
+        else if (bn->node.token == COMPOUND_STATEMENT) {
+            if (!c_second_pass_compound_statement(&(bn->node)))
+                return 0;
+        }
+    }
+
+    return 1;
+}
+
 int c_second_pass_func_definition(struct c_node_func_def *fdef) {
     if (fdef->declarator != NULL && fdef->decl_spec != NULL) {
         /* declare the function definition at the current scope */
@@ -2332,14 +2384,8 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
 
             /* run through compound statement. token type should be BLOCK_ITEM. */
             if (fdef->compound_statement != NULL && fdef->compound_statement->token == BLOCK_ITEM) {
-                struct c_block_item_node *bn;
-
-                for (bn=fdef->compound_statement->value.block_item_list;bn != NULL;bn=bn->next) {
-                    if (bn->node.token == DECL_SPECIFIER) {
-                        if (!c_second_pass_decl_specifier(&(bn->node.value.val_decl_spec)))
-                            return 0;
-                    }
-                }
+                if (!c_second_pass_block_item(fdef->compound_statement))
+                    return 0;
             }
 
             /* mark all identifiers past new boundary deleted */

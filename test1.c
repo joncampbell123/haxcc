@@ -59,8 +59,14 @@ void function1(void) {
     }
 
     {
+        long or = x; /* should refer to function1() scope */
         int x = 123;
         long y = 0x1111UL;
+        long r = x; /* should refer to this scope */
+    }
+
+    {
+        long r = x; /* should refer to function1() scope */
     }
 }
 
