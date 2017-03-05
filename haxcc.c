@@ -2217,6 +2217,25 @@ int c_dump_external_decl_list(struct c_node *node,int indent) {
     return 1;
 }
 
+int c_second_pass_decl_specifier_identifier_undefined(struct c_node_identifier *ident) {
+    struct identifier_t *id;
+
+    id = idents_find(ident->name,idents_scope_begin);
+    if (id == NULL) {
+        id = idents_alloc();
+        if (id == NULL) return 0;
+
+        id->name = strdup(ident->name);
+        if (id->name == NULL) {
+            fprintf(stderr,"Cannot strdup ident name\n");
+            return 0;
+        }
+    }
+
+    ident->id = idents_ptr_to_ref(id);
+    return 1;
+}
+
 int c_second_pass_decl_specifier_identifier(struct c_node_decl_spec *dcl,struct c_node_identifier *ident,struct c_node *parent_node) {
     unsigned char is_func_decl = 0;
     struct identifier_t *id;
@@ -2399,6 +2418,40 @@ int c_second_pass_func_definition(struct c_node_func_def *fdef) {
             /* then save scope boundary and set new boundary at end of ident allocation list so far */
             int old_idents_scope_begin = idents_scope_begin;
             idents_scope_begin = idents_count;
+
+            /* declare the parameter list inside the scope.
+             * if it's an identifier list (old C style) then declare each as not defined. */
+            if (fdef->declarator->token == FUNC_DECL) {
+                if (fdef->declarator->value.value_func_decl.param_list != NULL) {
+                    struct c_node *fdcl = fdef->declarator->value.value_func_decl.param_list;
+                    if (fdcl->token == PARAM_DECL_LIST) {
+                        struct c_param_decl_list *pl;
+
+                        for (pl=fdcl->value.param_decl_list;pl != NULL;pl=pl->next) {
+                            if (pl->node.token == PARAM_DECL) {
+                                struct c_node_decl_spec *dcl = pl->node.value.value_param_decl.decl_spec;
+                                struct c_node *decn = pl->node.value.value_param_decl.declarator;
+                                if (dcl && decn) {
+                                    if (decn->token == IDENTIFIER) {
+                                        if (!c_second_pass_decl_specifier_identifier(dcl,&(decn->value.val_identifier),&(pl->node)))
+                                            return 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (fdcl->token == IDENTIFIER_LIST) {
+                        struct c_node_ident_list *il;
+
+                        for (il=fdcl->value.ident_list;il != NULL;il=il->next) {
+                            if (il->node.token == IDENTIFIER) {
+                                if (!c_second_pass_decl_specifier_identifier_undefined(&(il->node.value.val_identifier)))
+                                    return 0;
+                            }
+                        }
+                    }
+                }
+            }
 
             /* TODO: scan parameter and identifier lists and declare them, allowing shadowing */
 
