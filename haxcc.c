@@ -2253,6 +2253,8 @@ int c_second_pass_decl_specifier(struct c_node_decl_spec *dcl) {
                 /* TODO: register the data type to the identifier */
             }
 
+            /* TODO: throw an error if extern/static confusion (static declaration after extern decl or vice versa) */
+
             /* the identifier is marked defined if it's not "extern" */
             if (!dcl->storageclass.is_extern) {
                 id->defined = 1;
