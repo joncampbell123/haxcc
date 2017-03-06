@@ -247,36 +247,36 @@ declaration
 
 declaration_specifiers
     : storage_class_specifier declaration_specifiers {
-        $<node>$ = $<node>2;
-        c_node_move_to_prev_link($<node>$,&($<node>1));
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | storage_class_specifier {
         $<node>$ = $<node>1;
     }
     | type_specifier declaration_specifiers {
-        $<node>$ = $<node>2;
-        c_node_move_to_prev_link($<node>$,&($<node>1));
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | type_specifier {
         $<node>$ = $<node>1;
     }
     | type_qualifier declaration_specifiers {
-        $<node>$ = $<node>2;
-        c_node_move_to_prev_link($<node>$,&($<node>1));
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | type_qualifier {
         $<node>$ = $<node>1;
     }
     | function_specifier declaration_specifiers {
-        $<node>$ = $<node>2;
-        c_node_move_to_prev_link($<node>$,&($<node>1));
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | function_specifier {
         $<node>$ = $<node>1;
     }
     | alignment_specifier declaration_specifiers {
-        $<node>$ = $<node>2;
-        c_node_move_to_prev_link($<node>$,&($<node>1));
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | alignment_specifier {
         $<node>$ = $<node>1;
