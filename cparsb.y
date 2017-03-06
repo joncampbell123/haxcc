@@ -42,6 +42,8 @@ void yyerror(const char *s);
 %token  INIT_DECLARATOR
 %token  EXTERNAL_DECLARATION
 
+%token-table
+
 %start translation_unit
 %%
 
@@ -639,5 +641,12 @@ void yyerror(const char *s)
 {
     fflush(stdout);
     fprintf(stderr, "*** %s\n", s);
+}
+
+const char *token2string(int tok) {
+    if (tok < 0 || tok >= YYNTOKENS)
+        return "?";
+
+    return yytname[tok];
 }
 

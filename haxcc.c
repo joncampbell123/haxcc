@@ -12,6 +12,7 @@
 struct c_node*              last_translation_unit = NULL;
 
 int yyparse();
+const char *token2string(int tok);
 
 struct c_node *c_node_alloc(void) {
     struct c_node *n;
@@ -477,8 +478,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
     for (;n!=NULL;n=n->next) {
         fprintf_indent(stderr,indent);
-        fprintf(stderr,"node %p: token=%u refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
-            (void*)n,n->token,n->refcount,
+        fprintf(stderr,"node %p: token(%u)='%s' refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
+            (void*)n,n->token,token2string(n->token),n->refcount,
             (void*)(n->prev),
             (void*)(n->next),
             (void*)(n->parent),
