@@ -11,6 +11,72 @@
 
 int yyparse();
 
+struct c_node *c_node_alloc(void) {
+    struct c_node *n;
+
+    n = malloc(sizeof(*n));
+    if (n == NULL) return NULL;
+    memset(n,0,sizeof(*n));
+    return n;
+}
+
+void c_node_delete_struct(struct c_node *n) {
+    if (n != NULL) {
+        if (n->refcount != 0) {
+            /* this means someone isn't tracking their resources properly */
+            fprintf(stderr,"WARNING: node ptr=%p deleting with refcount=%u\n",
+                (void*)n,n->refcount);
+        }
+
+        /* TODO: future node-specific deletion here */
+        free(n);
+    }
+}
+
+void c_node_delete(struct c_node **n) {
+    assert(n != NULL);
+
+    c_node_delete_struct(*n);
+    *n = NULL;
+}
+
+unsigned int c_node_addref(struct c_node **n) {
+    assert(n != NULL); /* if n == NULL the caller is an idiot and this program deserves to blow up */
+    assert(*n != NULL); /* if *n == NULL the caller is trying to addref something he freed or never allocated (idiot) */
+    return ++((*n)->refcount);
+}
+
+unsigned int c_node_release(struct c_node **n) {
+    unsigned int ref = 0; /* can't pull a refcount from a deleted node, unless you want use-after-free bugs in this compiler */
+
+    assert(n != NULL); /* if n == NULL the caller is an idiot and this program deserves to blow up */
+    if (*n == NULL) return 0; /* releasing a NULL pointer is OK */
+
+    if ((*n)->refcount != 0) {
+        if ((ref = (--((*n)->refcount))) == 0) { /* decrement refcount, assign result to ref, compare against zero */
+            c_node_delete(n); /* now the node is deleted. *n will become NULL */
+        }
+    }
+    else {
+        /* not tracking resources properly?
+         * most likely cause: allocating a node (result refcount == 0) then calling release() when you should call delete instead. */
+        fprintf(stderr,"WARNING: node ptr=%p release called with refcount=0\n",(void*)(*n));
+    }
+
+    return ref;
+}
+
+void c_node_move_to(struct c_node **d,struct c_node **s) {
+    assert(s != NULL);
+    assert(d != NULL);
+
+    if (*d != NULL)
+        fprintf(stderr,"WARNING: node_move_to destination node *d != NULL. pointer will be overwritten. memory leakage may result.\n");
+
+    *d = *s;
+    *s = NULL;
+}
+
 unsigned char char_width_b = 1;
 unsigned char wchar_width_b = 2;
 unsigned char short_width_b = 2;
