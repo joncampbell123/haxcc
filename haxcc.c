@@ -9,6 +9,8 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+struct c_node*              last_translation_unit = NULL;
+
 int yyparse();
 
 struct c_node *c_node_alloc(void) {
@@ -20,12 +22,40 @@ struct c_node *c_node_alloc(void) {
     return n;
 }
 
+struct c_node *c_node_alloc_or_die(void) {
+    struct c_node *n = c_node_alloc();
+    if (n != NULL) return n;
+
+    fprintf(stderr,"Out of memory (unable to allocate c_node)\n");
+    abort();
+}
+
 void c_node_delete_struct(struct c_node *n) {
+    unsigned int chidx;
+
     if (n != NULL) {
         if (n->refcount != 0) {
             /* this means someone isn't tracking their resources properly */
             fprintf(stderr,"WARNING: node ptr=%p deleting with refcount=%u\n",
                 (void*)n,n->refcount);
+        }
+        if (n->prev != NULL) {
+            fprintf(stderr,"WARNING: node ptr=%p deleting while still linked in a list (prev != NULL)\n",
+                (void*)n);
+        }
+        if (n->next != NULL) {
+            fprintf(stderr,"WARNING: node ptr=%p deleting while still linked in a list (next != NULL)\n",
+                (void*)n);
+        }
+        if (n->parent != NULL) {
+            fprintf(stderr,"WARNING: node ptr=%p deleting while still linked to parent node (parent != NULL)\n",
+                (void*)n);
+        }
+        for (chidx=0;chidx < c_node_MAX_CHILDREN;chidx++) {
+            if (n->child[chidx] != NULL) {
+                fprintf(stderr,"WARNING: node ptr=%p deleting while still linked to child nodes (child[%u] != NULL)\n",
+                    (void*)n,chidx);
+            }
         }
 
         /* TODO: future node-specific deletion here */
@@ -46,6 +76,25 @@ unsigned int c_node_addref(struct c_node **n) {
     return ++((*n)->refcount);
 }
 
+void c_node_delete_if_no_refs(struct c_node **n) {
+    assert(n != NULL);
+
+    if (*n != NULL) {
+        if ((*n)->refcount == 0)
+            c_node_delete(n);
+    }
+}
+
+unsigned int c_node_release_autodelete(struct c_node **n) {
+    unsigned int refs;
+
+    assert(n != NULL);
+
+    refs = c_node_release(n);
+    c_node_delete_if_no_refs(n);
+    return refs;
+}
+
 unsigned int c_node_release(struct c_node **n) {
     unsigned int ref = 0; /* can't pull a refcount from a deleted node, unless you want use-after-free bugs in this compiler */
 
@@ -53,9 +102,7 @@ unsigned int c_node_release(struct c_node **n) {
     if (*n == NULL) return 0; /* releasing a NULL pointer is OK */
 
     if ((*n)->refcount != 0) {
-        if ((ref = (--((*n)->refcount))) == 0) { /* decrement refcount, assign result to ref, compare against zero */
-            c_node_delete(n); /* now the node is deleted. *n will become NULL */
-        }
+        ref = --((*n)->refcount);
     }
     else {
         /* not tracking resources properly?
@@ -75,6 +122,90 @@ void c_node_move_to(struct c_node **d,struct c_node **s) {
 
     *d = *s;
     *s = NULL;
+}
+
+void c_node_release_prev_link(struct c_node *node) {
+    if (node->prev != NULL) {
+        c_node_release(&(node->prev)); /* node is letting go of node->prev */
+        assert(node->prev->next == node);
+        node->prev->next = NULL;
+        c_node_release(&node); /* and node->prev is letting go of node */
+        node->prev = NULL;
+    }
+}
+
+void c_node_addref_prev_link(struct c_node *node) {
+    if (node->prev != NULL) {
+        c_node_addref(&(node->prev)); /* node is grabbing onto node->prev */
+        node->prev->next = node;
+        c_node_addref(&node); /* and node->prev is grabbing onto node */
+    }
+}
+
+void c_node_move_to_prev_link(struct c_node *node,struct c_node **prev) {
+    if (node->prev == *prev) return;
+
+    c_node_release_prev_link(node);
+    c_node_move_to(&(node->prev),prev); /* copies to node->prev, sets *prev = NULL */
+    c_node_addref_prev_link(node);
+}
+
+void c_node_release_next_link(struct c_node *node) {
+    if (node->next != NULL) {
+        c_node_release(&(node->next)); /* node is letting go of node->next */
+        assert(node->next->prev == node);
+        node->next->prev = NULL;
+        c_node_release(&node); /* and node->next is letting go of node */
+        node->next = NULL;
+    }
+}
+
+void c_node_addref_next_link(struct c_node *node) {
+    if (node->next != NULL) {
+        c_node_addref(&(node->next)); /* node is grabbing onto node->next */
+        node->next->prev = node;
+        c_node_addref(&node); /* and node->next is grabbing onto node */
+    }
+}
+
+void c_node_move_to_next_link(struct c_node *node,struct c_node **next) {
+    if (node->next == *next) return;
+
+    c_node_release_next_link(node);
+    c_node_move_to(&(node->next),next); /* copies to node->next, sets *next = NULL */
+    c_node_addref_next_link(node);
+}
+
+void c_node_release_child_link(struct c_node *node,unsigned int chidx) {
+    assert(chidx < c_node_MAX_CHILDREN);
+
+    if (node->child[chidx] != NULL) {
+        c_node_release(&(node->child[chidx])); /* node is letting go of child */
+        assert(node->child[chidx]->parent == node);
+        node->child[chidx]->parent = NULL;
+        c_node_release(&node); /* and child is letting go of node */
+        node->child[chidx] = NULL;
+    }
+}
+
+void c_node_addref_child_link(struct c_node *node,unsigned int chidx) {
+    assert(chidx < c_node_MAX_CHILDREN);
+
+    if (node->child[chidx] != NULL) {
+        c_node_addref(&(node->child[chidx])); /* node is grabbing onto child */
+        node->child[chidx]->parent = node;
+        c_node_addref(&node); /* and child is grabbing onto node */
+    }
+}
+
+void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **child) {
+    assert(chidx < c_node_MAX_CHILDREN);
+
+    if (node->child[chidx] == *child) return;
+
+    c_node_release_child_link(node,chidx);
+    c_node_move_to(&(node->child[chidx]),child); /* copies to node->child[chidx], sets *child = NULL */
+    c_node_addref_child_link(node,chidx);
 }
 
 unsigned char char_width_b = 1;
@@ -341,6 +472,71 @@ c_stringref_t sconst_parse(const char *str) {
     return string_t_to_ref(r);
 }
 
+void c_node_dumptree(struct c_node *n,int indent) {
+    unsigned int chidx;
+
+    for (;n!=NULL;n=n->next) {
+        fprintf_indent(stderr,indent);
+        fprintf(stderr,"node %p: token=%u refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
+            (void*)n,n->token,n->refcount,
+            (void*)(n->prev),
+            (void*)(n->next),
+            (void*)(n->parent),
+            (void*)(n->child[0]),
+            (void*)(n->child[1]),
+            (void*)(n->child[2]));
+
+        if (n->next != NULL && n->next->prev != n) {
+            fprintf_indent(stderr,indent+1);
+            fprintf(stderr,"WARNING: node->next->prev != node\n");
+        }
+        if (n->prev != NULL && n->prev->next != n) {
+            fprintf_indent(stderr,indent+1);
+            fprintf(stderr,"WARNING: node->prev->next != node\n");
+        }
+        for (chidx=0;chidx < c_node_MAX_CHILDREN;chidx++) {
+            if (n->child[chidx] != NULL && n->child[chidx]->parent != n) {
+                fprintf_indent(stderr,indent+1);
+                fprintf(stderr,"WARNING: node->child[%u]->parent != node\n",chidx);
+            }
+            if (n->child[chidx] != NULL) {
+                fprintf_indent(stderr,indent+1);
+                fprintf(stderr,"child node %u:\n",chidx);
+                c_node_dumptree(n->child[chidx],indent+2);
+            }
+        }
+    }
+}
+
+void c_node_delete_tree(struct c_node **node) {
+    struct c_node *childnode = NULL;
+    struct c_node *nextnode = NULL;
+    unsigned int chidx;
+
+    while (*node != NULL) {
+        /* depth first */
+        for (chidx=0;chidx < c_node_MAX_CHILDREN;chidx++) {
+            childnode = (*node)->child[chidx]; /* save ptr. disconnect will zero array entry */
+            c_node_release_child_link(*node,chidx); /* disconnect child from node */
+            assert((*node)->child[chidx] == NULL); /* you did your job, RIIIIGHT? */
+            c_node_delete_tree(&childnode); /* then recurse */
+        }
+
+        /* "prev" should be NULL, since we only follow "next" */
+        assert((*node)->prev == NULL);
+
+        /* disconnect from next ptr */
+        nextnode = (*node)->next;
+        c_node_release_next_link(*node);
+
+        /* autodelete node */
+        c_node_release_autodelete(node);
+
+        /* next */
+        *node = nextnode;
+    }
+}
+
 int main(int argc, char **argv) {
     int res;
 
@@ -355,6 +551,15 @@ int main(int argc, char **argv) {
         if ((res=yyparse()) != 0) break;
     } while (!feof(yyin));
     yylex_destroy();
+
+    /* finish parsing final tree */
+    if (last_translation_unit != NULL) {
+        fprintf(stderr,"Resulting tree:\n");
+        c_node_dumptree(last_translation_unit,1);
+        c_node_delete_tree(&last_translation_unit);
+        c_node_release(&last_translation_unit);
+        c_node_delete(&last_translation_unit);
+    }
 
     strings_free_all();
     return (res != 0) ? 1 : 0;

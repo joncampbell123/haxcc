@@ -17,14 +17,22 @@ struct c_node {
     unsigned int                        refcount;
     struct c_node*                      prev;
     struct c_node*                      next;
+    struct c_node*                      parent;
     struct c_node*                      child[c_node_MAX_CHILDREN];
 };
 
+extern struct c_node*                   last_translation_unit;
+
 struct c_node *c_node_alloc(void);
+struct c_node *c_node_alloc_or_die(void);
 void c_node_delete(struct c_node **n); /* <- will throw a warning if refcount != 0 */
 unsigned int c_node_addref(struct c_node **n);
 unsigned int c_node_release(struct c_node **n);
+unsigned int c_node_release_autodelete(struct c_node **n);
 void c_node_move_to(struct c_node **d,struct c_node **s); /* <- *d = *s, *s = NULL */
+void c_node_move_to_prev_link(struct c_node *node,struct c_node **next);
+void c_node_move_to_next_link(struct c_node *node,struct c_node **next);
+void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **next);
 
 void yyerror(const char *s);
 

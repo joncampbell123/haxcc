@@ -37,15 +37,33 @@ void yyerror(const char *s);
 
 %token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
+%token  EXPRESSION
+%token  DECLARATION
+%token  INIT_DECLARATOR
+%token  EXTERNAL_DECLARATION
+
 %start translation_unit
 %%
 
 primary_expression
-    : IDENTIFIER
-    | constant
-    | string
-    | '(' expression ')'
-    | generic_selection
+    : IDENTIFIER {
+        $<node>$ = $<node>1;
+    }
+    | constant {
+        $<node>$ = $<node>1;
+    }
+    | string {
+        $<node>$ = $<node>1;
+    }
+    | '(' expression ')' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXPRESSION;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | generic_selection {
+        $<node>$ = $<node>1;
+    }
     ;
 
 constant
@@ -211,32 +229,82 @@ constant_expression
     ;
 
 declaration
-    : declaration_specifiers ';'
-    | declaration_specifiers init_declarator_list ';'
-    | static_assert_declaration
+    : declaration_specifiers ';' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | declaration_specifiers init_declarator_list ';' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | static_assert_declaration {
+        $<node>$ = $<node>1;
+    }
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers
-    | storage_class_specifier
-    | type_specifier declaration_specifiers
-    | type_specifier
-    | type_qualifier declaration_specifiers
-    | type_qualifier
-    | function_specifier declaration_specifiers
-    | function_specifier
-    | alignment_specifier declaration_specifiers
-    | alignment_specifier
+    : storage_class_specifier declaration_specifiers {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | storage_class_specifier {
+        $<node>$ = $<node>1;
+    }
+    | type_specifier declaration_specifiers {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | type_specifier {
+        $<node>$ = $<node>1;
+    }
+    | type_qualifier declaration_specifiers {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | type_qualifier {
+        $<node>$ = $<node>1;
+    }
+    | function_specifier declaration_specifiers {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | function_specifier {
+        $<node>$ = $<node>1;
+    }
+    | alignment_specifier declaration_specifiers {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | alignment_specifier {
+        $<node>$ = $<node>1;
+    }
     ;
 
 init_declarator_list
-    : init_declarator
-    | init_declarator_list ',' init_declarator
+    : init_declarator {
+        $<node>$ = $<node>1;
+    }
+    | init_declarator_list ',' init_declarator {
+        $<node>$ = $<node>3;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 init_declarator
-    : declarator '=' initializer
-    | declarator
+    : declarator '=' initializer {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | declarator {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
     ;
 
 storage_class_specifier
@@ -527,13 +595,26 @@ jump_statement
     ;
 
 translation_unit
-    : external_declaration
-    | translation_unit external_declaration
+    : external_declaration {
+        $<node>$ = $<node>1;
+        last_translation_unit = $<node>$;
+    }
+    | translation_unit external_declaration {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        /* do not update translation unit, because the new node is at the END of the linked list */
+    }
     ;
 
 external_declaration
-    : function_definition
-    | declaration
+    : function_definition {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
+    | declaration {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
     ;
 
 function_definition
@@ -542,8 +623,13 @@ function_definition
     ;
 
 declaration_list
-    : declaration
-    | declaration_list declaration
+    : declaration {
+        $<node>$ = $<node>1;
+    }
+    | declaration_list declaration {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 %%
