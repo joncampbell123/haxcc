@@ -11,61 +11,14 @@
 int yylex();
 int yyparse();
 FILE *yyin;
- 
+
 void yyerror(const char *s);
-
-extern struct c_node last_translation_unit;
-
-int c_node_convert_to_param_decl_list(struct c_node *res);
-int c_node_finish_declaration(struct c_node *decl,int indent);
-int c_node_param_decl_list_add(struct c_node *res,struct c_node *par);
-int c_init_block_item(struct c_node *res);
-int c_node_init_param_decl(struct c_node *res);
-int c_convert_to_block_item_list(struct c_node *res);
-int c_convert_to_compound_statement(struct c_node *res);
-int c_add_block_item_list(struct c_node *res,struct c_node *n);
-int c_node_add(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_sub(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_funcdef_add_declspec(struct c_node *res,struct c_node *decl);
-int c_node_divide(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_funcdef_add_declarator(struct c_node *res,struct c_node *decl);
-int c_node_funcdef_add_decl_list(struct c_node *res,struct c_node *decl);
-int c_node_add_param_decl_declspec(struct c_node *res,struct c_node *decl);
-int c_node_unaryop(struct c_node *res,struct c_node *op,struct c_node *p1);
-int c_node_modulus(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_typecast(struct c_node *res,struct c_node *tc,struct c_node *p1);
-int c_node_multiply(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_add_param_decl_declarator(struct c_node *res,struct c_node *decl);
-int c_node_shift_left(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_shift_right(struct c_node *res,struct c_node *p1,struct c_node *p2);
-int c_node_add_declaration_init_decl(struct c_node *decl,struct c_node *initdecl);
-int c_node_init_decl_attach_initializer(struct c_node *decl,struct c_node *init);
-int c_node_external_declaration_link(struct c_node *decl,struct c_node *nextdecl);
-int c_node_funcdef_add_compound_statement(struct c_node *res,struct c_node *cst);
-int c_node_add_init_decl(struct c_node *decl,struct c_node *initdecl);
-int c_node_convert_to_external_declaration(struct c_node *decl);
-int c_node_init_function_definition(struct c_node *decl);
-int c_node_convert_to_initializer(struct c_node *decl);
-int c_node_on_init_decl(struct c_node *typ); /* convert to INIT_DECL_LIST */
-int c_node_on_func_spec(struct c_node *typ); /* convert to FUNC_SPECIFIER */
-int c_node_on_type_qual(struct c_node *typ); /* convert to TYPE_QUALIFIER */
-int c_node_on_type_spec(struct c_node *typ); /* convert to TYPE_SPECIFIER */
-int c_node_type_to_decl(struct c_node *typ); /* convert TYPE_SPECIFIER to DECL_SPECIFIER */
-int c_node_add_type_to_decl(struct c_node *decl,struct c_node *typ);
-int c_node_on_storage_class_spec(struct c_node *stc); /* convert to STORAGE_CLASS_SPECIFIER */
-int c_init_function_decl(struct c_node *decl);
-int c_function_decl_set_declarator(struct c_node *decl,struct c_node *declar);
-int c_function_decl_set_param_list(struct c_node *decl,struct c_node *plist);
-int c_node_convert_to_identifier_list(struct c_node *decl);
-int c_node_add_to_identifier_list(struct c_node *decl,struct c_node *ident);
-int c_node_convert_to_decl_list(struct c_node *decl);
-int c_node_add_to_decl_list(struct c_node *dlist,struct c_node *decl);
-
 %}
 
 %union {
-    struct c_node   node;
+    struct c_node*              node;
 }
+
 
 %token  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
 %token  PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
@@ -84,27 +37,6 @@ int c_node_add_to_decl_list(struct c_node *dlist,struct c_node *decl);
 
 %token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
-%token  LONG_LONG
-%token  LONG_DOUBLE
-
-%token  STORAGE_CLASS_SPECIFIER
-%token  COMPOUND_STATEMENT
-%token  FUNC_DEFINITION
-%token  IDENTIFIER_LIST
-%token  PARAM_DECL_LIST
-%token  TYPE_SPECIFIER
-%token  TYPE_QUALIFIER
-%token  DECL_SPECIFIER
-%token  FUNC_SPECIFIER
-%token  INIT_DECL_LIST
-%token  EXTERNAL_DECL
-%token  INITIALIZER
-%token  BLOCK_ITEM
-%token  PARAM_DECL
-%token  DECL_LIST
-%token  FUNC_DECL
-%token  TYPECAST
-
 %start translation_unit
 %%
 
@@ -112,9 +44,7 @@ primary_expression
     : IDENTIFIER
     | constant
     | string
-    | '(' expression ')' {
-        $<node>$ = $<node>2;
-    }
+    | '(' expression ')'
     | generic_selection
     ;
 
@@ -169,9 +99,7 @@ unary_expression
     : postfix_expression
     | INC_OP unary_expression
     | DEC_OP unary_expression
-    | unary_operator cast_expression {
-        if (!c_node_unaryop(&($<node>$),&($<node>1),&($<node>2))) YYABORT;
-    }
+    | unary_operator cast_expression
     | SIZEOF unary_expression
     | SIZEOF '(' type_name ')'
     | ALIGNOF '(' type_name ')'
@@ -188,42 +116,26 @@ unary_operator
 
 cast_expression
     : unary_expression
-    | '(' type_name ')' cast_expression {
-        if (!c_node_typecast(&($<node>$),&($<node>2),&($<node>4))) YYABORT;
-    }
+    | '(' type_name ')' cast_expression
     ;
 
 multiplicative_expression
     : cast_expression
-    | multiplicative_expression '*' cast_expression {
-        if (!c_node_multiply(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
-    | multiplicative_expression '/' cast_expression {
-        if (!c_node_divide(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
-    | multiplicative_expression '%' cast_expression {
-        if (!c_node_modulus(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
+    | multiplicative_expression '*' cast_expression
+    | multiplicative_expression '/' cast_expression
+    | multiplicative_expression '%' cast_expression
     ;
 
 additive_expression
     : multiplicative_expression
-    | additive_expression '+' multiplicative_expression {
-        if (!c_node_add(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
-    | additive_expression '-' multiplicative_expression {
-        if (!c_node_sub(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
+    | additive_expression '+' multiplicative_expression
+    | additive_expression '-' multiplicative_expression
     ;
 
 shift_expression
     : additive_expression
-    | shift_expression LEFT_OP additive_expression {
-        if (!c_node_shift_left(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
-    | shift_expression RIGHT_OP additive_expression {
-        if (!c_node_shift_right(&($<node>$),&($<node>1),&($<node>3))) YYABORT;
-    }
+    | shift_expression LEFT_OP additive_expression
+    | shift_expression RIGHT_OP additive_expression
     ;
 
 relational_expression
@@ -299,80 +211,32 @@ constant_expression
     ;
 
 declaration
-    : declaration_specifiers ';' {
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | declaration_specifiers init_declarator_list ';' {
-        if (!c_node_add_declaration_init_decl(&($<node>1),&($<node>2))) YYABORT;
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : declaration_specifiers ';'
+    | declaration_specifiers init_declarator_list ';'
     | static_assert_declaration
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers {
-        if (!c_node_on_storage_class_spec(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | storage_class_specifier {
-        if (!c_node_on_storage_class_spec(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | type_specifier declaration_specifiers {
-        if (!c_node_on_type_spec(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | type_specifier {
-        if (!c_node_on_type_spec(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | type_qualifier declaration_specifiers {
-        if (!c_node_on_type_qual(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | type_qualifier {
-        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | function_specifier declaration_specifiers {
-        if (!c_node_on_func_spec(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | function_specifier {
-        if (!c_node_on_func_spec(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | alignment_specifier declaration_specifiers {
-        /* TODO */
-        $<node>$ = $<node>2;
-    }
+    : storage_class_specifier declaration_specifiers
+    | storage_class_specifier
+    | type_specifier declaration_specifiers
+    | type_specifier
+    | type_qualifier declaration_specifiers
+    | type_qualifier
+    | function_specifier declaration_specifiers
+    | function_specifier
+    | alignment_specifier declaration_specifiers
     | alignment_specifier
     ;
 
 init_declarator_list
     : init_declarator
-    | init_declarator_list ',' init_declarator {
-        if (!c_node_add_init_decl(&($<node>1),&($<node>3))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    | init_declarator_list ',' init_declarator
     ;
 
 init_declarator
-    : declarator '=' initializer {
-        if (!c_node_convert_to_initializer(&($<node>3))) YYABORT;
-        if (!c_node_on_init_decl(&($<node>1))) YYABORT;
-        if (!c_node_init_decl_attach_initializer(&($<node>1),&($<node>3))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | declarator {
-        if (!c_node_on_init_decl(&($<node>$))) YYABORT;
-    }
+    : declarator '=' initializer
+    | declarator
     ;
 
 storage_class_specifier
@@ -426,24 +290,10 @@ struct_declaration
     ;
 
 specifier_qualifier_list
-    : type_specifier specifier_qualifier_list {
-        if (!c_node_on_type_spec(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | type_specifier {
-        if (!c_node_on_type_spec(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | type_qualifier specifier_qualifier_list {
-        if (!c_node_on_type_qual(&($<node>1))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>2),&($<node>1))) YYABORT;
-        $<node>$ = $<node>2;
-    }
-    | type_qualifier {
-        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
+    : type_specifier specifier_qualifier_list
+    | type_specifier
+    | type_qualifier specifier_qualifier_list
+    | type_qualifier
     ;
 
 struct_declarator_list
@@ -513,20 +363,9 @@ direct_declarator
     | direct_declarator '[' type_qualifier_list assignment_expression ']'
     | direct_declarator '[' type_qualifier_list ']'
     | direct_declarator '[' assignment_expression ']'
-    | direct_declarator '(' parameter_type_list ')' {
-        if (!c_init_function_decl(&($<node>$))) YYABORT;
-        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
-        if (!c_function_decl_set_param_list(&($<node>$),&($<node>3))) YYABORT;
-    }
-    | direct_declarator '(' ')' {
-        if (!c_init_function_decl(&($<node>$))) YYABORT;
-        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
-    }
-    | direct_declarator '(' identifier_list ')' {
-        if (!c_init_function_decl(&($<node>$))) YYABORT;
-        if (!c_function_decl_set_declarator(&($<node>$),&($<node>1))) YYABORT;
-        if (!c_function_decl_set_param_list(&($<node>$),&($<node>3))) YYABORT;
-    }
+    | direct_declarator '(' parameter_type_list ')'
+    | direct_declarator '(' ')'
+    | direct_declarator '(' identifier_list ')'
     ;
 
 pointer
@@ -537,68 +376,30 @@ pointer
     ;
 
 type_qualifier_list
-    : type_qualifier {
-        if (!c_node_on_type_qual(&($<node>$))) YYABORT;
-        if (!c_node_type_to_decl(&($<node>$))) YYABORT;
-    }
-    | type_qualifier_list type_qualifier {
-        if (!c_node_on_type_qual(&($<node>2))) YYABORT;
-        if (!c_node_add_type_to_decl(&($<node>1),&($<node>2))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : type_qualifier
+    | type_qualifier_list type_qualifier
     ;
 
+
 parameter_type_list
-    : parameter_list ',' ELLIPSIS {
-        if (!c_node_convert_to_param_decl_list(&($<node>3))) YYABORT;
-        if (!c_node_param_decl_list_add(&($<node>1),&($<node>3))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | parameter_list {
-        $<node>$ = $<node>1;
-    }
+    : parameter_list ',' ELLIPSIS
+    | parameter_list
     ;
 
 parameter_list
-    : parameter_declaration {
-        if (!c_node_convert_to_param_decl_list(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | parameter_list ',' parameter_declaration {
-        if (!c_node_convert_to_param_decl_list(&($<node>3))) YYABORT;
-        if (!c_node_param_decl_list_add(&($<node>1),&($<node>3))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : parameter_declaration
+    | parameter_list ',' parameter_declaration
     ;
 
 parameter_declaration
-    : declaration_specifiers declarator {
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        if (!c_node_init_param_decl(&($<node>$))) YYABORT;
-        if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
-        if (!c_node_add_param_decl_declarator(&($<node>$),&($<node>2))) YYABORT;
-    }
-    | declaration_specifiers abstract_declarator {
-        /* TODO */
-        YYABORT;
-    }
-    | declaration_specifiers {
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        if (!c_node_init_param_decl(&($<node>$))) YYABORT;
-        if (!c_node_add_param_decl_declspec(&($<node>$),&($<node>1))) YYABORT;
-    }
+    : declaration_specifiers declarator
+    | declaration_specifiers abstract_declarator
+    | declaration_specifiers
     ;
 
 identifier_list
-    : IDENTIFIER {
-        if (!c_node_convert_to_identifier_list(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | identifier_list ',' IDENTIFIER {
-        if (!c_node_convert_to_identifier_list(&($<node>3))) YYABORT;
-        if (!c_node_add_to_identifier_list(&($<node>1),&($<node>3))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : IDENTIFIER
+    | identifier_list ',' IDENTIFIER
     ;
 
 type_name
@@ -683,27 +484,13 @@ labeled_statement
     ;
 
 compound_statement
-    : '{' '}' {
-        if (!c_init_block_item(&($<node>$))) YYABORT;
-        if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
-    }
-    | '{'  block_item_list '}' {
-        $<node>$ = $<node>2; /* pass up the block_item_list, not the curly braces */
-        if (!c_convert_to_compound_statement(&($<node>$))) YYABORT;
-    }
+    : '{' '}'
+    | '{'  block_item_list '}'
     ;
 
 block_item_list
-    : block_item {
-        if (!c_convert_to_block_item_list(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | block_item_list block_item {
-        if (!c_convert_to_block_item_list(&($<node>1))) YYABORT;
-        if (!c_convert_to_block_item_list(&($<node>2))) YYABORT;
-        if (!c_add_block_item_list(&($<node>1),&($<node>2))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : block_item
+    | block_item_list block_item
     ;
 
 block_item
@@ -740,17 +527,8 @@ jump_statement
     ;
 
 translation_unit
-    : external_declaration {
-        if (!c_node_convert_to_external_declaration(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
-        last_translation_unit = $<node>$;
-    }
-    | translation_unit external_declaration {
-        if (!c_node_convert_to_external_declaration(&($<node>2))) YYABORT;
-        if (!c_node_external_declaration_link(&($<node>1),&($<node>2))) YYABORT;
-        $<node>$ = $<node>1;
-        last_translation_unit = $<node>$;
-    }
+    : external_declaration
+    | translation_unit external_declaration
     ;
 
 external_declaration
@@ -759,33 +537,13 @@ external_declaration
     ;
 
 function_definition
-    : declaration_specifiers declarator declaration_list compound_statement {
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        if (!c_node_init_function_definition(&($<node>$))) YYABORT;
-        if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
-        if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
-        if (!c_node_funcdef_add_decl_list(&($<node>$),&($<node>3))) YYABORT;
-        if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>4))) YYABORT;
-    }
-    | declaration_specifiers declarator compound_statement {
-        if (!c_node_finish_declaration(&($<node>1),0)) YYABORT;
-        if (!c_node_init_function_definition(&($<node>$))) YYABORT;
-        if (!c_node_funcdef_add_declspec(&($<node>$),&($<node>1))) YYABORT;
-        if (!c_node_funcdef_add_declarator(&($<node>$),&($<node>2))) YYABORT;
-        if (!c_node_funcdef_add_compound_statement(&($<node>$),&($<node>3))) YYABORT;
-    }
+    : declaration_specifiers declarator declaration_list compound_statement
+    | declaration_specifiers declarator compound_statement
     ;
 
 declaration_list
-    : declaration {
-        if (!c_node_convert_to_decl_list(&($<node>1))) YYABORT;
-        $<node>$ = $<node>1;
-    }
-    | declaration_list declaration {
-        if (!c_node_convert_to_decl_list(&($<node>2))) YYABORT;
-        if (!c_node_add_to_decl_list(&($<node>1),&($<node>2))) YYABORT;
-        $<node>$ = $<node>1;
-    }
+    : declaration
+    | declaration_list declaration
     ;
 
 %%
