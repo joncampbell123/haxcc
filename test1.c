@@ -57,4 +57,6 @@ int (***this_less_so);
 int *(what_about_this);
 int *(*or_this1);
 int *(****(***(**(**about_this1))));
+int (*stuff)[64];
+int ((*stuff)[32])[64];
 
