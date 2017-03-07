@@ -232,12 +232,12 @@ constant_expression
 
 declaration
     : declaration_specifiers ';' {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_release_autodelete(&($<node>2));
     }
     | declaration_specifiers init_declarator_list ';' {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_move_to_child_link($<node>$,1,&($<node>2));
         c_node_release_autodelete(&($<node>3));
@@ -298,13 +298,13 @@ init_declarator_list
 
 init_declarator
     : declarator '=' initializer {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_move_to_child_link($<node>$,1,&($<node>3));
         c_node_release_autodelete(&($<node>2));
     }
     | declarator {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = INIT_DECLARATOR; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
     }
     ;
@@ -610,11 +610,11 @@ translation_unit
 
 external_declaration
     : function_definition {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
     }
     | declaration {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXTERNAL_DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
     }
     ;

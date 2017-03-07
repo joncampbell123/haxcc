@@ -14,12 +14,15 @@
  *      much as my last attempt. */
 struct c_node {
     int /*enum yytokentype*/            token;          /* lexer token */
+    int                                 lineno;         /* line number seen */
     unsigned int                        refcount;
     struct c_node*                      prev;
     struct c_node*                      next;
     struct c_node*                      parent;
     struct c_node*                      child[c_node_MAX_CHILDREN];
 };
+
+extern int yylineno;
 
 extern struct c_node*                   last_translation_unit;
 
@@ -33,6 +36,7 @@ void c_node_move_to(struct c_node **d,struct c_node **s); /* <- *d = *s, *s = NU
 void c_node_move_to_prev_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_next_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **next);
+void c_node_copy_lineno(struct c_node *d,struct c_node *s);
 
 void yyerror(const char *s);
 

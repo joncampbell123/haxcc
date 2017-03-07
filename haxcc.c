@@ -125,6 +125,10 @@ void c_node_move_to(struct c_node **d,struct c_node **s) {
     *s = NULL;
 }
 
+void c_node_copy_lineno(struct c_node *d,struct c_node *s) {
+    d->lineno = s->lineno;
+}
+
 void c_node_release_prev_link(struct c_node *node) {
     if (node->prev != NULL) {
         c_node_release(&(node->prev)); /* node is letting go of node->prev */
@@ -478,8 +482,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
     for (;n!=NULL;n=n->next) {
         fprintf_indent(stderr,indent);
-        fprintf(stderr,"node %p: token(%u)='%s' refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
-            (void*)n,n->token,token2string(n->token),n->refcount,
+        fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
+            (void*)n,n->token,token2string(n->token),n->lineno,n->refcount,
             (void*)(n->prev),
             (void*)(n->next),
             (void*)(n->parent),
