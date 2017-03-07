@@ -644,9 +644,9 @@ void yyerror(const char *s)
 }
 
 const char *token2string(int tok) {
-    if (tok < 0 || tok >= YYNTOKENS)
+    if (tok < 0)
         return "?";
 
-    return yytname[tok];
+    return yytname[YYTRANSLATE(tok)];
 }
 
