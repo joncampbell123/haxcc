@@ -88,7 +88,7 @@ static int check_type(void);
 "_Thread_local"         { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=THREAD_LOCAL; }
 "__func__"              { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=FUNC_NAME; }
 
-{L}{A}*                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=check_type(); }
+{L}{A}*                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_identifier_parse(yylval.node,yytext); return yylval.node->token=check_type(); }
 
 {HP}{H}+{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,16); return yylval.node->token=I_CONSTANT; }
 {NZ}{D}*{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,10); return yylval.node->token=I_CONSTANT; }

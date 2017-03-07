@@ -31,6 +31,15 @@ struct c_node *c_node_alloc_or_die(void) {
     abort();
 }
 
+void c_string_free(char **s) {
+    assert(s != NULL);
+
+    if (*s != NULL) {
+        free(*s);
+        *s = NULL;
+    }
+}
+
 void c_node_delete_struct(struct c_node *n) {
     unsigned int chidx;
 
@@ -59,7 +68,10 @@ void c_node_delete_struct(struct c_node *n) {
             }
         }
 
-        /* TODO: future node-specific deletion here */
+        if (n->token == IDENTIFIER) {
+            c_string_free(&(n->value.value_IDENTIFIER.name));
+        }
+
         free(n);
     }
 }
@@ -373,6 +385,11 @@ void c_node_i_constant_char_parse(struct c_node *d,char *s) {
         d->value.value_I_CONSTANT.bwidth = fw;
 }
 
+void c_node_identifier_parse(struct c_node *d,char *s) {
+    d->value.value_IDENTIFIER.id = c_identref_t_NONE;
+    d->value.value_IDENTIFIER.name = strdup(s);
+}
+
 struct string_t {
     unsigned char       wchar;      // L prefix
     unsigned char       utf8;       // u8 prefix
@@ -554,6 +571,12 @@ void c_node_dumptree(struct c_node *n,int indent) {
                 (unsigned long long)n->value.value_I_CONSTANT.v.uint,
                 n->value.value_I_CONSTANT.bwidth,
                 n->value.value_I_CONSTANT.bsign);
+        }
+        else if (n->token == IDENTIFIER) {
+            fprintf_indent(stderr,indent+1);
+            fprintf(stderr,"IDENTIFIER id=%ld name='%s'\n",
+                (long)n->value.value_IDENTIFIER.id,
+                n->value.value_IDENTIFIER.name);
         }
 
         if (n->next != NULL && n->next->prev != n) {
