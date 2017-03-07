@@ -56,6 +56,8 @@ void c_node_move_to_prev_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_next_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **next);
 void c_node_copy_lineno(struct c_node *d,struct c_node *s);
+void c_node_scan_to_head(struct c_node **n);
+void c_node_scan_to_end(struct c_node **n);
 
 void c_node_i_constant_parse(struct c_node *d,char *s,int base);
 void c_node_i_constant_char_parse(struct c_node *d,char *s);

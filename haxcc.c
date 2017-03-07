@@ -83,6 +83,20 @@ void c_node_delete(struct c_node **n) {
     *n = NULL;
 }
 
+void c_node_scan_to_head(struct c_node **n) {
+    assert(n != NULL);
+
+    while (*n && (*n)->prev != NULL)
+        *n = (*n)->prev;
+}
+
+void c_node_scan_to_end(struct c_node **n) {
+    assert(n != NULL);
+
+    while (*n && (*n)->next != NULL)
+        *n = (*n)->next;
+}
+
 unsigned int c_node_addref(struct c_node **n) {
     assert(n != NULL); /* if n == NULL the caller is an idiot and this program deserves to blow up */
     assert(*n != NULL); /* if *n == NULL the caller is trying to addref something he freed or never allocated (idiot) */

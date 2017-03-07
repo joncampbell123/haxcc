@@ -447,9 +447,11 @@ alignment_specifier
 
 declarator
     : pointer direct_declarator {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>1->token; c_node_copy_lineno($<node>$,$<node>1);
-        c_node_move_to_child_link($<node>$,0,&($<node>2));
-        c_node_release_autodelete(&($<node>1));
+        struct c_node *tmp;
+
+        $<node>$ = tmp = $<node>1;
+        c_node_scan_to_end(&tmp);
+        c_node_move_to_next_link(tmp,&($<node>2));
     }
     | direct_declarator
     ;
@@ -472,15 +474,29 @@ direct_declarator
     ;
 
 pointer
-    : '*' type_qualifier_list pointer
-    | '*' type_qualifier_list
-    | '*' pointer
+    : '*' type_qualifier_list pointer {
+        c_node_move_to_next_link($<node>2,&($<node>3));
+        c_node_scan_to_head(&($<node>2));
+        c_node_move_to_next_link($<node>1,&($<node>2));
+        $<node>$ = $<node>1;
+    }
+    | '*' type_qualifier_list {
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
+    }
+    | '*' pointer {
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>2));
+    }
     | '*'
     ;
 
 type_qualifier_list
     : type_qualifier
-    | type_qualifier_list type_qualifier
+    | type_qualifier_list type_qualifier {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 
