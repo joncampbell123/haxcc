@@ -29,6 +29,10 @@ struct c_node {
             unsigned char   bwidth;     // width, in bytes
             unsigned char   bsign;      // 1=signed 0=unsigned
         } value_I_CONSTANT;
+        struct c_node_F_CONSTANT {
+            double          val;        // FIXME: what about long double?
+            unsigned char   bwidth;     // width, in bytes
+        } value_F_CONSTANT;
         struct c_node_IDENTIFIER {
             c_identref_t                id;
             char*                       name;
@@ -55,6 +59,7 @@ void c_node_copy_lineno(struct c_node *d,struct c_node *s);
 void c_node_i_constant_parse(struct c_node *d,char *s,int base);
 void c_node_i_constant_char_parse(struct c_node *d,char *s);
 void c_node_identifier_parse(struct c_node *d,char *s);
+void c_node_f_constant_parse(struct c_node *d,char *s);
 
 void yyerror(const char *s);
 

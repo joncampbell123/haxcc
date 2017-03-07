@@ -326,6 +326,16 @@ uint64_t strescp(char ** const s) {
     return val;
 }
 
+void c_node_f_constant_parse(struct c_node *d,char *s) {
+    d->value.value_F_CONSTANT.bwidth = double_width_b; /* default double */
+    d->value.value_F_CONSTANT.val = strtof(s,&s);
+
+    if (*s == 'f' || *s == 'F')
+        d->value.value_F_CONSTANT.bwidth = float_width_b;
+    else if (*s == 'l' || *s == 'L')
+        d->value.value_F_CONSTANT.bwidth = longdouble_width_b;
+}
+
 void c_node_i_constant_parse(struct c_node *d,char *s,int base) {
     unsigned char u=0,l=0;
 
@@ -565,7 +575,13 @@ void c_node_dumptree(struct c_node *n,int indent) {
         fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u\n",
             (void*)n,n->token,token2string(n->token),n->lineno,n->refcount);
 
-        if (n->token == I_CONSTANT) {
+        if (n->token == F_CONSTANT) {
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"F_CONSTANT value=%.20f width=%u\n",
+                n->value.value_F_CONSTANT.val,
+                n->value.value_F_CONSTANT.bwidth);
+        }
+        else if (n->token == I_CONSTANT) {
             fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"I_CONSTANT value=0x%llx width=%u sign=%u\n",
                 (unsigned long long)n->value.value_I_CONSTANT.v.uint,

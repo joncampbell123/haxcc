@@ -95,12 +95,12 @@ static int check_type(void);
 "0"{O}*{IS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,8); return yylval.node->token=I_CONSTANT; }
 {CP}?"'"([^'\\\n]|{ES})+"'"         { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_char_parse(yylval.node,yytext); return yylval.node->token=I_CONSTANT; }
 
-{D}+{E}{FS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
-{D}*"."{D}+{E}?{FS}?                { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
-{D}+"."{E}?{FS}?                    { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
-{HP}{H}+{P}{FS}?                    { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
-{HP}{H}*"."{H}+{P}{FS}?             { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
-{HP}{H}+"."{P}{FS}?                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
+{D}+{E}{FS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
+{D}*"."{D}+{E}?{FS}?                { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
+{D}+"."{E}?{FS}?                    { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
+{HP}{H}+{P}{FS}?                    { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
+{HP}{H}*"."{H}+{P}{FS}?             { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
+{HP}{H}+"."{P}{FS}?                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=STRING_LITERAL; }
 
