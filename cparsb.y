@@ -140,10 +140,27 @@ cast_expression
     ;
 
 multiplicative_expression
-    : cast_expression
-    | multiplicative_expression '*' cast_expression
-    | multiplicative_expression '/' cast_expression
-    | multiplicative_expression '%' cast_expression
+    : cast_expression {
+        $<node>$ = $<node>1;
+    }
+    | multiplicative_expression '*' cast_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | multiplicative_expression '/' cast_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | multiplicative_expression '%' cast_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 additive_expression

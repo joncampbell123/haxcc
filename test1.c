@@ -13,4 +13,5 @@ int expressions1 = (4 + 3);
 long expressions2 = (1 + 3 + 5 + 7 + 9 + 11 + 13 + 15);
 unsigned long expressions_with_nested_parens = (((4) + 3 + 2) + 1);
 int expressions_with_identifiers1 = (1 + 3 + 5 + caca + 4 + caca) - 99 - caca;
+long multipadd1 = ((4 + 3 * 7) / 9) - (99 % 4);
 
