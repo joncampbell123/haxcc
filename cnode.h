@@ -20,6 +20,16 @@ struct c_node {
     struct c_node*                      next;
     struct c_node*                      parent;
     struct c_node*                      child[c_node_MAX_CHILDREN];
+    union c_node_val {
+        struct c_node_I_CONSTANT {
+            union {
+                uint64_t    uint;
+                int64_t     sint;
+            } v;
+            unsigned char   bwidth;     // width, in bytes
+            unsigned char   bsign;      // 1=signed 0=unsigned
+        } value_I_CONSTANT;
+    } value;
 };
 
 extern int yylineno;
@@ -37,6 +47,9 @@ void c_node_move_to_prev_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_next_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **next);
 void c_node_copy_lineno(struct c_node *d,struct c_node *s);
+
+void c_node_i_constant_parse(struct c_node *d,char *s,int base);
+void c_node_i_constant_char_parse(struct c_node *d,char *s);
 
 void yyerror(const char *s);
 

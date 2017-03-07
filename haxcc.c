@@ -241,7 +241,7 @@ unsigned char hextobin(const char c) {
     return 0;
 }
 
-uint64_t strescp_o(const char ** const s) {
+uint64_t strescp_o(char ** const s) {
     uint64_t v;
 
     // \nnn  where nnn is octal
@@ -251,7 +251,7 @@ uint64_t strescp_o(const char ** const s) {
     return v;
 }
 
-uint64_t strescp_x(const char ** const s) {
+uint64_t strescp_x(char ** const s) {
     uint64_t v;
 
     // \xXX  where XX is hex
@@ -261,7 +261,7 @@ uint64_t strescp_x(const char ** const s) {
     return v;
 }
 
-uint64_t strescp(const char ** const s) {
+uint64_t strescp(char ** const s) {
     uint64_t val = 0;
 
     if (*(*s) == '\\') {
@@ -314,7 +314,64 @@ uint64_t strescp(const char ** const s) {
     return val;
 }
 
-/* TODO: when ready, retrieve I_CONST, F_CONST, and char const parsing from git tag "this-try-sucks-20170305-1256-but-can-do-some-neato-global-alignment" */
+void c_node_i_constant_parse(struct c_node *d,char *s,int base) {
+    unsigned char u=0,l=0;
+
+    d->value.value_I_CONSTANT.bsign = 1; /* signed by default */
+    d->value.value_I_CONSTANT.bwidth = int_width_b;
+    d->value.value_I_CONSTANT.v.uint = (uint64_t)strtoull(s,&s,base);
+
+    /* and then suffixes like l/L, u/U, ll/LL */
+    while (*s == 'l' || *s == 'L' || *s == 'u' || *s == 'U') {
+        if (*s == 'l' || *s == 'L') l++;
+        else if (*s == 'u' || *s == 'U') u++;
+        s++;
+    }
+
+    if (u) d->value.value_I_CONSTANT.bsign = 0;
+    if (l >= 2) d->value.value_I_CONSTANT.bwidth = longlong_width_b;
+    else if (l == 1) d->value.value_I_CONSTANT.bwidth = long_width_b;
+}
+
+void c_node_i_constant_char_parse(struct c_node *d,char *s) {
+    unsigned int fw = 0;
+
+    d->value.value_I_CONSTANT.v.uint = 0;
+    if (*s == 'u') {
+        d->value.value_I_CONSTANT.bsign = 1;
+        d->value.value_I_CONSTANT.bwidth = 2;
+        s++;
+    }
+    else if (*s == 'U') {
+        d->value.value_I_CONSTANT.bsign = 1;
+        d->value.value_I_CONSTANT.bwidth = 4;
+        s++;
+    }
+    else if (*s == 'L') {
+        d->value.value_I_CONSTANT.bsign = 1;
+        d->value.value_I_CONSTANT.bwidth = wchar_width_b;
+        s++;
+    }
+    else if (*s == '\'') {
+        d->value.value_I_CONSTANT.bsign = 1;
+        d->value.value_I_CONSTANT.bwidth = 1;
+    }
+    else {
+        yyerror("I_CONSTANT char constant unknown char");
+    }
+
+    if (*s++ != '\'') return;
+
+    while (*s != '\'') {
+        /* TODO: Unicode handling */
+        d->value.value_I_CONSTANT.v.uint <<= ((unsigned long long)d->value.value_I_CONSTANT.bwidth << 3ULL);
+        d->value.value_I_CONSTANT.v.uint += strescp(&s);
+        fw += d->value.value_I_CONSTANT.bwidth;
+    }
+
+    if (d->value.value_I_CONSTANT.bwidth < fw)
+        d->value.value_I_CONSTANT.bwidth = fw;
+}
 
 struct string_t {
     unsigned char       wchar;      // L prefix
@@ -374,7 +431,7 @@ c_stringref_t string_t_to_ref(struct string_t *r) {
     return (c_stringref_t)(r - &strings[0]);
 }
 
-c_stringref_t sconst_parse(const char *str) {
+c_stringref_t sconst_parse(char *str) {
     struct string_t *r = strings_alloc();
     unsigned char *tmp;
     size_t tmp_alloc;
@@ -490,6 +547,14 @@ void c_node_dumptree(struct c_node *n,int indent) {
             (void*)(n->child[0]),
             (void*)(n->child[1]),
             (void*)(n->child[2]));
+
+        if (n->token == I_CONSTANT) {
+            fprintf_indent(stderr,indent+1);
+            fprintf(stderr,"I_CONSTANT value=0x%llx width=%u sign=%u\n",
+                (unsigned long long)n->value.value_I_CONSTANT.v.uint,
+                n->value.value_I_CONSTANT.bwidth,
+                n->value.value_I_CONSTANT.bsign);
+        }
 
         if (n->next != NULL && n->next->prev != n) {
             fprintf_indent(stderr,indent+1);

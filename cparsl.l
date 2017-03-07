@@ -90,10 +90,10 @@ static int check_type(void);
 
 {L}{A}*                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=check_type(); }
 
-{HP}{H}+{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=I_CONSTANT; }
-{NZ}{D}*{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=I_CONSTANT; }
-"0"{O}*{IS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=I_CONSTANT; }
-{CP}?"'"([^'\\\n]|{ES})+"'"         { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=I_CONSTANT; }
+{HP}{H}+{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,16); return yylval.node->token=I_CONSTANT; }
+{NZ}{D}*{IS}?                       { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,10); return yylval.node->token=I_CONSTANT; }
+"0"{O}*{IS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_parse(yylval.node,yytext,8); return yylval.node->token=I_CONSTANT; }
+{CP}?"'"([^'\\\n]|{ES})+"'"         { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_i_constant_char_parse(yylval.node,yytext); return yylval.node->token=I_CONSTANT; }
 
 {D}+{E}{FS}?                        { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }
 {D}*"."{D}+{E}?{FS}?                { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=F_CONSTANT; }

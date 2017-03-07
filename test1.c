@@ -1,4 +1,7 @@
 
+char char1 = 'a';
+int char2 = 'x';
+int char3 = 'RIFF';
 int abc = 123;
 int abcnoinit;
 unsigned int abcu = 244U;
