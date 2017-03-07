@@ -33,6 +33,8 @@ char * const * const * const * const * const * const * const *pp2;
 
 int typc1 = (int)(long)(char)19;
 int typc2 = (int) ((long) ((char)45));
+int typc3 = (int)(long long unsigned int)(signed short int)99;
+int typc4 = (int)(long*)(char****)(const char * const **)999;
 
 /* clearly illegal, but here to test declspec / typespec combining */
 static const static static restrict static static restrict static extern const unsigned unsigned const extern const short static long int static red = 1;

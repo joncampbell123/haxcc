@@ -415,10 +415,24 @@ struct_declaration
     ;
 
 specifier_qualifier_list
-    : type_specifier specifier_qualifier_list
-    | type_specifier
-    | type_qualifier specifier_qualifier_list
-    | type_qualifier
+    : type_specifier specifier_qualifier_list {
+        $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_SPECIFIER;
+        c_node_move_to_next_link($<node>$,&($<node>2));
+    }
+    | type_specifier {
+        $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_SPECIFIER;
+    }
+    | type_qualifier specifier_qualifier_list {
+        $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_QUALIFIER;
+        c_node_move_to_next_link($<node>$,&($<node>2));
+    }
+    | type_qualifier {
+        $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_QUALIFIER;
+    }
     ;
 
 struct_declarator_list
@@ -560,8 +574,13 @@ identifier_list
     ;
 
 type_name
-    : specifier_qualifier_list abstract_declarator
-    | specifier_qualifier_list
+    : specifier_qualifier_list abstract_declarator {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
+    | specifier_qualifier_list {
+        $<node>$ = $<node>1;
+    }
     ;
 
 abstract_declarator
