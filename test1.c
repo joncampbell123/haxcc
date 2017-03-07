@@ -54,4 +54,7 @@ int (apparently_this_is_valid); /* <- GCC likes it, apparently */
 int ((apparently_so_is_this)); /* <- GCC doesn't complain */
 int (*this_is_more_common);
 int (***this_less_so);
+int *(what_about_this);
+int *(*or_this1);
+int *(****(***(**(**about_this1))));
 
