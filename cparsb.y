@@ -46,6 +46,7 @@ void yyerror(const char *s);
 %token  TYPE_QUALIFIER
 %token  FUNCTION_SPECIFIER
 %token  ALIGNMENT_SPECIFIER
+%token  POINTER_DEREF
 
 %token-table
 
@@ -493,24 +494,28 @@ direct_declarator
 
 pointer
     : '*' type_qualifier_list pointer {
-        struct c_node *end = $<node>2;
+        $<node>$ = $<node>1;
+        $<node>$->token = POINTER_DEREF;
         c_node_scan_to_head(&($<node>2));
         c_node_declaration_specifiers_group_combine(&($<node>2));
-        c_node_move_to_next_link(end,&($<node>3));
-        c_node_move_to_next_link($<node>1,&($<node>2));
-        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
     }
     | '*' type_qualifier_list {
         $<node>$ = $<node>1;
+        $<node>$->token = POINTER_DEREF;
         c_node_scan_to_head(&($<node>2));
         c_node_declaration_specifiers_group_combine(&($<node>2));
-        c_node_move_to_next_link($<node>$,&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
     }
     | '*' pointer {
         $<node>$ = $<node>1;
-        c_node_move_to_next_link($<node>$,&($<node>2));
+        $<node>$->token = POINTER_DEREF;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
     }
-    | '*'
+    | '*' {
+        $<node>$->token = POINTER_DEREF;
+    }
     ;
 
 type_qualifier_list
