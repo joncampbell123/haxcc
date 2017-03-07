@@ -413,6 +413,13 @@ struct string_t {
 struct string_t         strings[MAX_STRINGS];
 int                     strings_count=0;
 
+struct string_t *strings_get(c_stringref_t x) {
+    if (x >= (c_stringref_t)strings_count)
+        return NULL;
+
+    return &strings[x];
+}
+
 uint64_t width2mask(unsigned char w) {
     if (w == 0) return 0;
     return ((uint64_t)1ULL << ((uint64_t)w * (uint64_t)8ULL)) - (uint64_t)1ULL; /* x,8,16,24,32,40,48,56,64 */
@@ -473,11 +480,12 @@ c_stringref_t sconst_parse(char *str) {
 
     if (r == NULL) {
         fprintf(stderr,"Unable to alloc string ref\n");
-        return 0; // FIXME
+        return c_stringref_t_NONE;
     }
 
     do {
         if (*str == 'u' || *str == 'U') {
+            /* FIXME */
             str++;
             if (*str == '8') {
                 r->utf8 = 1;
@@ -498,7 +506,7 @@ c_stringref_t sconst_parse(char *str) {
 
     if (*str++ != '\"') {
         fprintf(stderr,"String did not begin with \"\n");
-        return 0; // FIXME
+        return c_stringref_t_NONE;
     }
 
     tmp_alloc = 128;
@@ -506,7 +514,7 @@ c_stringref_t sconst_parse(char *str) {
     tmp = malloc(tmp_alloc);
     if (tmp == NULL) {
         fprintf(stderr,"Unable to alloc str\n");
-        return 0; // FIXME
+        return c_stringref_t_NONE;
     }
 
     while (*str) {
@@ -520,7 +528,7 @@ c_stringref_t sconst_parse(char *str) {
             np = (unsigned char*)realloc((void*)tmp,nalloc);
             if (np == NULL) {
                 fprintf(stderr,"Out of string space\n");
-                return 0; // FIXME
+                return c_stringref_t_NONE;
             }
 
             tmp = np;
@@ -593,6 +601,22 @@ void c_node_dumptree(struct c_node *n,int indent) {
             fprintf(stderr,"IDENTIFIER id=%ld name='%s'\n",
                 (long)n->value.value_IDENTIFIER.id,
                 n->value.value_IDENTIFIER.name);
+        }
+        else if (n->token == STRING_LITERAL) {
+            c_stringref_t ref = n->value.value_STRING_LITERAL;
+            struct string_t *str = strings_get(ref);
+
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"STRING_LITERAL id=%ld ",
+                (long)ref);
+            if (str != NULL) {
+                if (str->wchar || str->utf8) {
+                }
+                else {
+                    fprintf(stderr,"str='%s' ",str->bytes?((char*)str->bytes):"(null)");
+                }
+            }
+            fprintf(stderr,"\n");
         }
 
         if (n->next != NULL && n->next->prev != n) {

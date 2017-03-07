@@ -37,6 +37,7 @@ struct c_node {
             c_identref_t                id;
             char*                       name;
         } value_IDENTIFIER;
+        c_stringref_t       value_STRING_LITERAL;
     } value;
 };
 

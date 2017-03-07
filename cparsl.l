@@ -102,7 +102,7 @@ static int check_type(void);
 {HP}{H}*"."{H}+{P}{FS}?             { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
 {HP}{H}+"."{P}{FS}?                 { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); c_node_f_constant_parse(yylval.node,yytext); return yylval.node->token=F_CONSTANT; }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=STRING_LITERAL; }
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); yylval.node->value.value_STRING_LITERAL=sconst_parse(yytext); return yylval.node->token=STRING_LITERAL; }
 
 "..."                   { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=ELLIPSIS; }
 ">>="                   { yylval.node=c_node_alloc_or_die(); yylval.node->lineno = yylineno; c_node_addref(&yylval.node); return yylval.node->token=RIGHT_ASSIGN; }
