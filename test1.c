@@ -2,6 +2,7 @@
 char char1 = 'a';
 int char2 = 'x';
 int char3 = 'RIFF';
+long multiples1 = 4,multiples2 = 99,multiples3,multiples4 = 77;
 char *str1 = "string1";
 char *str2 = "string 2 very long blah blah";
 const char *strlong = "constant string";

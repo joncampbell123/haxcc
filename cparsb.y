@@ -273,6 +273,7 @@ declaration
     }
     | declaration_specifiers init_declarator_list ';' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_scan_to_head(&($<node>2));
         c_node_declaration_specifiers_group_combine(&($<node>1));
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_move_to_child_link($<node>$,1,&($<node>2));

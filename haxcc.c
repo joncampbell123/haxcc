@@ -687,9 +687,10 @@ c_stringref_t sconst_parse(char *str) {
 }
 
 void c_node_dumptree(struct c_node *n,int indent) {
+    struct c_node *pn = NULL;
     unsigned int chidx;
 
-    for (;n!=NULL;n=n->next) {
+    for (;n!=NULL;n=(pn=n)->next) {
         fprintf_indent_node(stderr,indent);
         fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u",
             (void*)n,n->token,token2string(n->token),n->lineno,n->refcount);
@@ -738,6 +739,10 @@ void c_node_dumptree(struct c_node *n,int indent) {
         if (n->next != NULL && n->next->prev != n) {
             fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"WARNING: node->next->prev != node\n");
+        }
+        if (n->prev != NULL && pn == NULL) {
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"WARNING: node->prev != NULL and first node of this level\n");
         }
         if (n->prev != NULL && n->prev->next != n) {
             fprintf_indent_node(stderr,indent+1);
