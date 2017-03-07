@@ -50,3 +50,8 @@ char arraymd1[64][128];
 char arraymd2[*][*];
 char manyarrays[8][9][10][11][12][13];
 
+int (apparently_this_is_valid); /* <- GCC likes it, apparently */
+int ((apparently_so_is_this)); /* <- GCC doesn't complain */
+int (*this_is_more_common);
+int (***this_less_so);
+

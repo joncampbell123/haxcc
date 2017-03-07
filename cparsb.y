@@ -42,13 +42,15 @@ void yyerror(const char *s);
 %token  INIT_DECLARATOR
 %token  EXTERNAL_DECLARATION
 %token  STORAGE_CLASS_SPECIFIER
+%token  DECLARATOR_EXPRESSION
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  FUNCTION_SPECIFIER
 %token  ALIGNMENT_SPECIFIER
 %token  POINTER_DEREF
-%token  TYPECAST
 %token  ARRAY_REF
+%token  TYPECAST
+%token  POINTER
 
 %token-table
 
@@ -488,18 +490,21 @@ alignment_specifier
 
 declarator
     : pointer direct_declarator {
-        struct c_node *tmp;
-
-        $<node>$ = tmp = $<node>1;
-        c_node_scan_to_end(&tmp);
-        c_node_move_to_next_link(tmp,&($<node>2));
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = POINTER; c_node_copy_lineno($<node>$,$<node>2);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
     }
     | direct_declarator
     ;
 
 direct_declarator
     : IDENTIFIER
-    | '(' declarator ')'
+    | '(' declarator ')' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATOR_EXPRESSION; c_node_copy_lineno($<node>$,$<node>2);
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>3));
+    }
     | direct_declarator '[' ']' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
