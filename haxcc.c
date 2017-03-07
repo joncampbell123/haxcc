@@ -414,7 +414,7 @@ uint64_t width2mask_signbit(unsigned char w) {
 }
 
 void fprintf_indent(FILE *fp,int indent) {
-    while (indent-- > 0) fprintf(fp,"    ");
+    while (indent-- > 0) fprintf(fp,"  ");
 }
 
 void strings_free_item(struct string_t *s) {
@@ -556,14 +556,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
     for (;n!=NULL;n=n->next) {
         fprintf_indent(stderr,indent);
-        fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u prev=%p next=%p parent=%p child=[%p,%p,%p]\n",
-            (void*)n,n->token,token2string(n->token),n->lineno,n->refcount,
-            (void*)(n->prev),
-            (void*)(n->next),
-            (void*)(n->parent),
-            (void*)(n->child[0]),
-            (void*)(n->child[1]),
-            (void*)(n->child[2]));
+        fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u\n",
+            (void*)n,n->token,token2string(n->token),n->lineno,n->refcount);
 
         if (n->token == I_CONSTANT) {
             fprintf_indent(stderr,indent+1);
