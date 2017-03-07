@@ -16,6 +16,7 @@ struct c_node {
     int /*enum yytokentype*/            token;          /* lexer token */
     int                                 lineno;         /* line number seen */
     unsigned int                        refcount;
+    int                                 groupcode;      /* used for grouping during parsing */
     struct c_node*                      prev;
     struct c_node*                      next;
     struct c_node*                      parent;
@@ -58,6 +59,8 @@ void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_n
 void c_node_copy_lineno(struct c_node *d,struct c_node *s);
 void c_node_scan_to_head(struct c_node **n);
 void c_node_scan_to_end(struct c_node **n);
+
+void c_node_declaration_specifiers_group_combine(struct c_node **n);
 
 void c_node_i_constant_parse(struct c_node *d,char *s,int base);
 void c_node_i_constant_char_parse(struct c_node *d,char *s);

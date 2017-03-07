@@ -41,6 +41,11 @@ void yyerror(const char *s);
 %token  DECLARATION
 %token  INIT_DECLARATOR
 %token  EXTERNAL_DECLARATION
+%token  STORAGE_CLASS_SPECIFIER
+%token  TYPE_SPECIFIER
+%token  TYPE_QUALIFIER
+%token  FUNCTION_SPECIFIER
+%token  ALIGNMENT_SPECIFIER
 
 %token-table
 
@@ -262,11 +267,13 @@ constant_expression
 declaration
     : declaration_specifiers ';' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_declaration_specifiers_group_combine(&($<node>1));
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_release_autodelete(&($<node>2));
     }
     | declaration_specifiers init_declarator_list ';' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_declaration_specifiers_group_combine(&($<node>1));
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_move_to_child_link($<node>$,1,&($<node>2));
         c_node_release_autodelete(&($<node>3));
@@ -279,38 +286,48 @@ declaration
 declaration_specifiers
     : storage_class_specifier declaration_specifiers {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = STORAGE_CLASS_SPECIFIER;
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | storage_class_specifier {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = STORAGE_CLASS_SPECIFIER;
     }
     | type_specifier declaration_specifiers {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_SPECIFIER;
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | type_specifier {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_SPECIFIER;
     }
     | type_qualifier declaration_specifiers {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_QUALIFIER;
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | type_qualifier {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_QUALIFIER;
     }
     | function_specifier declaration_specifiers {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = FUNCTION_SPECIFIER;
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | function_specifier {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = FUNCTION_SPECIFIER;
     }
     | alignment_specifier declaration_specifiers {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = ALIGNMENT_SPECIFIER;
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | alignment_specifier {
         $<node>$ = $<node>1;
+        $<node>$->groupcode = ALIGNMENT_SPECIFIER;
     }
     ;
 
@@ -475,13 +492,17 @@ direct_declarator
 
 pointer
     : '*' type_qualifier_list pointer {
-        c_node_move_to_next_link($<node>2,&($<node>3));
+        struct c_node *end = $<node>2;
         c_node_scan_to_head(&($<node>2));
+        c_node_declaration_specifiers_group_combine(&($<node>2));
+        c_node_move_to_next_link(end,&($<node>3));
         c_node_move_to_next_link($<node>1,&($<node>2));
         $<node>$ = $<node>1;
     }
     | '*' type_qualifier_list {
         $<node>$ = $<node>1;
+        c_node_scan_to_head(&($<node>2));
+        c_node_declaration_specifiers_group_combine(&($<node>2));
         c_node_move_to_next_link($<node>$,&($<node>2));
     }
     | '*' pointer {
@@ -492,9 +513,13 @@ pointer
     ;
 
 type_qualifier_list
-    : type_qualifier
+    : type_qualifier {
+        $<node>$ = $<node>1;
+        $<node>$->groupcode = TYPE_QUALIFIER;
+    }
     | type_qualifier_list type_qualifier {
         $<node>$ = $<node>2;
+        $<node>$->groupcode = TYPE_QUALIFIER;
         c_node_move_to_prev_link($<node>$,&($<node>1));
     }
     ;

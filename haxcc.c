@@ -239,6 +239,103 @@ void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_n
     c_node_addref_child_link(node,chidx);
 }
 
+/* FIXME: test this code more */
+void c_node_insert_right_before_in_list(struct c_node **tn,struct c_node *sn) {
+    struct c_node *prev;
+
+    assert(tn != NULL);
+    if (*tn == NULL || sn == NULL) return;
+
+    /* node must not already be in list */
+    assert(sn->prev == NULL);
+    assert(sn->next == NULL);
+
+    /* store prev link */
+    prev = (*tn)->prev;
+
+    /* update tn->prev to point to sn */
+    c_node_release_prev_link(*tn);
+    (*tn)->prev = sn;
+    c_node_addref_prev_link(*tn);
+    assert(sn->next == (*tn));
+
+    /* update sn->prev to point to old (*tn)->prev. sn->next == NULL already, we checked */
+    sn->prev = prev;
+    c_node_addref_prev_link(sn);
+    if (prev != NULL) { assert(prev->next == sn); };
+
+    *tn = sn;
+}
+
+void c_node_insert_after_in_list(struct c_node *tn,struct c_node *sn) {
+    struct c_node *next;
+
+    if (tn == NULL || sn == NULL) return;
+
+    /* node must not already be in list */
+    assert(sn->prev == NULL);
+    assert(sn->next == NULL);
+
+    /* store next link */
+    next = tn->next;
+
+    /* update tn->next to point to sn */
+    c_node_release_next_link(tn);
+    tn->next = sn;
+    c_node_addref_next_link(tn);
+    assert(sn->prev == tn);
+
+    /* update sn->next to point to old tn->next. remember sn->next == NULL already, we assert()'d on that. */
+    sn->next = next;
+    c_node_addref_next_link(sn);
+}
+
+void c_node_remove_from_list(struct c_node *n) {
+    struct c_node *next,*prev;
+
+    if (n != NULL) {
+        prev = n->prev;
+        next = n->next;
+
+        c_node_release_next_link(n);
+        c_node_release_prev_link(n);
+        assert(n->prev == NULL);
+        assert(n->next == NULL);
+
+        /* NTS: remember the addref_*_link function updates the partner's opposite pointer automatically.
+         *      call one or the other only, not both. */
+        if (prev != NULL) {
+            assert(prev->next == NULL);
+            prev->next = next;
+            c_node_addref_next_link(prev);
+        }
+        else if (next != NULL) {
+            assert(next->prev == NULL);
+            next->prev = prev;
+            c_node_addref_prev_link(next);
+        }
+    }
+}
+
+void c_node_dumptree(struct c_node *n,int indent);
+
+void c_node_declaration_specifiers_group_combine(struct c_node **n) {
+    struct c_node *scan,*s;
+
+    scan = *n;
+    while (scan != NULL && (s=(scan->next)) != NULL) {
+        while (s && (scan->groupcode != s->groupcode || (scan->groupcode == s->groupcode && scan->token != s->token)))
+            s = s->next;
+
+        if (s != NULL) {
+            c_node_remove_from_list(s);
+            c_node_insert_after_in_list(scan,s);
+        }
+
+        scan = scan->next;
+    }
+}
+
 unsigned char char_width_b = 1;
 unsigned char wchar_width_b = 2;
 unsigned char short_width_b = 2;
@@ -594,8 +691,13 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
     for (;n!=NULL;n=n->next) {
         fprintf_indent_node(stderr,indent);
-        fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u\n",
+        fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u",
             (void*)n,n->token,token2string(n->token),n->lineno,n->refcount);
+
+        if (n->groupcode != 0)
+            fprintf(stderr," groupcode=%d",n->groupcode);
+
+        fprintf(stderr,"\n");
 
         if (n->token == F_CONSTANT) {
             fprintf_indent_node(stderr,indent+1);

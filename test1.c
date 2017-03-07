@@ -29,5 +29,10 @@ int expressions_with_identifiers1 = (1 + 3 + 5 + caca + 4 + caca) - 99 - caca;
 long multipadd1 = ((4 + 3 * 7) / 9) - (99 % 4);
 char **********************************pp1;
 char * const * const * const * const * const * const * const *pp2;
-char * const volatile restrict * const volatile * restrict * const * const * const * const restrict * pp3;
+
+/* clearly illegal, but here to test declspec / typespec combining */
+static const static static restrict static static restrict static extern const unsigned unsigned const extern const short static long int static red = 1;
+static extern register const restrict volatile int illegal_combo = 5;
+char * const volatile restrict const volatile restrict const volatile restrict * const volatile const volatile * restrict * const * const * const * const restrict * pp3;
+/* ------ */
 
