@@ -414,7 +414,13 @@ uint64_t width2mask_signbit(unsigned char w) {
 }
 
 void fprintf_indent(FILE *fp,int indent) {
-    while (indent-- > 0) fprintf(fp,"  ");
+    while (indent-- > 0) fprintf(fp,"    ");
+}
+
+void fprintf_indent_node(FILE *fp,int indent) {
+    int i = indent;
+    while (i-- > 0) fprintf(fp,"  ");
+    fprintf(fp,"[%d] ",indent);
 }
 
 void strings_free_item(struct string_t *s) {
@@ -555,39 +561,39 @@ void c_node_dumptree(struct c_node *n,int indent) {
     unsigned int chidx;
 
     for (;n!=NULL;n=n->next) {
-        fprintf_indent(stderr,indent);
+        fprintf_indent_node(stderr,indent);
         fprintf(stderr,"node %p: token(%u)='%s' lineno=%u refcount=%u\n",
             (void*)n,n->token,token2string(n->token),n->lineno,n->refcount);
 
         if (n->token == I_CONSTANT) {
-            fprintf_indent(stderr,indent+1);
+            fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"I_CONSTANT value=0x%llx width=%u sign=%u\n",
                 (unsigned long long)n->value.value_I_CONSTANT.v.uint,
                 n->value.value_I_CONSTANT.bwidth,
                 n->value.value_I_CONSTANT.bsign);
         }
         else if (n->token == IDENTIFIER) {
-            fprintf_indent(stderr,indent+1);
+            fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"IDENTIFIER id=%ld name='%s'\n",
                 (long)n->value.value_IDENTIFIER.id,
                 n->value.value_IDENTIFIER.name);
         }
 
         if (n->next != NULL && n->next->prev != n) {
-            fprintf_indent(stderr,indent+1);
+            fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"WARNING: node->next->prev != node\n");
         }
         if (n->prev != NULL && n->prev->next != n) {
-            fprintf_indent(stderr,indent+1);
+            fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"WARNING: node->prev->next != node\n");
         }
         for (chidx=0;chidx < c_node_MAX_CHILDREN;chidx++) {
             if (n->child[chidx] != NULL && n->child[chidx]->parent != n) {
-                fprintf_indent(stderr,indent+1);
+                fprintf_indent_node(stderr,indent+1);
                 fprintf(stderr,"WARNING: node->child[%u]->parent != node\n",chidx);
             }
             if (n->child[chidx] != NULL) {
-                fprintf_indent(stderr,indent+1);
+                fprintf_indent_node(stderr,indent+1);
                 fprintf(stderr,"child node %u:\n",chidx);
                 c_node_dumptree(n->child[chidx],indent+2);
             }
