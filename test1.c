@@ -42,3 +42,11 @@ static extern register const restrict volatile int illegal_combo = 5;
 char * const volatile restrict const volatile restrict const volatile restrict * const volatile const volatile * restrict * const * const * const * const restrict * pp3;
 /* ------ */
 
+char array0[];
+char array1[64];
+char array2[*]; /* <- FIXME: what does this do in C? */
+char arraymd0[][];
+char arraymd1[64][128];
+char arraymd2[*][*];
+char manyarrays[8][9][10][11][12][13];
+

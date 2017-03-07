@@ -48,6 +48,7 @@ void yyerror(const char *s);
 %token  ALIGNMENT_SPECIFIER
 %token  POINTER_DEREF
 %token  TYPECAST
+%token  ARRAY_REF
 
 %token-table
 
@@ -499,15 +500,32 @@ declarator
 direct_declarator
     : IDENTIFIER
     | '(' declarator ')'
-    | direct_declarator '[' ']'
-    | direct_declarator '[' '*' ']'
+    | direct_declarator '[' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | direct_declarator '[' '*' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     | direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'
     | direct_declarator '[' STATIC assignment_expression ']'
     | direct_declarator '[' type_qualifier_list '*' ']'
     | direct_declarator '[' type_qualifier_list STATIC assignment_expression ']'
     | direct_declarator '[' type_qualifier_list assignment_expression ']'
     | direct_declarator '[' type_qualifier_list ']'
-    | direct_declarator '[' assignment_expression ']'
+    | direct_declarator '[' assignment_expression ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     | direct_declarator '(' parameter_type_list ')'
     | direct_declarator '(' ')'
     | direct_declarator '(' identifier_list ')'
