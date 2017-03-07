@@ -5,6 +5,7 @@ int char3 = 'RIFF';
 char *str1 = "string1";
 char *str2 = "string 2 very long blah blah";
 const char *strlong = "constant string";
+static const signed long int combot1 = 444L;
 int abc = 123;
 int abcnoinit;
 float float1 = 1.0f;
