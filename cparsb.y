@@ -58,7 +58,7 @@ primary_expression
         $<node>$ = $<node>1;
     }
     | '(' expression ')' {
-        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXPRESSION;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = EXPRESSION; c_node_copy_lineno($<node>$,$<node>2);
         c_node_move_to_child_link($<node>$,0,&($<node>2));
         c_node_release_autodelete(&($<node>1));
         c_node_release_autodelete(&($<node>3));
