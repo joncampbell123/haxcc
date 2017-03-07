@@ -47,6 +47,7 @@ void yyerror(const char *s);
 %token  FUNCTION_SPECIFIER
 %token  ALIGNMENT_SPECIFIER
 %token  POINTER_DEREF
+%token  TYPECAST
 
 %token-table
 
@@ -142,7 +143,13 @@ unary_operator
 
 cast_expression
     : unary_expression
-    | '(' type_name ')' cast_expression
+    | '(' type_name ')' cast_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = TYPECAST; c_node_copy_lineno($<node>$,$<node>2);
+        c_node_release_autodelete(&($<node>1));
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+    }
     ;
 
 multiplicative_expression

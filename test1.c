@@ -31,6 +31,9 @@ long multipadd1 = ((4 + 3 * 7) / 9) - (99 % 4);
 char **********************************pp1;
 char * const * const * const * const * const * const * const *pp2;
 
+int typc1 = (int)(long)(char)19;
+int typc2 = (int) ((long) ((char)45));
+
 /* clearly illegal, but here to test declspec / typespec combining */
 static const static static restrict static static restrict static extern const unsigned unsigned const extern const short static long int static red = 1;
 static extern register const restrict volatile int illegal_combo = 5;
