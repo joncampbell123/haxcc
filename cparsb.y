@@ -120,8 +120,14 @@ postfix_expression
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '.' IDENTIFIER
     | postfix_expression PTR_OP IDENTIFIER
-    | postfix_expression INC_OP
-    | postfix_expression DEC_OP
+    | postfix_expression INC_OP {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
+    | postfix_expression DEC_OP {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     | '(' type_name ')' '{' initializer_list '}'
     | '(' type_name ')' '{' initializer_list ',' '}'
     ;
@@ -132,7 +138,10 @@ argument_expression_list
     ;
 
 unary_expression
-    : postfix_expression
+    : postfix_expression {
+        c_node_scan_to_head(&($<node>1));
+        $<node>$ = $<node>1;
+    }
     | INC_OP unary_expression {
         $<node>$ = $<node>1;
         c_node_move_to_child_link($<node>$,0,&($<node>2));
