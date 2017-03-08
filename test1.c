@@ -60,3 +60,8 @@ int *(****(***(**(**about_this1))));
 int (*stuff)[64];
 int ((*stuff)[32])[64];
 
+void function1();
+int function2();
+void oldcfunc0(param1,param2,param3,param4);
+long oldcfunction(a,b,c,d,e,f,g);
+
