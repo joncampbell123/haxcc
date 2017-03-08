@@ -100,6 +100,9 @@ long *functhatdoesthings2(int * const a,const char * const * const * const b) {
     char d = ***b;
 }
 
+void funcwithparamsarrays(int a[],char b[5],char *c[17]) {
+}
+
 unsigned int unarystuff(unsigned int a,unsigned int b) {
     unsigned int c = ~a,cc = ~~a;
     unsigned int *addr = &a;
