@@ -135,7 +135,10 @@ unary_expression
     : postfix_expression
     | INC_OP unary_expression
     | DEC_OP unary_expression
-    | unary_operator cast_expression
+    | unary_operator cast_expression {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
     | SIZEOF unary_expression
     | SIZEOF '(' type_name ')'
     | ALIGNOF '(' type_name ')'
@@ -143,7 +146,10 @@ unary_expression
 
 unary_operator
     : '&'
-    | '*'
+    | '*' {
+        $<node>$ = $<node>1;
+        $<node>$->token = POINTER_DEREF;
+    }
     | '+'
     | '-'
     | '~'

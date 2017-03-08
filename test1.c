@@ -95,3 +95,16 @@ void functhatdoesthings1(int a) {
     double dah = ((flah + blah) * 3) + 35;
 }
 
+long *functhatdoesthings2(int * const a,const char * const * const * const b) {
+    int c = *a;
+    char d = ***b;
+}
+
+unsigned int unarystuff(unsigned int a,unsigned int b) {
+    unsigned int c = ~a,cc = ~~a;
+    unsigned int *addr = &a;
+    unsigned int aaa = +a;
+    unsigned int bbb = -a + b;
+    unsigned int notty = !a,notty2 = !!a;
+}
+
