@@ -173,8 +173,12 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         a <<= c + d;
         d >>= a + c - 3;
 
+        /* NTS: This is obscure, but the comma ',' operator causes the evaluation of both sides then
+         *      discards the first, returns the second */
         {
             long x = *functhatdoesthings2(&a,p);
+            a = (b + c, b = c + 3, g + h, 4, 6 + h); /* result should be 6 + h after evaluating everything else including b = c + 3 */
+            *p = (char)(a + b);
         }
     }
 }
