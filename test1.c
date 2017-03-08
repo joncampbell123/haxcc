@@ -132,6 +132,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char c = *p++;
         char d = *++p;
         int x = function2();
+        int y = (*funcptr)();
     }
 }
 
