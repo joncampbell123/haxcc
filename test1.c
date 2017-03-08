@@ -122,6 +122,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     (((a++)--)++)--;
     (((a--)++)--)++;
 
+    function1();
+
     {
         int a = 5;
         int b = ++a; /* b = 6 */
@@ -129,6 +131,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char *p;
         char c = *p++;
         char d = *++p;
+        int x = function2();
     }
 }
 
