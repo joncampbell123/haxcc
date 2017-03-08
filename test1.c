@@ -172,6 +172,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         b >>= 2;
         a <<= c + d;
         d >>= a + c - 3;
+
+        {
+            long x = *functhatdoesthings2(&a,p);
+        }
     }
 }
 
