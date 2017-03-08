@@ -106,5 +106,11 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     unsigned int aaa = +a;
     unsigned int bbb = -a + b;
     unsigned int notty = !a,notty2 = !!a;
+    unsigned int sz1 = sizeof a;
+    unsigned int sz2 = sizeof(a);
+    unsigned int sz3 = sizeof(*addr);
+    ++a;
+    --b;
+    ;;;;;
 }
 

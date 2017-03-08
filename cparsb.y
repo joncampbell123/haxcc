@@ -133,14 +133,28 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | INC_OP unary_expression
-    | DEC_OP unary_expression
+    | INC_OP unary_expression {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
+    | DEC_OP unary_expression {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
     | unary_operator cast_expression {
         $<node>$ = $<node>1;
         c_node_move_to_child_link($<node>$,0,&($<node>2));
     }
-    | SIZEOF unary_expression
-    | SIZEOF '(' type_name ')'
+    | SIZEOF unary_expression {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
+    | SIZEOF '(' type_name ')' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     | ALIGNOF '(' type_name ')'
     ;
 
@@ -787,8 +801,13 @@ block_item
     ;
 
 expression_statement
-    : ';'
-    | expression ';'
+    : ';' {
+        $<node>$->token = EXPRESSION;
+    }
+    | expression ';' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 selection_statement
