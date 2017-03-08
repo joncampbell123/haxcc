@@ -58,6 +58,7 @@ void yyerror(const char *s);
 %token  ARRAY_REF
 %token  TYPECAST
 %token  POINTER
+%token  TERNARY
 
 %token-table
 
@@ -389,7 +390,14 @@ logical_or_expression
 
 conditional_expression
     : logical_or_expression
-    | logical_or_expression '?' expression ':' conditional_expression
+    | logical_or_expression '?' expression ':' conditional_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = TERNARY; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_move_to_child_link($<node>$,2,&($<node>5));
+        c_node_release_autodelete(&($<node>2));
+        c_node_release_autodelete(&($<node>4));
+    }
     ;
 
 assignment_expression

@@ -179,6 +179,11 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             long x = *functhatdoesthings2(&a,p);
             a = (b + c, b = c + 3, g + h, 4, 6 + h); /* result should be 6 + h after evaluating everything else including b = c + 3 */
             *p = (char)(a + b);
+
+            {
+                int ternary1 = (a == 5 ? 9 : a + b);
+                int ternary2 = (a == (b == 7 ? a + c : a + d) ? i : (j == k ? 11 : 4 + c));
+            }
         }
     }
 }
