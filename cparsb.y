@@ -629,8 +629,18 @@ function_specifier
     ;
 
 alignment_specifier
-    : ALIGNAS '(' type_name ')'
-    | ALIGNAS '(' constant_expression ')'
+    : ALIGNAS '(' type_name ')' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
+    | ALIGNAS '(' constant_expression ')' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     ;
 
 declarator

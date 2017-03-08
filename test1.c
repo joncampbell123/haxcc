@@ -150,6 +150,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char hh = spa.bla[i]->asdf.qwerty[a][b]->b->c;
         char ii = ((long*)xps)[j];
         char jj = _Alignof(int);
+        char _Alignas(int) kk = 55;
+        char _Alignas(8) ll = 111;
     }
 }
 
