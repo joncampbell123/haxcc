@@ -155,6 +155,19 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char jj = _Alignof(int);
         char _Alignas(int) kk = 55;
         char _Alignas(8) ll = 111;
+
+        a  = b + c;
+        a += 1;
+        b += a;
+        c += (a + b * 3 - 5);
+        d -= 3 + a;
+        e -= 5;
+        f *= 2;
+        g /= 5;
+        h %= 3;
+        i &= 3;
+        j ^= 1;
+        k |= 1;
     }
 }
 
