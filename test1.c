@@ -168,6 +168,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         i &= 3;
         j ^= 1;
         k |= 1;
+        a <<= 1;
+        b >>= 2;
+        a <<= c + d;
+        d >>= a + c - 3;
     }
 }
 
