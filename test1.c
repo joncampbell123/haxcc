@@ -126,6 +126,9 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         int a = 5;
         int b = ++a; /* b = 6 */
         int c = a++; /* c = 6, then a = 7 */
+        char *p;
+        char c = *p++;
+        char d = *++p;
     }
 }
 
