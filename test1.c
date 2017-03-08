@@ -64,4 +64,10 @@ void function1();
 int function2();
 void oldcfunc0(param1,param2,param3,param4);
 long oldcfunction(a,b,c,d,e,f,g);
+long function3(void);
+long function4(int,long,float);
+long function5(int a,long b,float c);
+long function6(int **a,long *b,const char * const c);
+long function7(int **a,long *b,...);
+long function8(int (*something),long (**(*something)));
 

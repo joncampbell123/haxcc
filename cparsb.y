@@ -48,6 +48,7 @@ void yyerror(const char *s);
 %token  FUNCTION_SPECIFIER
 %token  ALIGNMENT_SPECIFIER
 %token  IDENTIFIER_LIST
+%token  PARAMETER_LIST
 %token  POINTER_DEREF
 %token  FUNCTION_REF
 %token  ARRAY_REF
@@ -533,7 +534,19 @@ direct_declarator
         c_node_move_to_child_link($<node>$,1,&($<node>3));
         c_node_release_autodelete(&($<node>4));
     }
-    | direct_declarator '(' parameter_type_list ')'
+    | direct_declarator '(' parameter_type_list ')' {
+        struct c_node *idlist;
+
+        idlist = c_node_alloc_or_die(); c_node_addref(&idlist); idlist->token = PARAMETER_LIST; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_scan_to_head(&($<node>3));
+        c_node_move_to_child_link(idlist,0,&($<node>3));
+
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&idlist);
+        c_node_release_autodelete(&($<node>4));
+    }
     | direct_declarator '(' ')' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
@@ -595,18 +608,41 @@ type_qualifier_list
 
 
 parameter_type_list
-    : parameter_list ',' ELLIPSIS
-    | parameter_list
+    : parameter_list ',' ELLIPSIS {
+        $<node>$ = $<node>1;
+        c_node_move_to_next_link($<node>$,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | parameter_list {
+        c_node_scan_to_head(&($<node>1));
+        $<node>$ = $<node>1;
+    }
     ;
 
 parameter_list
-    : parameter_declaration
-    | parameter_list ',' parameter_declaration
+    : parameter_declaration {
+        $<node>$ = $<node>1;
+    }
+    | parameter_list ',' parameter_declaration {
+        $<node>$ = $<node>3;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 parameter_declaration
-    : declaration_specifiers declarator
-    | declaration_specifiers abstract_declarator
+    : declaration_specifiers declarator {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_declaration_specifiers_group_combine(&($<node>1));
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+    }
+    | declaration_specifiers abstract_declarator {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_declaration_specifiers_group_combine(&($<node>1));
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+    }
     | declaration_specifiers
     ;
 
