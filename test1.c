@@ -133,6 +133,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char d = *++p;
         int x = function2();
         int y = (*funcptr)();
+        long xx = function4(1,2,3.333);
+        long yy = function4(x,xx,float1);
+        functiondef3(22222,&b,float2);
+        functiondef3(22222,(char*)(&c),(float)xx);
     }
 }
 

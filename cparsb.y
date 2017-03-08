@@ -51,6 +51,7 @@ void yyerror(const char *s);
 %token  ALIGNMENT_SPECIFIER
 %token  IDENTIFIER_LIST
 %token  PARAMETER_LIST
+%token  ARGUMENT_LIST
 %token  POINTER_DEREF
 %token  FUNCTION_REF
 %token  BLOCK_ITEM
@@ -122,7 +123,19 @@ postfix_expression
         c_node_release_autodelete(&($<node>2));
         c_node_release_autodelete(&($<node>3));
     }
-    | postfix_expression '(' argument_expression_list ')'
+    | postfix_expression '(' argument_expression_list ')' {
+        struct c_node *idlist;
+
+        idlist = c_node_alloc_or_die(); c_node_addref(&idlist); idlist->token = ARGUMENT_LIST; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_scan_to_head(&($<node>3));
+        c_node_move_to_child_link(idlist,0,&($<node>3));
+
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&idlist);
+        c_node_release_autodelete(&($<node>4));
+    }
     | postfix_expression '.' IDENTIFIER
     | postfix_expression PTR_OP IDENTIFIER
     | postfix_expression INC_OP {
@@ -141,7 +154,11 @@ postfix_expression
 
 argument_expression_list
     : assignment_expression
-    | argument_expression_list ',' assignment_expression
+    | argument_expression_list ',' assignment_expression {
+        $<node>$ = $<node>3;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 unary_expression
