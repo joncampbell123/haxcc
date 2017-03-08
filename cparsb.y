@@ -116,7 +116,13 @@ generic_association
 
 postfix_expression
     : primary_expression
-    | postfix_expression '[' expression ']'
+    | postfix_expression '[' expression ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     | postfix_expression '(' ')' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
