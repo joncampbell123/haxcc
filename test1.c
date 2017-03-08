@@ -115,10 +115,12 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     a++;
     b++;
     /* illegal, for testing only */
-    ++++a;
-    a++++;
-    ++--a;
-    a++--;
+    ++++++++a;
+    a++++++++;
+    ++--++--a;
+    a--++--++;
+    (((a++)--)++)--;
+    (((a--)++)--)++;
 
     {
         int a = 5;

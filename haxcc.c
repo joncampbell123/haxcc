@@ -83,6 +83,13 @@ void c_node_delete(struct c_node **n) {
     *n = NULL;
 }
 
+void c_node_scan_to_parent_head(struct c_node **n) {
+    assert(n != NULL);
+
+    while (*n && (*n)->parent != NULL)
+        *n = (*n)->parent;
+}
+
 void c_node_scan_to_head(struct c_node **n) {
     assert(n != NULL);
 
@@ -237,6 +244,27 @@ void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_n
     c_node_release_child_link(node,chidx);
     c_node_move_to(&(node->child[chidx]),child); /* copies to node->child[chidx], sets *child = NULL */
     c_node_addref_child_link(node,chidx);
+}
+
+void c_node_move_to_parent_link(struct c_node *node,struct c_node **next) {
+    unsigned int chidx = 0;
+    struct c_node *p;
+
+    assert(next != NULL);
+    p = (*next);
+
+    while (chidx < c_node_MAX_CHILDREN) {
+        if (p->child[chidx] == NULL) {
+            c_node_move_to(&(p->child[chidx]),&node);
+            c_node_addref_child_link(p,chidx);
+            *next = NULL;
+            return;
+        }
+
+        chidx++;
+    }
+
+    fprintf(stderr,"move_to_parent_link no child nodes in parent\n");
 }
 
 /* FIXME: test this code more */
@@ -697,6 +725,11 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
         if (n->groupcode != 0)
             fprintf(stderr," groupcode=%d",n->groupcode);
+
+        if (n->token == INC_OP)
+            fprintf(stderr," %s-increment",n->value.value_INC_OP_direction>0?"post":"pre");
+        else if (n->token == DEC_OP)
+            fprintf(stderr," %s-decrement",n->value.value_INC_OP_direction>0?"post":"pre");
 
         fprintf(stderr,"\n");
 

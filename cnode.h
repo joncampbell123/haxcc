@@ -39,6 +39,8 @@ struct c_node {
             char*                       name;
         } value_IDENTIFIER;
         c_stringref_t       value_STRING_LITERAL;
+        char                value_INC_OP_direction;     /* -1 = pre-increment  1 = post-increment */
+        char                value_DEC_OP_direction;     /* -1 = pre-decrement  1 = post-decrement */
     } value;
 };
 
@@ -56,7 +58,9 @@ void c_node_move_to(struct c_node **d,struct c_node **s); /* <- *d = *s, *s = NU
 void c_node_move_to_prev_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_next_link(struct c_node *node,struct c_node **next);
 void c_node_move_to_child_link(struct c_node *node,unsigned int chidx,struct c_node **next);
+void c_node_move_to_parent_link(struct c_node *node,struct c_node **next);
 void c_node_copy_lineno(struct c_node *d,struct c_node *s);
+void c_node_scan_to_parent_head(struct c_node **n);
 void c_node_scan_to_head(struct c_node **n);
 void c_node_scan_to_end(struct c_node **n);
 
