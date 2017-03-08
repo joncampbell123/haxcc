@@ -149,6 +149,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char gg = sp->val.blah,hh = sp->val->a->b->c->d->f->g;
         char hh = spa.bla[i]->asdf.qwerty[a][b]->b->c;
         char ii = ((long*)xps)[j];
+        char jj = _Alignof(int);
     }
 }
 

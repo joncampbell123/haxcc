@@ -204,7 +204,12 @@ unary_expression
         c_node_move_to_child_link($<node>$,0,&($<node>3));
         c_node_release_autodelete(&($<node>4));
     }
-    | ALIGNOF '(' type_name ')'
+    | ALIGNOF '(' type_name ')' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     ;
 
 unary_operator
