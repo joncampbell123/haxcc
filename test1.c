@@ -70,4 +70,7 @@ long function5(int a,long b,float c);
 long function6(int **a,long *b,const char * const c);
 long function7(int **a,long *b,...);
 long function8(int (*something),long (**(*something)));
+int (*funcptr)();
+int (*anotherfuncptr)(int,long,float,const char *s);
+int (*anotherfuncptr2)(int a,long *b,float (*c)(int,long),const char * const d);
 
