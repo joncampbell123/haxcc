@@ -142,8 +142,16 @@ postfix_expression
         c_node_move_to_child_link($<node>$,1,&idlist);
         c_node_release_autodelete(&($<node>4));
     }
-    | postfix_expression '.' IDENTIFIER
-    | postfix_expression PTR_OP IDENTIFIER
+    | postfix_expression '.' IDENTIFIER {
+        $<node>$ = $<node>2;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+    }
+    | postfix_expression PTR_OP IDENTIFIER {
+        $<node>$ = $<node>2;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+    }
     | postfix_expression INC_OP {
         $<node>$ = $<node>2;
         $<node>$->value.value_INC_OP_direction = 1; /* post-increment */

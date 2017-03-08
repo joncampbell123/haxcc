@@ -145,6 +145,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char aa = array1[0],bb = array1[32] + array1[16];
         char cc = array1[aa] + array[aa+2] - array[aa*3];
         char dd = array1[3 + array1[45] - array1[3]];
+        char ee = struc.val,ff = struc.mem.val.blah.ea;
+        char gg = sp->val.blah,hh = sp->val->a->b->c->d->f->g;
+        char hh = spa.bla[i]->asdf.qwerty[a][b]->b->c;
+        char ii = ((long*)xps)[j];
     }
 }
 
