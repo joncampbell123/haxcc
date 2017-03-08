@@ -138,5 +138,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         functiondef3(22222,&b,float2);
         functiondef3(22222,(char*)(&c),(float)xx);
     }
+
+    {
+        int a = 1 | 2,b = 1 || 2,c = 1 ^ 3,d = 3 & 2,e = 1 && 1,f = 1 == 1,g = 1 != 1,
+            h = 1 >= 1,i = 1 <= 1,j = 1 > 1,k = 1 < 1,l = 1 >> 1,m = 1 << 1;
+    }
 }
 

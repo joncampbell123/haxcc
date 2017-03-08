@@ -260,47 +260,112 @@ additive_expression
 
 shift_expression
     : additive_expression
-    | shift_expression LEFT_OP additive_expression
-    | shift_expression RIGHT_OP additive_expression
+    | shift_expression LEFT_OP additive_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | shift_expression RIGHT_OP additive_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 relational_expression
     : shift_expression
-    | relational_expression '<' shift_expression
-    | relational_expression '>' shift_expression
-    | relational_expression LE_OP shift_expression
-    | relational_expression GE_OP shift_expression
+    | relational_expression '<' shift_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | relational_expression '>' shift_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | relational_expression LE_OP shift_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | relational_expression GE_OP shift_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 equality_expression
     : relational_expression
-    | equality_expression EQ_OP relational_expression
-    | equality_expression NE_OP relational_expression
+    | equality_expression EQ_OP relational_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | equality_expression NE_OP relational_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 and_expression
     : equality_expression
-    | and_expression '&' equality_expression
+    | and_expression '&' equality_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 exclusive_or_expression
     : and_expression
-    | exclusive_or_expression '^' and_expression
+    | exclusive_or_expression '^' and_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 inclusive_or_expression
     : exclusive_or_expression
-    | inclusive_or_expression '|' exclusive_or_expression
+    | inclusive_or_expression '|' exclusive_or_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 logical_and_expression
     : inclusive_or_expression
-    | logical_and_expression AND_OP inclusive_or_expression
+    | logical_and_expression AND_OP inclusive_or_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 logical_or_expression
     : logical_and_expression
-    | logical_or_expression OR_OP logical_and_expression
+    | logical_or_expression OR_OP logical_and_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = $<node>2->token; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 conditional_expression
