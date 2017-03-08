@@ -119,5 +119,9 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     a++++;
     ++--a;
     a++--;
+
+    {
+        int a = 5;
+    }
 }
 
