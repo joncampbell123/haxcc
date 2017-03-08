@@ -43,14 +43,17 @@ void yyerror(const char *s);
 %token  EXTERNAL_DECLARATION
 %token  STORAGE_CLASS_SPECIFIER
 %token  DECLARATOR_EXPRESSION
+%token  FUNCTION_DEFINITION
 %token  TYPE_SPECIFIER
 %token  TYPE_QUALIFIER
 %token  FUNCTION_SPECIFIER
+%token  COMPOUND_STATEMENT
 %token  ALIGNMENT_SPECIFIER
 %token  IDENTIFIER_LIST
 %token  PARAMETER_LIST
 %token  POINTER_DEREF
 %token  FUNCTION_REF
+%token  BLOCK_ITEM
 %token  ARRAY_REF
 %token  TYPECAST
 %token  POINTER
@@ -746,13 +749,30 @@ labeled_statement
     ;
 
 compound_statement
-    : '{' '}'
-    | '{'  block_item_list '}'
+    : '{' '}' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = COMPOUND_STATEMENT; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | '{'  block_item_list '}' {
+        c_node_scan_to_head(&($<node>2));
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = COMPOUND_STATEMENT; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
     ;
 
 block_item_list
-    : block_item
-    | block_item_list block_item
+    : block_item {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = BLOCK_ITEM; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
+    | block_item_list block_item {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = BLOCK_ITEM; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 block_item
@@ -812,8 +832,21 @@ external_declaration
     ;
 
 function_definition
-    : declaration_specifiers declarator declaration_list compound_statement
-    | declaration_specifiers declarator compound_statement
+    : declaration_specifiers declarator declaration_list compound_statement {
+        c_node_declaration_specifiers_group_combine(&($<node>1));
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_DEFINITION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+        c_node_move_to_child_link($<node>$,2,&($<node>3));
+        c_node_move_to_child_link($<node>$,3,&($<node>4));
+    }
+    | declaration_specifiers declarator compound_statement {
+        c_node_declaration_specifiers_group_combine(&($<node>1));
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_DEFINITION; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+        c_node_move_to_child_link($<node>$,3,&($<node>3));
+    }
     ;
 
 declaration_list

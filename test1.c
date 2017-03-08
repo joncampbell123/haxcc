@@ -74,3 +74,24 @@ int (*funcptr)();
 int (*anotherfuncptr)(int,long,float,const char *s);
 int (*anotherfuncptr2)(int a,long *b,float (*c)(int,long),const char * const d);
 
+void functiondef1() {
+}
+
+void functiondef2(void) {
+}
+
+void functiondef3(int a,const char * const b,const float) {
+}
+
+void oldfunctiondef1(a) {
+}
+
+long oldfunctiondef2(a,b,c,d,e,f,g,h) {
+}
+
+void functhatdoesthings1(int a) {
+    int blah = 45;
+    float flah = 33.33;
+    double dah = ((flah + blah) * 3) + 35;
+}
+

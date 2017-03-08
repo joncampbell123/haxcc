@@ -3,7 +3,7 @@
 
 #include "cstring.h"
 
-#define c_node_MAX_CHILDREN             3
+#define c_node_MAX_CHILDREN             4
 
 /* NTS: In my previous attempt, memory allocation and linked list management
  *      became way too complex. I had one linked list struct for every type
