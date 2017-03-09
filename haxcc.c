@@ -732,6 +732,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
             fprintf(stderr," %s-decrement",n->value.value_INC_OP_direction>0?"post":"pre");
         else if (n->token == ENUM)
             fprintf(stderr," extra-elem=%u",n->value.value_ENUM.extra_elem);
+        else if (n->token == INITIALIZER_LIST)
+            fprintf(stderr," extra-elem=%u",n->value.value_INITIALIZER_LIST.extra_elem);
 
         fprintf(stderr,"\n");
 
