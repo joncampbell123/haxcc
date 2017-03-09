@@ -402,8 +402,13 @@ typedef unsigned int uitype;
 typedef struct xyz xyztype;
 typedef float fltype1,fltype2;
 
+typedef int uiblob[32];
+typedef int uiblobblob[16][16];
+
 void functt(const uitype x) {
+    uiblobblob uu;
     xyztype xyz;
+    uiblob xx;
 
     fltype1 t[5];
     t[0] = (fltype2)x;

@@ -665,9 +665,16 @@ void c_node_autoregister_if_typedef(struct c_node *n) {
         if (sn->token == INIT_DECLARATOR) {
             if ((idn=sn->child[0]) != NULL) {
                 /* find the identifier */
-                /* TODO */
+                while (idn->token != IDENTIFIER) {
+                    if (idn->token == ARRAY_REF) {
+                        idn = idn->child[0];
+                    }
+                    else {
+                        break;
+                    }
+                }
 
-                if (idn->token == IDENTIFIER) {
+                if (idn && idn->token == IDENTIFIER) {
                     struct identifier_t *id;
 
                     assert(idn->value.value_IDENTIFIER.name != NULL);
@@ -678,6 +685,9 @@ void c_node_autoregister_if_typedef(struct c_node *n) {
                     id->defined = 1;
                     id->token = TYPEDEF_NAME;
                     idents_set_name(idents_ptr_to_ref(id),idn);
+                }
+                else {
+                    fprintf(stderr,"Warning: unable to register typedef\n");
                 }
             }
         }
