@@ -911,8 +911,17 @@ statement
 
 labeled_statement
     : IDENTIFIER ':' statement
-    | CASE constant_expression ':' statement
-    | DEFAULT ':' statement
+    | CASE constant_expression ':' statement {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+    }
+    | DEFAULT ':' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+    }
     ;
 
 compound_statement
@@ -958,9 +967,29 @@ expression_statement
     ;
 
 selection_statement
-    : IF '(' expression ')' statement ELSE statement
-    | IF '(' expression ')' statement
-    | SWITCH '(' expression ')' statement
+    : IF '(' expression ')' statement ELSE statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_move_to_child_link($<node>$,1,&($<node>5));
+        c_node_release_autodelete(&($<node>6));
+        c_node_move_to_child_link($<node>$,2,&($<node>7));
+    }
+    | IF '(' expression ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_move_to_child_link($<node>$,1,&($<node>5));
+    }
+    | SWITCH '(' expression ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_move_to_child_link($<node>$,1,&($<node>5));
+    }
     ;
 
 iteration_statement

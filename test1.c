@@ -202,6 +202,52 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
                 int ternary2 = (a == (b == 7 ? a + c : a + d) ? i : (j == k ? 11 : 4 + c));
             }
         }
+
+        if (0) {
+            int this_will_never_happen = 1;
+        }
+        else {
+            int this_will_always_happen = 1;
+        }
+
+        if (a == b) {
+            int c = a + b;
+        }
+
+        if (a == b) {
+            int c = a + b;
+        }
+        else if (c == d) {
+            int d = c + d;
+        }
+        else if (e == f) {
+            int e = a + b;
+        }
+        else {
+            int f = a + b;
+        }
+
+        if (a == b) {
+            a += b;
+        }
+        else if (c == d) {
+            c += d;
+        }
     }
+
+    switch (a) {
+        case 1:
+            b = 5;
+            break;
+        case 4:
+            b = 99;
+            break;
+        case 7:
+            b = 111;
+            break;
+        default:
+            b = -1;
+            break;
+    };
 }
 
