@@ -368,3 +368,18 @@ struct xyz {
     char        aaa:3;
 } aaa;
 
+struct xyz {
+    int         c;
+    char        x,y,z;
+    struct abc {
+        int     z;
+        char    a,b,c,d;
+        struct hww {
+            char    u,w,x;
+        };
+    };
+    struct xyz2 {
+        int     q,w,e,r;
+    };
+};
+
