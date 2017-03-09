@@ -738,7 +738,12 @@ enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
     ;
 
 atomic_type_specifier
-    : ATOMIC '(' type_name ')'
+    : ATOMIC '(' type_name ')' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     ;
 
 type_qualifier
