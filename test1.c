@@ -208,6 +208,24 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             b -= 4;
         } while ((a+b) > c);
 
+        for (k=6;k < 9;) {
+            j = k + 1;
+        }
+
+        for (k=6;k < 9;k++) {
+            j = k + 2;
+            l = j * 3;
+        }
+
+        for (int c=5;c < 99;) {
+            d = c * 6 + 3;
+        }
+
+        for (int c=5;c < 99;c += 3) {
+            d = c * 6 + 5;
+            e = d - 3;
+        }
+
         /* NTS: This is obscure, but the comma ',' operator causes the evaluation of both sides then
          *      discards the first, returns the second */
         {

@@ -1017,10 +1017,40 @@ iteration_statement
         c_node_release_autodelete(&($<node>6));
         c_node_release_autodelete(&($<node>7));
     }
-    | FOR '(' expression_statement expression_statement ')' statement
-    | FOR '(' expression_statement expression_statement expression ')' statement
-    | FOR '(' declaration expression_statement ')' statement
-    | FOR '(' declaration expression_statement expression ')' statement
+    | FOR '(' expression_statement expression_statement ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+        c_node_move_to_child_link($<node>$,3,&($<node>6));
+    }
+    | FOR '(' expression_statement expression_statement expression ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_move_to_child_link($<node>$,2,&($<node>5));
+        c_node_release_autodelete(&($<node>6));
+        c_node_move_to_child_link($<node>$,3,&($<node>7));
+    }
+    | FOR '(' declaration expression_statement ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+        c_node_move_to_child_link($<node>$,3,&($<node>6));
+    }
+    | FOR '(' declaration expression_statement expression ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_move_to_child_link($<node>$,2,&($<node>5));
+        c_node_release_autodelete(&($<node>6));
+        c_node_move_to_child_link($<node>$,3,&($<node>7));
+    }
     ;
 
 jump_statement
