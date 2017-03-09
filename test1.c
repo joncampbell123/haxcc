@@ -372,14 +372,14 @@ struct xyz {
     int         c;
     char        x,y,z;
     struct abc {
-        int     z;
+        int     z:4;
         char    a,b,c,d;
         struct hww {
             char    u,w,x;
         };
     };
     struct xyz2 {
-        int     q,w,e,r;
+        int     q,w:2,e,r:1;
     };
 };
 
