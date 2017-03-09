@@ -34,10 +34,13 @@ struct c_node {
             double          val;        // FIXME: what about long double?
             unsigned char   bwidth;     // width, in bytes
         } value_F_CONSTANT;
-        struct c_node_IDENTIFIER {
+        struct c_node_IDENTIFIER {      // token == IDENTIFIER or token == ENUMERATION_CONSTANT
             c_identref_t                id;
             char*                       name;
         } value_IDENTIFIER;
+        struct c_node_ENUM {
+            unsigned char               extra_elem; // at the end
+        } value_ENUM;
         c_stringref_t       value_STRING_LITERAL;
         char                value_INC_OP_direction;     /* -1 = pre-increment  1 = post-increment */
         char                value_DEC_OP_direction;     /* -1 = pre-decrement  1 = post-decrement */

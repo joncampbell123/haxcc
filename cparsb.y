@@ -615,21 +615,69 @@ struct_declarator
     ;
 
 enum_specifier
-    : ENUM '{' enumerator_list '}'
-    | ENUM '{' enumerator_list ',' '}'
-    | ENUM IDENTIFIER '{' enumerator_list '}'
-    | ENUM IDENTIFIER '{' enumerator_list ',' '}'
-    | ENUM IDENTIFIER
+    : ENUM '{' enumerator_list '}' {
+        c_node_scan_to_head(&($<node>3));
+        $<node>$ = $<node>1;
+        $<node>$->value.value_ENUM.extra_elem = 0;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
+    | ENUM '{' enumerator_list ',' '}' {
+        c_node_scan_to_head(&($<node>3));
+        $<node>$ = $<node>1;
+        $<node>$->value.value_ENUM.extra_elem = 1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+    }
+    | ENUM IDENTIFIER '{' enumerator_list '}' {
+        c_node_scan_to_head(&($<node>4));
+        $<node>$ = $<node>1;
+        $<node>$->value.value_ENUM.extra_elem = 0;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+    }
+    | ENUM IDENTIFIER '{' enumerator_list ',' '}' {
+        c_node_scan_to_head(&($<node>4));
+        $<node>$ = $<node>1;
+        $<node>$->value.value_ENUM.extra_elem = 1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+        c_node_release_autodelete(&($<node>6));
+    }
+    | ENUM IDENTIFIER {
+        $<node>$ = $<node>1;
+        $<node>$->value.value_ENUM.extra_elem = 0;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
     ;
 
 enumerator_list
     : enumerator
-    | enumerator_list ',' enumerator
+    | enumerator_list ',' enumerator {
+        $<node>$ = $<node>3;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
-    : enumeration_constant '=' constant_expression
-    | enumeration_constant
+    : enumeration_constant '=' constant_expression {
+        $<node>$ = $<node>1;
+        $<node>$->token = ENUMERATION_CONSTANT;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+    }
+    | enumeration_constant {
+        $<node>$ = $<node>1;
+        $<node>$->token = ENUMERATION_CONSTANT;
+    }
     ;
 
 atomic_type_specifier

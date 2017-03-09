@@ -74,6 +74,40 @@ int (*funcptr)();
 int (*anotherfuncptr)(int,long,float,const char *s);
 int (*anotherfuncptr2)(int a,long *b,float (*c)(int,long),const char * const d);
 
+enum enumnothing;
+enum {
+    joe,
+    bob,
+    harry,
+    jerkface
+};
+enum {
+    joe2 = 9,
+    bob2 = 99999,
+    harry2 = 111,
+    jerface2 = 11111
+};
+enum {
+    thisenum,
+    willkill = 3333,
+    your,
+    ocd, /* <- see? */
+};
+enum named_enum {
+    asdf,
+    qwerty = 333,
+    keeeeeeee,
+    qweeeeee = 0x10000,
+    ppppppp
+};
+enum named_enum_trailing {
+    wowoiqwr = 22222,
+    wrqqqqq,
+    wpwpwpwsks = 0x40000,
+    qjfjajrja = 0777,
+    ocd_trigger,
+};
+
 void functiondef1() {
 }
 

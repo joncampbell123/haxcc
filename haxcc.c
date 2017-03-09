@@ -68,7 +68,7 @@ void c_node_delete_struct(struct c_node *n) {
             }
         }
 
-        if (n->token == IDENTIFIER) {
+        if (n->token == IDENTIFIER || n->token == ENUMERATION_CONSTANT) {
             c_string_free(&(n->value.value_IDENTIFIER.name));
         }
 
@@ -730,6 +730,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
             fprintf(stderr," %s-increment",n->value.value_INC_OP_direction>0?"post":"pre");
         else if (n->token == DEC_OP)
             fprintf(stderr," %s-decrement",n->value.value_INC_OP_direction>0?"post":"pre");
+        else if (n->token == ENUM)
+            fprintf(stderr," extra-elem=%u",n->value.value_ENUM.extra_elem);
 
         fprintf(stderr,"\n");
 
@@ -749,6 +751,12 @@ void c_node_dumptree(struct c_node *n,int indent) {
         else if (n->token == IDENTIFIER) {
             fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"IDENTIFIER id=%ld name='%s'\n",
+                (long)n->value.value_IDENTIFIER.id,
+                n->value.value_IDENTIFIER.name);
+        }
+        else if (n->token == ENUMERATION_CONSTANT) {
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"ENUMERATION_CONSTANT id=%ld name='%s'\n",
                 (long)n->value.value_IDENTIFIER.id,
                 n->value.value_IDENTIFIER.name);
         }
