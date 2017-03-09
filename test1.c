@@ -203,6 +203,11 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             k += 1 + (1 << k);
         }
 
+        do {
+            a /= 2;
+            b -= 4;
+        } while ((a+b) > c);
+
         /* NTS: This is obscure, but the comma ',' operator causes the evaluation of both sides then
          *      discards the first, returns the second */
         {

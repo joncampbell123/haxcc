@@ -57,6 +57,7 @@ void yyerror(const char *s);
 %token  BLOCK_ITEM
 %token  ARRAY_REF
 %token  TYPECAST
+%token  DO_WHILE
 %token  POINTER
 %token  TERNARY
 %token  LABEL
@@ -1006,7 +1007,16 @@ iteration_statement
         c_node_release_autodelete(&($<node>4));
         c_node_move_to_child_link($<node>$,1,&($<node>5));
     }
-    | DO statement WHILE '(' expression ')' ';'
+    | DO statement WHILE '(' expression ')' ';' {
+        $<node>$ = $<node>1;
+        $<node>$->token = DO_WHILE;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_move_to_child_link($<node>$,1,&($<node>5));
+        c_node_release_autodelete(&($<node>6));
+        c_node_release_autodelete(&($<node>7));
+    }
     | FOR '(' expression_statement expression_statement ')' statement
     | FOR '(' expression_statement expression_statement expression ')' statement
     | FOR '(' declaration expression_statement ')' statement
