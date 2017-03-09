@@ -407,8 +407,10 @@ typedef int uiblobblob[16][16];
 typedef int *intptrwhat;
 typedef int **intptrptr;
 typedef int *intptrarray[32];
+typedef int (*funcptr1_t)();
 
 void functt(const uitype x) {
+    funcptr1_t f1;
     intptrarray whatpa;
     intptrptr whatptr;
     intptrwhat what;

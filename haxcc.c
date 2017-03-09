@@ -666,7 +666,9 @@ void c_node_autoregister_if_typedef(struct c_node *n) {
             if ((idn=sn->child[0]) != NULL) {
                 /* find the identifier */
                 while (idn->token != IDENTIFIER) {
-                    if (idn->token == ARRAY_REF) {
+                    if (idn->token == ARRAY_REF ||
+                        idn->token == FUNCTION_REF ||
+                        idn->token == DECLARATOR_EXPRESSION) {
                         idn = idn->child[0];
                     }
                     else if (idn->token == POINTER) {
