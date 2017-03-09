@@ -398,3 +398,15 @@ struct xyz {
     };
 };
 
+typedef unsigned int uitype;
+typedef struct xyz xyztype;
+typedef float fltype1,fltype2;
+
+void functt(const uitype x) {
+    xyztype xyz;
+
+    fltype1 t[5];
+    t[0] = (fltype2)x;
+    xyz.c = (int)x;
+}
+

@@ -68,7 +68,7 @@ void c_node_delete_struct(struct c_node *n) {
             }
         }
 
-        if (n->token == IDENTIFIER || n->token == ENUMERATION_CONSTANT) {
+        if (n->token == IDENTIFIER || n->token == ENUMERATION_CONSTANT || n->token == TYPEDEF_NAME) {
             c_string_free(&(n->value.value_IDENTIFIER.name));
         }
 
@@ -642,6 +642,48 @@ c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
     return (c_identref_t)(id - &idents[0]);
 }
 
+void c_node_autoregister_if_typedef(struct c_node *n) {
+    unsigned char is_typedef = 0;
+    struct c_node *sn,*idn;
+
+    assert(n->token == DECLARATION);
+
+    /* first child is declaration */
+    /* second child is init declarator */
+    if (n->child[0] == NULL || n->child[1] == NULL)
+        return;
+
+    for (sn=n->child[0];sn != NULL;sn=sn->next) {
+        if (sn->token == TYPEDEF)
+            is_typedef = 1;
+    }
+
+    if (!is_typedef)
+        return;
+
+    for (sn=n->child[1];sn != NULL;sn=sn->next) {
+        if (sn->token == INIT_DECLARATOR) {
+            if ((idn=sn->child[0]) != NULL) {
+                /* find the identifier */
+                /* TODO */
+
+                if (idn->token == IDENTIFIER) {
+                    struct identifier_t *id;
+
+                    assert(idn->value.value_IDENTIFIER.name != NULL);
+
+                    id = idents_new();
+                    if (id == NULL) return; /* TODO: error */
+
+                    id->defined = 1;
+                    id->token = TYPEDEF_NAME;
+                    idents_set_name(idents_ptr_to_ref(id),idn);
+                }
+            }
+        }
+    }
+}
+
 void c_node_register_enum_constant(struct c_node *n) {
     struct identifier_t *id;
 
@@ -884,6 +926,12 @@ void c_node_dumptree(struct c_node *n,int indent) {
             fprintf(stderr,"ENUMERATION_CONSTANT id=%ld name='%s'\n",
                 (long)n->value.value_IDENTIFIER.id,
                 n->value.value_IDENTIFIER.name);
+        }
+        else if (n->token == TYPEDEF_NAME) {
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"TYPEDEF_NAME id=%ld name='%s'\n",
+                    (long)n->value.value_IDENTIFIER.id,
+                    n->value.value_IDENTIFIER.name);
         }
         else if (n->token == STRING_LITERAL) {
             c_stringref_t ref = n->value.value_STRING_LITERAL;

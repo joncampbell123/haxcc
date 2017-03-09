@@ -453,6 +453,7 @@ declaration
         c_node_declaration_specifiers_group_combine(&($<node>1));
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_release_autodelete(&($<node>2));
+        c_node_autoregister_if_typedef($<node>$);
     }
     | declaration_specifiers init_declarator_list ';' {
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATION; c_node_copy_lineno($<node>$,$<node>1);
@@ -461,6 +462,7 @@ declaration
         c_node_move_to_child_link($<node>$,0,&($<node>1));
         c_node_move_to_child_link($<node>$,1,&($<node>2));
         c_node_release_autodelete(&($<node>3));
+        c_node_autoregister_if_typedef($<node>$);
     }
     | static_assert_declaration {
         $<node>$ = $<node>1;

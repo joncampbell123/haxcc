@@ -34,7 +34,7 @@ struct c_node {
             double          val;        // FIXME: what about long double?
             unsigned char   bwidth;     // width, in bytes
         } value_F_CONSTANT;
-        struct c_node_IDENTIFIER {      // token == IDENTIFIER or token == ENUMERATION_CONSTANT
+        struct c_node_IDENTIFIER {      // token == IDENTIFIER or token == ENUMERATION_CONSTANT or TYPEDEF_NAME
             c_identref_t                id;
             char*                       name;
         } value_IDENTIFIER;
@@ -73,6 +73,7 @@ void c_node_scan_to_end(struct c_node **n);
 void c_node_register_enum_constant(struct c_node *n);
 
 void c_node_declaration_specifiers_group_combine(struct c_node **n);
+void c_node_autoregister_if_typedef(struct c_node *n);
 
 void c_node_i_constant_parse(struct c_node *d,char *s,int base);
 void c_node_i_constant_char_parse(struct c_node *d,char *s);
