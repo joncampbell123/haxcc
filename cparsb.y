@@ -730,10 +730,12 @@ enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
         $<node>$->token = ENUMERATION_CONSTANT;
         c_node_release_autodelete(&($<node>2));
         c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_register_enum_constant($<node>$);
     }
     | enumeration_constant {
         $<node>$ = $<node>1;
         $<node>$->token = ENUMERATION_CONSTANT;
+        c_node_register_enum_constant($<node>$);
     }
     ;
 

@@ -539,6 +539,129 @@ void c_node_identifier_parse(struct c_node *d,char *s) {
     d->value.value_IDENTIFIER.name = strdup(s);
 }
 
+struct identifier_t {
+    int                 token;      // IDENTIFIER, ENUM_CONSTANT, TYPEDEF_NAME
+    unsigned int        defined:1;
+    unsigned int        deleted:1;
+    struct c_node*      ident;      // identifier node
+};
+
+#define MAX_IDENTIFIERS 16384
+
+struct identifier_t     idents[MAX_IDENTIFIERS];
+c_identref_t            idents_count=0;
+
+struct identifier_t *idents_get(c_identref_t idr) {
+    if (idr < (c_identref_t)MAX_IDENTIFIERS)
+        return &idents[idr];
+
+    return NULL;
+}
+
+void idents_free_struct(struct identifier_t *id) {
+    if (id->ident != NULL) {
+        c_node_release_autodelete(&(id->ident));
+        id->ident = NULL;
+    }
+}
+
+void idents_free(c_identref_t idr) {
+    idents_free_struct(idents_get(idr));
+}
+
+void idents_free_all(void) {
+    while (idents_count > 0) {
+        idents_count--;
+        idents_free(idents_count);
+    }
+}
+
+void idents_mark_deleted(c_identref_t idr) {
+    struct identifier_t *id = idents_get(idr);
+    if (id != NULL) id->deleted = 1;
+}
+
+void idents_mark_defined(c_identref_t idr) {
+    struct identifier_t *id = idents_get(idr);
+    if (id != NULL) id->defined = 1;
+}
+
+/* NTS: This scans BACKWARDS in the allocation array for the first non-deleted identifier of the same name.
+ *      This allows variables in an inner scope to shadow global scope while in scope. */
+struct identifier_t *idents_name_lookup(const char *name,c_identref_t min_stop_at) {
+    c_identref_t scan = idents_count;
+
+    if ((scan--) != min_stop_at) {
+        do {
+            struct identifier_t *id = idents_get(scan);
+            if (id != NULL) {
+                if (!id->deleted && id->ident != NULL) {
+                    struct c_node_IDENTIFIER *ident = &(id->ident->value.value_IDENTIFIER);
+
+                    if (ident->name != NULL) {
+                        if (!strcmp(name,ident->name))
+                            return id;
+                    }
+                }
+            }
+        } while ((scan--) != min_stop_at);
+    }
+
+    return NULL;
+}
+
+struct identifier_t *idents_new(void) {
+    struct identifier_t *id;
+
+    if (idents_count >= (c_identref_t)MAX_IDENTIFIERS)
+        return NULL;
+
+    id = &idents[idents_count++];
+    memset(id,0,sizeof(*id));
+    return id;
+}
+
+void idents_set_name(c_identref_t idr,struct c_node *identnode) {
+    struct identifier_t *id;
+
+    id = idents_get(idr);
+    if (id == NULL) return;
+
+    if (id->ident != NULL) {
+        c_node_release_autodelete(&(id->ident));
+        id->ident = NULL;
+    }
+
+    id->ident = identnode;
+
+    if (id->ident != NULL)
+        c_node_addref(&(id->ident));
+}
+
+c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
+    return (c_identref_t)(id - &idents[0]);
+}
+
+void c_node_register_enum_constant(struct c_node *n) {
+    struct identifier_t *id;
+
+    assert(n->value.value_IDENTIFIER.name != NULL);
+
+    id = idents_new();
+    if (id == NULL) return; /* TODO: error */
+
+    id->defined = 1;
+    id->token = ENUMERATION_CONSTANT;
+    idents_set_name(idents_ptr_to_ref(id),n);
+}
+
+int sym_type(const char *name) {
+    struct identifier_t *id = idents_name_lookup(name,0);
+
+    if (id == NULL) return IDENTIFIER;
+    return id->token;
+}
+
 struct string_t {
     unsigned char       wchar;      // L prefix
     unsigned char       utf8;       // u8 prefix
@@ -858,6 +981,7 @@ int main(int argc, char **argv) {
         c_node_delete(&last_translation_unit);
     }
 
+    idents_free_all();
     strings_free_all();
     return (res != 0) ? 1 : 0;
 }

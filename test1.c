@@ -218,7 +218,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         char dd = array1[3 + array1[45] - array1[3]];
         char ee = struc.val,ff = struc.mem.val.blah.ea;
         char gg = sp->val.blah,hh = sp->val->a->b->c->d->f->g;
-        char hh = spa.bla[i]->asdf.qwerty[a][b]->b->c;
+        char hh = spa.bla[i]->asdfqwerty.qwertyuiop[a][b]->b->c;
         char ii = ((long*)xps)[j];
         char jj = _Alignof(int);
         char _Alignas(int) kk = 55;
@@ -344,6 +344,13 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             b = -1;
             break;
     };
+
+    /* TEST: we declared an enum 'joe' 'bob' etc. this test is whether the code remembers that they are enum constants */
+    {
+        int x = joe + 5;
+        int y = joe + bob * 3;
+        int sarrr[joe+bob];
+    }
 }
 
 struct somestruct;

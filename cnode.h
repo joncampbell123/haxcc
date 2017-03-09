@@ -70,6 +70,8 @@ void c_node_scan_to_parent_head(struct c_node **n);
 void c_node_scan_to_head(struct c_node **n);
 void c_node_scan_to_end(struct c_node **n);
 
+void c_node_register_enum_constant(struct c_node *n);
+
 void c_node_declaration_specifiers_group_combine(struct c_node **n);
 
 void c_node_i_constant_parse(struct c_node *d,char *s,int base);
