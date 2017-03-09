@@ -669,6 +669,9 @@ void c_node_autoregister_if_typedef(struct c_node *n) {
                     if (idn->token == ARRAY_REF) {
                         idn = idn->child[0];
                     }
+                    else if (idn->token == POINTER) {
+                        idn = idn->child[1];
+                    }
                     else {
                         break;
                     }

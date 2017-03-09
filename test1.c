@@ -404,8 +404,12 @@ typedef float fltype1,fltype2;
 
 typedef int uiblob[32];
 typedef int uiblobblob[16][16];
+typedef int *intptrwhat;
+typedef int **intptrptr;
 
 void functt(const uitype x) {
+    intptrptr whatptr;
+    intptrwhat what;
     uiblobblob uu;
     xyztype xyz;
     uiblob xx;
