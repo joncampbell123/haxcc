@@ -408,9 +408,11 @@ typedef int *intptrwhat;
 typedef int **intptrptr;
 typedef int *intptrarray[32];
 typedef int (*funcptr1_t)();
+typedef int (*funcptr2_t)(int,long,void,char*);
 
 void functt(const uitype x) {
     funcptr1_t f1;
+    funcptr2_t f2;
     intptrarray whatpa;
     intptrptr whatptr;
     intptrwhat what;
