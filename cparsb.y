@@ -999,7 +999,13 @@ selection_statement
     ;
 
 iteration_statement
-    : WHILE '(' expression ')' statement
+    : WHILE '(' expression ')' statement {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+        c_node_move_to_child_link($<node>$,1,&($<node>5));
+    }
     | DO statement WHILE '(' expression ')' ';'
     | FOR '(' expression_statement expression_statement ')' statement
     | FOR '(' expression_statement expression_statement expression ')' statement

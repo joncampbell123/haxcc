@@ -195,6 +195,14 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         a <<= c + d;
         d >>= a + c - 3;
 
+        while (c > 500)
+            c--;
+
+        while (j < 1000) {
+            j += k;
+            k += 1 + (1 << k);
+        }
+
         /* NTS: This is obscure, but the comma ',' operator causes the evaluation of both sides then
          *      discards the first, returns the second */
         {
