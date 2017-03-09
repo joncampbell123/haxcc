@@ -37,6 +37,9 @@ void yyerror(const char *s);
 
 %token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
+%token  DESIGNATOR_ARRAY_INDEX
+%token  DESIGNATOR_STRUCT_MEMBER
+
 %token  EXPRESSION
 %token  DECLARATION
 %token  INIT_DECLARATOR
@@ -56,6 +59,7 @@ void yyerror(const char *s);
 %token  ARGUMENT_LIST
 %token  POINTER_DEREF
 %token  FUNCTION_REF
+%token  DESIGNATION
 %token  BLOCK_ITEM
 %token  ARRAY_REF
 %token  ANONYMOUS
@@ -994,11 +998,19 @@ initializer
     ;
 
 initializer_list
-    : designation initializer
+    : designation initializer {
+        $<node>$ = $<node>2;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
     | initializer {
         $<node>$ = $<node>1;
     }
-    | initializer_list ',' designation initializer
+    | initializer_list ',' designation initializer {
+        $<node>$ = $<node>4;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,0,&($<node>3));
+    }
     | initializer_list ',' initializer {
         $<node>$ = $<node>3;
         c_node_move_to_prev_link($<node>$,&($<node>1));
@@ -1007,17 +1019,36 @@ initializer_list
     ;
 
 designation
-    : designator_list '='
+    : designator_list '=' {
+        c_node_scan_to_head(&($<node>1));
+        $<node>$ = $<node>2;
+        $<node>$->token = DESIGNATION;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
     ;
 
 designator_list
-    : designator
-    | designator_list designator
+    : designator {
+        $<node>$ = $<node>1;
+    }
+    | designator_list designator {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 designator
-    : '[' constant_expression ']'
-    | '.' IDENTIFIER
+    : '[' constant_expression ']' {
+        $<node>$ = $<node>1;
+        $<node>$->token = DESIGNATOR_ARRAY_INDEX;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | '.' IDENTIFIER {
+        $<node>$ = $<node>1;
+        $<node>$->token = DESIGNATOR_STRUCT_MEMBER;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
     ;
 
 static_assert_declaration

@@ -203,6 +203,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int abc_init_array_ocd[] = {1, 2, 3, 4, 5, -1, -2, -3, -4, -5, (char)99, (char)(long)1111,};
             /* not legal, but for testing */
             int layers1[] = {1,2,3,4,5,{6,7,8,9},10,11,12,13,14,{15,16,{17,{18,19}}}};
+            int desigarray[] = {1, 2, [4]=4, 5, 6, 7, [8][8]=8}; /* <- C11 designators */
+            int desigarray2[] = {1, 2, [4]=7, 2, 1, .member=4}; /* <- C11 designators */
         }
     }
 
