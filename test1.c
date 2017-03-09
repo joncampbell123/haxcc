@@ -115,9 +115,14 @@ long *functhatdoesthings2(int * const a,const char * const * const * const b) {
 
 void funcwithparamsarrays(int a[],char b[5],char *c[17]) {
     /* illegal, for testing */
-    goto label;
+    goto label1;
     continue;
+    goto label2;
     break;
+label1:
+    a[4] = 6;
+label2:
+    a[3] = 7;
 }
 
 unsigned int unarystuff(unsigned int a,unsigned int b) {

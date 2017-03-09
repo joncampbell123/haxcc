@@ -59,6 +59,7 @@ void yyerror(const char *s);
 %token  TYPECAST
 %token  POINTER
 %token  TERNARY
+%token  LABEL
 
 %token-table
 
@@ -910,7 +911,12 @@ statement
     ;
 
 labeled_statement
-    : IDENTIFIER ':' statement
+    : IDENTIFIER ':' statement {
+        $<node>$ = $<node>2;
+        $<node>$->token = LABEL;
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+    }
     | CASE constant_expression ':' statement {
         $<node>$ = $<node>1;
         c_node_move_to_child_link($<node>$,0,&($<node>2));
