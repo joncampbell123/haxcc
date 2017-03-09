@@ -362,3 +362,9 @@ union {
     char        y;
 };
 
+struct xyz {
+    int         x;
+    int         y,z;
+    char        aaa:3;
+} aaa;
+
