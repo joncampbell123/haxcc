@@ -201,6 +201,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int x[qweeeeee];
             int abc_init_array[] = {1, 2, 3, 4, 5, -1, -2, -3, -4, -5, (char)99, (char)(long)1111};
             int abc_init_array_ocd[] = {1, 2, 3, 4, 5, -1, -2, -3, -4, -5, (char)99, (char)(long)1111,};
+            /* not legal, but for testing */
+            int layers1[] = {1,2,3,4,5,{6,7,8,9},10,11,12,13,14,{15,16,{17,{18,19}}}};
         }
     }
 
