@@ -196,6 +196,10 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         long yy = function4(x,xx,float1);
         functiondef3(22222,&b,float2);
         functiondef3(22222,(char*)(&c),(float)xx);
+
+        {
+            int x[qweeeeee];
+        }
     }
 
     {
@@ -303,6 +307,19 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         else if (c == d) {
             c += d;
         }
+    }
+
+    switch (c) {
+        case asdf:
+            break;
+        case qwerty:
+            break;
+        case keeeeeeee:
+            break;
+        case qweeeeee:
+            break;
+        case ppppppp:
+            break;
     }
 
     switch (a) {
