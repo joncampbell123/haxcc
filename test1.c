@@ -338,3 +338,27 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     };
 }
 
+struct somestruct;
+
+struct {
+    int         x;
+    int         y;
+};
+
+struct somestruct2 {
+    int         x,a;
+    int         y;
+    int         z;
+};
+
+struct somestruct3 {
+    int         y;
+    int         :4;
+    int         x:3;
+};
+
+union {
+    int         x;
+    char        y;
+};
+

@@ -49,6 +49,7 @@ void yyerror(const char *s);
 %token  FUNCTION_SPECIFIER
 %token  COMPOUND_STATEMENT
 %token  ALIGNMENT_SPECIFIER
+%token  STRUCT_DECLARATOR
 %token  IDENTIFIER_LIST
 %token  PARAMETER_LIST
 %token  ARGUMENT_LIST
@@ -56,6 +57,7 @@ void yyerror(const char *s);
 %token  FUNCTION_REF
 %token  BLOCK_ITEM
 %token  ARRAY_REF
+%token  ANONYMOUS
 %token  TYPECAST
 %token  DO_WHILE
 %token  POINTER
@@ -561,9 +563,25 @@ type_specifier
     ;
 
 struct_or_union_specifier
-    : struct_or_union '{' struct_declaration_list '}'
-    | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-    | struct_or_union IDENTIFIER
+    : struct_or_union '{' struct_declaration_list '}' {
+        c_node_scan_to_head(&($<node>3));
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
+    | struct_or_union IDENTIFIER '{' struct_declaration_list '}' {
+        c_node_scan_to_head(&($<node>4));
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+        c_node_move_to_child_link($<node>$,1,&($<node>4));
+        c_node_release_autodelete(&($<node>5));
+    }
+    | struct_or_union IDENTIFIER {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+    }
     ;
 
 struct_or_union
@@ -572,14 +590,29 @@ struct_or_union
     ;
 
 struct_declaration_list
-    : struct_declaration
-    | struct_declaration_list struct_declaration
+    : struct_declaration {
+        $<node>$ = $<node>1;
+    }
+    | struct_declaration_list struct_declaration {
+        $<node>$ = $<node>2;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+    }
     ;
 
 struct_declaration
-    : specifier_qualifier_list ';'  /* for anonymous struct/union */
-    | specifier_qualifier_list struct_declarator_list ';'
-    | static_assert_declaration
+    : specifier_qualifier_list ';'  /* for anonymous struct/union */ {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+    }
+    | specifier_qualifier_list struct_declarator_list ';' {
+        c_node_scan_to_head(&($<node>2));
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | static_assert_declaration {
+        $<node>$ = $<node>1;
+    }
     ;
 
 specifier_qualifier_list
@@ -604,14 +637,33 @@ specifier_qualifier_list
     ;
 
 struct_declarator_list
-    : struct_declarator
-    | struct_declarator_list ',' struct_declarator
+    : struct_declarator {
+        $<node>$ = $<node>1;
+    }
+    | struct_declarator_list ',' struct_declarator {
+        $<node>$ = $<node>3;
+        c_node_move_to_prev_link($<node>$,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
     ;
 
 struct_declarator
-    : ':' constant_expression
-    | declarator ':' constant_expression
-    | declarator
+    : ':' constant_expression {
+        $<node>1->token = ANONYMOUS;
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = STRUCT_DECLARATOR; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+    }
+    | declarator ':' constant_expression {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = STRUCT_DECLARATOR; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+    }
+    | declarator {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = STRUCT_DECLARATOR; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+    }
     ;
 
 enum_specifier
