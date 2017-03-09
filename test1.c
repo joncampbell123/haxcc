@@ -83,10 +83,23 @@ void functiondef2(void) {
 void functiondef3(int a,const char * const b,const float) {
 }
 
-void oldfunctiondef1(a) {
+void oldfunctiondef1(a)
+int a;
+{
+    return;
 }
 
-long oldfunctiondef2(a,b,c,d,e,f,g,h) {
+long oldfunctiondef2(a,b,c,d,e,f,g,h)
+long a;
+int b,g,h;
+float c,f;
+char d,e;
+{
+    return a + b - c;
+}
+
+long oldfunctiondef3() {
+    return(99);
 }
 
 void functhatdoesthings1(int a) {
@@ -101,6 +114,10 @@ long *functhatdoesthings2(int * const a,const char * const * const * const b) {
 }
 
 void funcwithparamsarrays(int a[],char b[5],char *c[17]) {
+    /* illegal, for testing */
+    goto label;
+    continue;
+    break;
 }
 
 unsigned int unarystuff(unsigned int a,unsigned int b) {

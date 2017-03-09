@@ -973,11 +973,28 @@ iteration_statement
     ;
 
 jump_statement
-    : GOTO IDENTIFIER ';'
-    | CONTINUE ';'
-    | BREAK ';'
-    | RETURN ';'
-    | RETURN expression ';'
+    : GOTO IDENTIFIER ';' {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | CONTINUE ';' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+    }
+    | BREAK ';' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+    }
+    | RETURN ';' {
+        $<node>$ = $<node>1;
+        c_node_release_autodelete(&($<node>2));
+    }
+    | RETURN expression ';' {
+        $<node>$ = $<node>1;
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
     ;
 
 translation_unit
@@ -1005,6 +1022,7 @@ external_declaration
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement {
+        c_node_scan_to_head(&($<node>3));
         c_node_declaration_specifiers_group_combine(&($<node>1));
         $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_DEFINITION; c_node_copy_lineno($<node>$,$<node>1);
         c_node_move_to_child_link($<node>$,0,&($<node>1));
