@@ -118,7 +118,9 @@ enum named_enum {
     framexpr11 = (4 + (99 - 11) + willkill) * (4 + 1 + 1 - 1 * 5),
     framexpr12 = (4 + (99 - 11) + ocd + willkill * your) * (4 + 1 + 1 + (2 + 2 * 6)), /* deliberate mistake, to test eval */
     framexpr13 = 1U << 8U,
-    framexpr14 = (1U << 12) + (3U << 8) + (7U << 2U << 2U)
+    framexpr14 = (1U << 12) + (3U << 8) + (7U << 2U << 2U),
+    framexpr15 = 256U >> 8U,
+    framexpr16 = (256U >> 2U >> 2U)
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
