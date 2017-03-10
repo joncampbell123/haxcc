@@ -1114,9 +1114,11 @@ int enum_const_eval(struct c_node *idn) {
     return 0;
 }
 
-int enum_expr_eval(struct c_node *idn) {
-    if (idn->token == ENUMERATION_CONSTANT)
-        return enum_const_eval(idn);
+int enum_expr_eval(struct c_node **idn) {
+    assert(idn != NULL);
+
+    if ((*idn)->token == ENUMERATION_CONSTANT)
+        return enum_const_eval(*idn);
 
     return 0;
 }
@@ -1181,7 +1183,7 @@ int register_enum(struct c_node *node) {
              * that integer constant becomes the new value instead */
             if ((idn=enumconsts->child[0]) != NULL) {
                 if (idn->token != I_CONSTANT) {
-                    if (enum_expr_eval(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                    if (enum_expr_eval(&idn)) { /* will eval expressions upward then change token to I_CONSTANT */
                         fprintf(stderr,"enum expression evaluation failure\n");
                         return -1;
                     }
