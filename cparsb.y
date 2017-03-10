@@ -40,6 +40,9 @@ void yyerror(const char *s);
 %token  DESIGNATOR_ARRAY_INDEX
 %token  DESIGNATOR_STRUCT_MEMBER
 
+%token  NEGATE
+%token  POSITIVE
+%token  ADDRESS_OF
 %token  EXPRESSION
 %token  DECLARATION
 %token  INIT_DECLARATOR
@@ -245,13 +248,22 @@ unary_expression
     ;
 
 unary_operator
-    : '&'
+    : '&' {
+        $<node>$ = $<node>1;
+        $<node>$->token = ADDRESS_OF;
+    }
     | '*' {
         $<node>$ = $<node>1;
         $<node>$->token = POINTER_DEREF;
     }
-    | '+'
-    | '-'
+    | '+' {
+        $<node>$ = $<node>1;
+        $<node>$->token = POSITIVE;
+    }
+    | '-' {
+        $<node>$ = $<node>1;
+        $<node>$->token = NEGATE;
+    }
     | '~'
     | '!'
     ;
