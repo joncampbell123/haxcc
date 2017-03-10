@@ -914,6 +914,8 @@ void c_node_dumptree(struct c_node *n,int indent) {
             fprintf(stderr," extra-elem=%u",n->value.value_ENUM.extra_elem);
         else if (n->token == INITIALIZER_LIST)
             fprintf(stderr," extra-elem=%u",n->value.value_INITIALIZER_LIST.extra_elem);
+        else if (n->token == TYPECAST_INITIALIZER_LIST)
+            fprintf(stderr," extra-elem=%u",n->value.value_TYPECAST_INITIALIZER_LIST.extra_elem);
 
         fprintf(stderr,"\n");
 

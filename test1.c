@@ -350,6 +350,9 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         int x = joe + 5;
         int y = joe + bob * 3;
         int sarrr[joe+bob];
+        void *xptraa = (int){1, 2, 3, 4};
+        void *xp2 = (long){3, 1, -1, 4, 2, 1, (char){'a', 'b', 'c'}, 3, 1};
+        void *xp3 = (int){1, 1, 1, 1, 1,};
     }
 }
 

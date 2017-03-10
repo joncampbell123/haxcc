@@ -44,6 +44,9 @@ struct c_node {
         struct c_node_INITIALIZER_LIST {
             unsigned char               extra_elem; // at the end
         } value_INITIALIZER_LIST;
+        struct c_node_TYPECAST_INITIALIZER_LIST {
+            unsigned char               extra_elem; // at the end
+        } value_TYPECAST_INITIALIZER_LIST;
         c_stringref_t       value_STRING_LITERAL;
         char                value_INC_OP_direction;     /* -1 = pre-increment  1 = post-increment */
         char                value_DEC_OP_direction;     /* -1 = pre-decrement  1 = post-decrement */
