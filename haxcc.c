@@ -1471,7 +1471,7 @@ int expression_eval_reduce_positive(struct c_node *idn) {
     return 0;
 }
 
-int expression_eval_reduce_tilde(struct c_node *idn) {
+int expression_eval_reduce_tilde(struct c_node *idn) { /* ~ aka one's complement */
     struct c_node *nullnode = NULL;
     struct c_node *p1;
     int r;
