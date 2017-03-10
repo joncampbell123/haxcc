@@ -1114,20 +1114,25 @@ int enum_const_eval(struct c_node *idn) {
     return 0;
 }
 
-int expression_eval(struct c_node *idn) {
+int expression_eval_reduce(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *sn;
     int r;
 
-    assert(idn->token == EXPRESSION);
-
     /* we do not concern ourself with prev/next/parent */
     /* we do expect the node to only have one child */
-    while (idn->token == EXPRESSION) {
-        if ((sn=idn->child[0]) == NULL)
-            break;
+    do {
+        if (idn->token == EXPRESSION) {
+            /* eval child node */
+            sn = idn->child[0];
+            if (sn == NULL) break;
 
-        if (sn->token == I_CONSTANT) {
+            if ((r=expression_eval_reduce(sn)) != 0)
+                return r;
+
+            if (!(sn->token == I_CONSTANT || sn->token == F_CONSTANT))
+                break;
+
             /* pull it up, replace EXPRESSION node */
             idn->token = sn->token;
             idn->value = sn->value;
@@ -1136,33 +1141,14 @@ int expression_eval(struct c_node *idn) {
             c_node_move_to_child_link(idn,0,&nullnode);
             c_node_release_autodelete(&(sn));
         }
-        else if (sn->token == ENUMERATION_CONSTANT) {
-            if ((r=enum_const_eval(sn)) != 0)
+        else if (idn->token == ENUMERATION_CONSTANT) {
+            if ((r=enum_const_eval(idn)) != 0)
                 return r;
-
-            /* pull it up, replace EXPRESSION node */
-            idn->token = sn->token;
-            idn->value = sn->value;
-            /* dispose of child contents */
-            memset(&(sn->value),0,sizeof(sn->value));
-            c_node_move_to_child_link(idn,0,&nullnode);
-            c_node_release_autodelete(&(sn));
         }
         else {
             break;
         }
-    }
-
-    return 0;
-}
-
-int enum_expr_eval(struct c_node **idn) {
-    assert(idn != NULL);
-
-    if ((*idn)->token == ENUMERATION_CONSTANT)
-        return enum_const_eval(*idn);
-    else if ((*idn)->token == EXPRESSION)
-        return expression_eval(*idn);
+    } while (1);
 
     return 0;
 }
@@ -1227,7 +1213,7 @@ int register_enum(struct c_node *node) {
              * that integer constant becomes the new value instead */
             if ((idn=enumconsts->child[0]) != NULL) {
                 if (idn->token != I_CONSTANT) {
-                    if (enum_expr_eval(&idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                    if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
                         fprintf(stderr,"enum expression evaluation failure\n");
                         return -1;
                     }

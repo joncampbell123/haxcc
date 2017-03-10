@@ -106,7 +106,8 @@ enum named_enum {
     qweeeeee = 0x10000,
     ppppppp,
     fromexpr1 = (9),
-    fromexpr2 = (qweeeeee)
+    fromexpr2 = (qweeeeee),
+    fromexpr3 = ((((((((((99999))))))))))
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
