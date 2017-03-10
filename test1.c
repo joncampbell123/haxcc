@@ -114,7 +114,9 @@ enum named_enum {
     fromexpr7 = (999999 - 12345),
     fromexpr8 = (223 - 23) - 100,
     framexpr9 = (9 * 111111111),
-    framexpr10 = (99999999 / 9)
+    framexpr10 = (99999999 / 9),
+    framexpr11 = (4 + (99 - 11) + willkill) * (4 + 1 + 1 - 1 * 5),
+    framexpr12 = (4 + (99 - 11) + not_an_enum) * (4 + 1 + 1 + (2 + 2 * 6)) /* deliberate mistake, to test eval */
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
