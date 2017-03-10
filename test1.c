@@ -110,7 +110,9 @@ enum named_enum {
     fromexpr3 = ((((((((((99999)))))))))),
     fromexpr4 = 123000 + 456,
     fromexpr5 = (1230000 + 4500 + 60) + 7,
-    fromexpr6 = ((qwerty + 222000) + 1000000) + 990000000
+    fromexpr6 = ((qwerty + 222000) + 1000000) + 990000000,
+    fromexpr7 = (999999 - 12345),
+    fromexpr8 = (223 - 23) - 100
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
