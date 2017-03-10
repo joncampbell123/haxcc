@@ -81,6 +81,10 @@ enum {
     harry,
     jerkface
 };
+enum enumnothing {
+    blah1,
+    blah2,blah3
+};
 enum {
     joe2 = 9,
     bob2 = 99999,

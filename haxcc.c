@@ -544,11 +544,13 @@ struct identifier_t {
     unsigned int        defined:1;
     unsigned int        deleted:1;
     struct c_node*      ident;      // identifier node
+    struct c_node*      node;
 };
 
 #define MAX_IDENTIFIERS 16384
 
 struct identifier_t     idents[MAX_IDENTIFIERS];
+c_identref_t            idents_scope_boundary = 0; /* ref >= boundary means in scope */
 c_identref_t            idents_count=0;
 
 struct identifier_t *idents_get(c_identref_t idr) {
@@ -562,6 +564,10 @@ void idents_free_struct(struct identifier_t *id) {
     if (id->ident != NULL) {
         c_node_release_autodelete(&(id->ident));
         id->ident = NULL;
+    }
+    if (id->node != NULL) {
+        c_node_release_autodelete(&(id->node));
+        id->node = NULL;
     }
 }
 
@@ -636,6 +642,23 @@ void idents_set_name(c_identref_t idr,struct c_node *identnode) {
 
     if (id->ident != NULL)
         c_node_addref(&(id->ident));
+}
+
+void idents_set_node(c_identref_t idr,struct c_node *node) {
+    struct identifier_t *id;
+
+    id = idents_get(idr);
+    if (id == NULL) return;
+
+    if (id->node != NULL) {
+        c_node_release_autodelete(&(id->node));
+        id->node = NULL;
+    }
+
+    id->node = node;
+
+    if (id->node != NULL)
+        c_node_addref(&(id->node));
 }
 
 c_identref_t idents_ptr_to_ref(struct identifier_t *id) {
@@ -940,9 +963,11 @@ void c_node_dumptree(struct c_node *n,int indent) {
         }
         else if (n->token == ENUMERATION_CONSTANT) {
             fprintf_indent_node(stderr,indent+1);
-            fprintf(stderr,"ENUMERATION_CONSTANT id=%ld name='%s'\n",
+            fprintf(stderr,"ENUMERATION_CONSTANT id=%ld name='%s' value=0x%llx(%llu)\n",
                 (long)n->value.value_IDENTIFIER.id,
-                n->value.value_IDENTIFIER.name);
+                n->value.value_IDENTIFIER.name,
+                (unsigned long long)n->value.value_IDENTIFIER.enum_constant,
+                (unsigned long long)n->value.value_IDENTIFIER.enum_constant);
         }
         else if (n->token == TYPEDEF_NAME) {
             fprintf_indent_node(stderr,indent+1);
@@ -1022,6 +1047,147 @@ void c_node_delete_tree(struct c_node **node) {
     }
 }
 
+#define REGISTER_IDENTIFIER_ERROR_IF_EXISTS             (1U << 0U)
+
+struct identifier_t *register_identifier(struct c_node *nid,unsigned int regflags) {
+    struct identifier_t *id = NULL;
+
+    assert(nid != NULL);
+
+    if (nid->value.value_IDENTIFIER.id != c_identref_t_NONE)
+        return idents_get(nid->value.value_IDENTIFIER.id);
+
+    if (nid->value.value_IDENTIFIER.name == NULL) {
+        fprintf(stderr,"register_identifier(): no name\n");
+        return NULL;
+    }
+
+    id = idents_name_lookup(nid->value.value_IDENTIFIER.name,0);
+    if (id != NULL) {
+        if (regflags & REGISTER_IDENTIFIER_ERROR_IF_EXISTS) {
+            fprintf(stderr,"register_identifier(): '%s' already defined\n",nid->value.value_IDENTIFIER.name);
+            return NULL;
+        }
+
+        nid->value.value_IDENTIFIER.id = idents_ptr_to_ref(id);
+        return id;
+    }
+
+    id = idents_new();
+    if (id == NULL) {
+        fprintf(stderr,"register_identifier(): cannot alloc identifier\n");
+        return NULL;
+    }
+
+    nid->value.value_IDENTIFIER.id = idents_ptr_to_ref(id);
+    assert(id->ident == NULL);
+    id->ident = nid;
+    c_node_addref(&(id->ident));
+    idents_set_name(nid->value.value_IDENTIFIER.id,nid);
+    return id;
+}
+
+/* ENUM
+ *   child[0] = identifier (if present, NULL if not)
+ *   child[1] = first node of ENUMERATION_CONSTANT linked list (follow ->next list) */
+int register_enum(struct c_node *node) {
+    struct c_node *identifier,*enumconsts;
+    unsigned long long enum_it_val = 0;
+    struct identifier_t *id;
+    struct c_node *idn;
+
+    assert(node != NULL);
+
+    identifier = node->child[0];
+    enumconsts = node->child[1];
+
+    if (identifier != NULL) {
+        if ((id=register_identifier(identifier,0)) == NULL)
+            return -1;
+
+        /* make sure it's an enum */
+        if (id->token != 0 && id->token != ENUM) {
+            fprintf(stderr,"identifier already exists but NOT as enum\n");
+            return -1;
+        }
+        id->token = ENUM;
+
+        /* we treat it like a declaration if there are no enum constants provided */
+        if (enumconsts != NULL) {
+            if (id->defined) {
+                fprintf(stderr,"enum already defined.\n");
+                return -1;
+            }
+
+            id->defined = 1;
+        }
+    }
+
+    /* and then register enumeration identifiers */
+    for (;enumconsts != NULL;enumconsts=enumconsts->next) {
+        if (enumconsts->token == ENUMERATION_CONSTANT) {
+            if ((id=register_identifier(enumconsts,0)) == NULL)
+                return -1;
+
+            /* make sure it's an enum */
+            if (id->token != 0 && id->token != ENUMERATION_CONSTANT) {
+                fprintf(stderr,"identifier already exists but NOT as enum const\n");
+                return -1;
+            }
+
+            if (id->defined) {
+                fprintf(stderr,"enum const already defined\n");
+                return -1;
+            }
+
+            id->token = ENUMERATION_CONSTANT;
+            id->defined = 1;
+
+            /* if the ENUMERATION_CONSTANT has an I_CONST child node,
+             * that integer constant becomes the new value instead */
+            if ((idn=enumconsts->child[0]) != NULL) {
+                /* TODO: Evaluation, if integer expression */
+                if (idn->token == I_CONSTANT)
+                    enum_it_val = idn->value.value_I_CONSTANT.v.uint;
+                else {
+                    fprintf(stderr,"enum const not an integer constant\n");
+                    return -1;
+                }
+            }
+
+            /* register node and value */
+            idents_set_node(idents_ptr_to_ref(id),enumconsts);
+            enumconsts->value.value_IDENTIFIER.enum_constant = enum_it_val;
+
+            /* increment const */
+            enum_it_val++;
+        }
+    }
+
+    return 0;
+}
+
+int enumerator_pass(struct c_node *node) {
+    struct c_node *sc;
+    unsigned int i;
+    int r;
+
+    for (sc=node;sc!=NULL;sc=sc->next) {
+        if (sc->token == ENUM) {
+            if ((r=register_enum(sc)) != 0)
+                return r;
+        }
+        else {
+            for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                if ((r=enumerator_pass(sc->child[i])) != 0)
+                    return r;
+            }
+        }
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     int res;
 
@@ -1036,11 +1202,20 @@ int main(int argc, char **argv) {
         if ((res=yyparse()) != 0) break;
     } while (!feof(yyin));
     yylex_destroy();
+    idents_free_all();
+
+    /* first pass: enumerator marking */
+    if (res == 0 && last_translation_unit != NULL)
+        res = enumerator_pass(last_translation_unit);
 
     /* finish parsing final tree */
     if (last_translation_unit != NULL) {
         fprintf(stderr,"Resulting tree:\n");
         c_node_dumptree(last_translation_unit,1);
+    }
+
+    /* delete the tree, we're done */
+    if (last_translation_unit != NULL) {
         c_node_delete_tree(&last_translation_unit);
         c_node_release(&last_translation_unit);
         c_node_delete(&last_translation_unit);

@@ -37,6 +37,7 @@ struct c_node {
         struct c_node_IDENTIFIER {      // token == IDENTIFIER or token == ENUMERATION_CONSTANT or TYPEDEF_NAME
             c_identref_t                id;
             char*                       name;
+            uint64_t                    enum_constant; // if token == ENUMERATION_CONSTANT
         } value_IDENTIFIER;
         struct c_node_ENUM {
             unsigned char               extra_elem; // at the end
