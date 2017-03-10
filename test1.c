@@ -131,7 +131,10 @@ enum named_enum {
     framexpr24 = (~1 + 1),
     framexpr25 = ~~~~~((~2) + 1),
     framexpr26 = ((7 % 4) + 7),
-    framexpr27 = 7 % 4 % 2
+    framexpr27 = 7 % 4 % 2,
+    framexpr28 = !0,
+    framexpr29 = !1,
+    framexpr30 = !(1 + 1 + 1 + 1)
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
