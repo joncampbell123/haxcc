@@ -1114,11 +1114,42 @@ int enum_const_eval(struct c_node *idn) {
     return 0;
 }
 
+int expression_eval(struct c_node *idn) {
+    struct c_node *nullnode = NULL;
+    struct c_node *sn;
+
+    assert(idn->token == EXPRESSION);
+
+    /* we do not concern ourself with prev/next/parent */
+    /* we do expect the node to only have one child */
+    while (idn->token == EXPRESSION) {
+        if ((sn=idn->child[0]) == NULL)
+            break;
+
+        if (sn->token == I_CONSTANT) {
+            /* pull it up, replace EXPRESSION node */
+            idn->token = sn->token;
+            idn->value = sn->value;
+            /* dispose of child contents */
+            memset(&(sn->value),0,sizeof(sn->value));
+            c_node_move_to_child_link(idn,0,&nullnode);
+            c_node_release_autodelete(&(sn));
+        }
+        else {
+            break;
+        }
+    }
+
+    return 0;
+}
+
 int enum_expr_eval(struct c_node **idn) {
     assert(idn != NULL);
 
     if ((*idn)->token == ENUMERATION_CONSTANT)
         return enum_const_eval(*idn);
+    else if ((*idn)->token == EXPRESSION)
+        return expression_eval(*idn);
 
     return 0;
 }

@@ -104,7 +104,8 @@ enum named_enum {
     qwerty = 333,
     keeeeeeee,
     qweeeeee = 0x10000,
-    ppppppp
+    ppppppp,
+    fromexpr1 = (9)
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
