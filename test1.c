@@ -113,7 +113,8 @@ enum named_enum {
     fromexpr6 = ((qwerty + 222000) + 1000000) + 990000000,
     fromexpr7 = (999999 - 12345),
     fromexpr8 = (223 - 23) - 100,
-    framexpr9 = (9 * 111111111)
+    framexpr9 = (9 * 111111111),
+    framexpr10 = (99999999 / 9)
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
