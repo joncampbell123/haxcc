@@ -1093,24 +1093,30 @@ struct identifier_t *register_identifier(struct c_node *nid,unsigned int regflag
     return id;
 }
 
-int enum_expr_eval(struct c_node *idn) {
-    if (idn->token == ENUMERATION_CONSTANT) {
-        struct identifier_t *eid;
-        struct c_node *en;
+int enum_const_eval(struct c_node *idn) {
+    struct identifier_t *eid;
+    struct c_node *en;
 
-        if ((eid=register_identifier(idn,REGISTER_IDENTIFIER_MUST_EXIST)) == NULL)
-            return -1;
-        if ((en=eid->node) == NULL) {
-            fprintf(stderr,"enum identifier no node\n");
-            return -1;
-        }
-        assert(en->token == ENUMERATION_CONSTANT);
-        c_string_free(&(idn->value.value_IDENTIFIER.name));
-        idn->value.value_I_CONSTANT.v.uint = en->value.value_IDENTIFIER.enum_constant;
-        idn->value.value_I_CONSTANT.bsign = 0;
-        idn->value.value_I_CONSTANT.bwidth = int_width_b;
-        idn->token = I_CONSTANT;
+    assert(idn->token == ENUMERATION_CONSTANT);
+
+    if ((eid=register_identifier(idn,REGISTER_IDENTIFIER_MUST_EXIST)) == NULL)
+        return -1;
+    if ((en=eid->node) == NULL) {
+        fprintf(stderr,"enum identifier no node\n");
+        return -1;
     }
+    assert(en->token == ENUMERATION_CONSTANT);
+    c_string_free(&(idn->value.value_IDENTIFIER.name));
+    idn->value.value_I_CONSTANT.v.uint = en->value.value_IDENTIFIER.enum_constant;
+    idn->value.value_I_CONSTANT.bsign = 0;
+    idn->value.value_I_CONSTANT.bwidth = int_width_b;
+    idn->token = I_CONSTANT;
+    return 0;
+}
+
+int enum_expr_eval(struct c_node *idn) {
+    if (idn->token == ENUMERATION_CONSTANT)
+        return enum_const_eval(idn);
 
     return 0;
 }
