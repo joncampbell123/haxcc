@@ -1048,6 +1048,7 @@ void c_node_delete_tree(struct c_node **node) {
 }
 
 #define REGISTER_IDENTIFIER_ERROR_IF_EXISTS             (1U << 0U)
+#define REGISTER_IDENTIFIER_MUST_EXIST                  (1U << 1U)
 
 struct identifier_t *register_identifier(struct c_node *nid,unsigned int regflags) {
     struct identifier_t *id = NULL;
@@ -1071,6 +1072,11 @@ struct identifier_t *register_identifier(struct c_node *nid,unsigned int regflag
 
         nid->value.value_IDENTIFIER.id = idents_ptr_to_ref(id);
         return id;
+    }
+
+    if (regflags & REGISTER_IDENTIFIER_MUST_EXIST) {
+        fprintf(stderr,"register_identifier(): '%s' does not exist\n",nid->value.value_IDENTIFIER.name);
+        return NULL;
     }
 
     id = idents_new();
@@ -1149,6 +1155,19 @@ int register_enum(struct c_node *node) {
                 /* TODO: Evaluation, if integer expression */
                 if (idn->token == I_CONSTANT)
                     enum_it_val = idn->value.value_I_CONSTANT.v.uint;
+                else if (idn->token == ENUMERATION_CONSTANT) {
+                    struct identifier_t *eid;
+                    struct c_node *en;
+
+                    if ((eid=register_identifier(idn,REGISTER_IDENTIFIER_MUST_EXIST)) == NULL)
+                        return -1;
+                    if ((en=eid->node) == NULL) {
+                        fprintf(stderr,"enum identifier no node\n");
+                        return -1;
+                    }
+                    assert(en->token == ENUMERATION_CONSTANT);
+                    enum_it_val = idn->value.value_IDENTIFIER.enum_constant = en->value.value_IDENTIFIER.enum_constant;
+                }
                 else {
                     fprintf(stderr,"enum const not an integer constant\n");
                     return -1;

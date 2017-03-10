@@ -89,7 +89,8 @@ enum {
     joe2 = 9,
     bob2 = 99999,
     harry2 = 111,
-    jerface2 = 11111
+    jerface2 = 11111,
+    fromanotherenum = joe2 /* apparently it's legal (in GCC) to declare an enum const from another enum const */
 };
 enum {
     thisenum,
