@@ -353,6 +353,15 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
         void *xptraa = (int){1, 2, 3, 4};
         void *xp2 = (long){3, 1, -1, 4, 2, 1, (char){'a', 'b', 'c'}, 3, 1};
         void *xp3 = (int){1, 1, 1, 1, 1,};
+        /* invalid, for testing */
+        {
+            int typecastarrayabs[] = (int[])y;
+            int typecastarrayabs2[] = (int[][])y;
+            int typecastarrayabs2x[] = (int[][64])y;
+            int typecastarrayabs3[] = (int[32][64])y;
+            int typecastarraya = (int[]())y;
+            int typecastarraya = (int[](int,long,float)(int))y;
+        }
 
         _Static_assert(1 == 1,"Hello");
         _Static_assert((1 + 1) == 2,"AAAA");

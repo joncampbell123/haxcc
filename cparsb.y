@@ -974,7 +974,11 @@ type_name
     ;
 
 abstract_declarator
-    : pointer direct_abstract_declarator
+    : pointer direct_abstract_declarator {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = POINTER; c_node_copy_lineno($<node>$,$<node>2);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+    }
     | pointer {
         $<node>$ = $<node>1;
     }
@@ -984,27 +988,95 @@ abstract_declarator
     ;
 
 direct_abstract_declarator
-    : '(' abstract_declarator ')'
-    | '[' ']'
-    | '[' '*' ']'
+    : '(' abstract_declarator ')' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = DECLARATOR_EXPRESSION; c_node_copy_lineno($<node>$,$<node>2);
+        c_node_move_to_child_link($<node>$,0,&($<node>2));
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | '[' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | '[' '*' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
     | '[' STATIC type_qualifier_list assignment_expression ']'
     | '[' STATIC assignment_expression ']'
     | '[' type_qualifier_list STATIC assignment_expression ']'
     | '[' type_qualifier_list assignment_expression ']'
     | '[' type_qualifier_list ']'
-    | '[' assignment_expression ']'
-    | direct_abstract_declarator '[' ']'
-    | direct_abstract_declarator '[' '*' ']'
+    | '[' assignment_expression ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | direct_abstract_declarator '[' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | direct_abstract_declarator '[' '*' ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
     | direct_abstract_declarator '[' STATIC type_qualifier_list assignment_expression ']'
     | direct_abstract_declarator '[' STATIC assignment_expression ']'
     | direct_abstract_declarator '[' type_qualifier_list assignment_expression ']'
     | direct_abstract_declarator '[' type_qualifier_list STATIC assignment_expression ']'
     | direct_abstract_declarator '[' type_qualifier_list ']'
-    | direct_abstract_declarator '[' assignment_expression ']'
-    | '(' ')'
-    | '(' parameter_type_list ')'
-    | direct_abstract_declarator '(' ')'
-    | direct_abstract_declarator '(' parameter_type_list ')'
+    | direct_abstract_declarator '[' assignment_expression ']' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = ARRAY_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&($<node>3));
+        c_node_release_autodelete(&($<node>4));
+    }
+    | '(' ')' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+    }
+    | '(' parameter_type_list ')' {
+        struct c_node *idlist;
+
+        idlist = c_node_alloc_or_die(); c_node_addref(&idlist); idlist->token = PARAMETER_LIST; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_scan_to_head(&($<node>2));
+        c_node_move_to_child_link(idlist,0,&($<node>2));
+
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_release_autodelete(&($<node>1));
+        c_node_move_to_child_link($<node>$,1,&idlist);
+        c_node_release_autodelete(&($<node>3));
+    }
+    | direct_abstract_declarator '(' ')' {
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_release_autodelete(&($<node>3));
+    }
+    | direct_abstract_declarator '(' parameter_type_list ')' {
+        struct c_node *idlist;
+
+        idlist = c_node_alloc_or_die(); c_node_addref(&idlist); idlist->token = PARAMETER_LIST; c_node_copy_lineno($<node>$,$<node>3);
+        c_node_scan_to_head(&($<node>3));
+        c_node_move_to_child_link(idlist,0,&($<node>3));
+
+        $<node>$ = c_node_alloc_or_die(); c_node_addref(&($<node>$)); $<node>$->token = FUNCTION_REF; c_node_copy_lineno($<node>$,$<node>1);
+        c_node_move_to_child_link($<node>$,0,&($<node>1));
+        c_node_release_autodelete(&($<node>2));
+        c_node_move_to_child_link($<node>$,1,&idlist);
+        c_node_release_autodelete(&($<node>4));
+    }
     ;
 
 initializer
