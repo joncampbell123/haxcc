@@ -123,7 +123,9 @@ enum named_enum {
     framexpr16 = (256U >> 2U >> 2U),
     framexpr17 = -9,
     framexpr18 = -((3 - 2)),
-    framexpr19 = 5 + (-(2 + 2))
+    framexpr19 = 5 + (-(2 + 2)),
+    framexpr20 = +5,
+    framexpr21 = 5 + +5
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,

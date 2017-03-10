@@ -1445,6 +1445,32 @@ int expression_eval_reduce_negate(struct c_node *idn) {
     return 0;
 }
 
+int expression_eval_reduce_positive(struct c_node *idn) {
+    struct c_node *nullnode = NULL;
+    struct c_node *p1;
+    int r;
+
+    assert(idn != NULL);
+    assert(idn->token == POSITIVE);
+
+    if (idn->child[0] == NULL)
+        return 0;
+
+    if ((r=expression_eval_reduce(idn->child[0])) != 0)
+        return r;
+
+    if ((p1=idn->child[0])->token == I_CONSTANT) {
+        idn->token = I_CONSTANT;
+        idn->value = p1->value;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+    }
+
+    return 0;
+}
+
 int expression_eval_reduce(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *sn;
@@ -1527,6 +1553,14 @@ int expression_eval_reduce(struct c_node *idn) {
         else if (idn->token == NEGATE) {
             /* express child nodes */
             if ((r=expression_eval_reduce_negate(idn)) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
+        else if (idn->token == POSITIVE) {
+            /* express child nodes */
+            if ((r=expression_eval_reduce_positive(idn)) != 0)
                 return r;
 
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
