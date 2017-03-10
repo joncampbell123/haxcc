@@ -1117,6 +1117,7 @@ int enum_const_eval(struct c_node *idn) {
 int expression_eval(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *sn;
+    int r;
 
     assert(idn->token == EXPRESSION);
 
@@ -1127,6 +1128,18 @@ int expression_eval(struct c_node *idn) {
             break;
 
         if (sn->token == I_CONSTANT) {
+            /* pull it up, replace EXPRESSION node */
+            idn->token = sn->token;
+            idn->value = sn->value;
+            /* dispose of child contents */
+            memset(&(sn->value),0,sizeof(sn->value));
+            c_node_move_to_child_link(idn,0,&nullnode);
+            c_node_release_autodelete(&(sn));
+        }
+        else if (sn->token == ENUMERATION_CONSTANT) {
+            if ((r=enum_const_eval(sn)) != 0)
+                return r;
+
             /* pull it up, replace EXPRESSION node */
             idn->token = sn->token;
             idn->value = sn->value;
