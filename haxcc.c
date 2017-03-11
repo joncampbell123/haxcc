@@ -2442,12 +2442,12 @@ int enumerator_pass(struct c_node *node) {
     return 0;
 }
 
-int optimization_pass1(struct c_node *node) {
+int optimization_pass1(struct c_node **node) {
     struct c_node *sc,*idn;
     unsigned int i;
     int r;
 
-    for (sc=node;sc!=NULL;sc=sc->next) {
+    for (sc=*node;sc!=NULL;sc=sc->next) {
         if (sc->token == STATIC_ASSERT) {
             if ((idn=sc->child[0]) != NULL) {
                 if (idn->token != I_CONSTANT) {
@@ -2456,6 +2456,11 @@ int optimization_pass1(struct c_node *node) {
                         return -1;
                     }
                 }
+            }
+
+            for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                if ((r=optimization_pass1(&sc->child[i])) != 0)
+                    return r;
             }
         }
         else if (sc->token == INIT_DECLARATOR) {
@@ -2469,10 +2474,15 @@ int optimization_pass1(struct c_node *node) {
                     }
                 }
             }
+
+            for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                if ((r=optimization_pass1(&sc->child[i])) != 0)
+                    return r;
+            }
         }
         else {
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=optimization_pass1(sc->child[i])) != 0)
+                if ((r=optimization_pass1(&sc->child[i])) != 0)
                     return r;
             }
         }
@@ -2503,7 +2513,7 @@ int main(int argc, char **argv) {
 
     /* second pass: optimization pass 1 */
     if (res == 0 && last_translation_unit != NULL)
-        res = optimization_pass1(last_translation_unit);
+        res = optimization_pass1(&last_translation_unit);
 
     /* finish parsing final tree */
     if (last_translation_unit != NULL) {
