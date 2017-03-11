@@ -1663,7 +1663,7 @@ int expression_eval_reduce_ne_op(struct c_node *idn) {
     return 0;
 }
 
-int expression_eval_reduce_g_op(struct c_node *idn) { /* > greater than */
+int expression_eval_reduce_gt_op(struct c_node *idn) { /* > greater than */
     struct c_node *nullnode = NULL;
     struct c_node *p1,*p2;
     int r;
@@ -1690,6 +1690,48 @@ int expression_eval_reduce_g_op(struct c_node *idn) { /* > greater than */
             p1->value.value_I_CONSTANT.v.uint = (p1->value.value_I_CONSTANT.v.sint > p2->value.value_I_CONSTANT.v.sint) ? 1 : 0;
         else
             p1->value.value_I_CONSTANT.v.uint = (p1->value.value_I_CONSTANT.v.uint > p2->value.value_I_CONSTANT.v.uint) ? 1 : 0;
+        p1->value.value_I_CONSTANT.bsign = 0;
+        idn->value = p1->value;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+
+        memset(&(p2->value),0,sizeof(p2->value));
+        c_node_move_to_child_link(idn,1,&nullnode);
+        c_node_release_autodelete(&(p2));
+    }
+
+    return 0;
+}
+
+int expression_eval_reduce_lt_op(struct c_node *idn) { /* < less than */
+    struct c_node *nullnode = NULL;
+    struct c_node *p1,*p2;
+    int r;
+
+    assert(idn != NULL);
+    assert(idn->token == '<');
+
+    if (idn->child[0] == NULL || idn->child[1] == NULL)
+        return 0;
+
+    if ((r=expression_eval_reduce(idn->child[0])) != 0)
+        return r;
+    if ((r=expression_eval_reduce(idn->child[1])) != 0)
+        return r;
+    if (idn->child[0]->token != idn->child[1]->token)
+        return 0;
+
+    if ((p1=idn->child[0])->token == I_CONSTANT) {
+        /* remember child[1]->token == I_CONSTANT because of check */
+        p2 = idn->child[1];
+        idn->token = I_CONSTANT;
+
+        if (p1->value.value_I_CONSTANT.bsign > 0 || p2->value.value_I_CONSTANT.bsign > 0)
+            p1->value.value_I_CONSTANT.v.uint = (p1->value.value_I_CONSTANT.v.sint < p2->value.value_I_CONSTANT.v.sint) ? 1 : 0;
+        else
+            p1->value.value_I_CONSTANT.v.uint = (p1->value.value_I_CONSTANT.v.uint < p2->value.value_I_CONSTANT.v.uint) ? 1 : 0;
         p1->value.value_I_CONSTANT.bsign = 0;
         idn->value = p1->value;
 
@@ -1842,7 +1884,15 @@ int expression_eval_reduce(struct c_node *idn) {
         }
         else if (idn->token == '>') {
             /* express child nodes */
-            if ((r=expression_eval_reduce_g_op(idn)) != 0)
+            if ((r=expression_eval_reduce_gt_op(idn)) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
+        else if (idn->token == '<') {
+            /* express child nodes */
+            if ((r=expression_eval_reduce_lt_op(idn)) != 0)
                 return r;
 
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))

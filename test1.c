@@ -144,7 +144,11 @@ enum named_enum {
     framexpr37 = (3 > 2),
     framexpr38 = (2 > 3),
     framexpr39 = (-2 > -3), /* which is true! */
-    framexpr40 = (-3 > -2)  /* which is false */
+    framexpr40 = (-3 > -2), /* which is false */
+    framexpr41 = (2 < 3),
+    framexpr42 = (3 < 2),
+    framexpr43 = (-3 < -2), /* which is true! */
+    framexpr44 = (-2 < -3)  /* which is false */
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
