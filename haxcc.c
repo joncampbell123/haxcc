@@ -2005,7 +2005,7 @@ int expression_eval_reduce_logical_and(struct c_node *idn) { /* logical and (&&)
     return 0;
 }
 
-int expression_eval_reduce_logical_or(struct c_node *idn) { /* logical and (&&) operator */
+int expression_eval_reduce_logical_or(struct c_node *idn) { /* logical or (||) operator */
     struct c_node *nullnode = NULL;
     struct c_node *p1,*p2;
     int r;
