@@ -2834,18 +2834,14 @@ int expression_eval_reduce(struct c_node *idn) {
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
                 break;
         }
-        else if (
-                idn->token == POINTER_DEREF) {
-            /* array ref index in child[1] */
+        else if (idn->token == POINTER_DEREF) {
             if ((r=expression_eval_reduce(idn->child[0])) != 0)
                 return r;
 
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
                 break;
         }
-        else if (
-            idn->token == ARRAY_REF) {
-            /* array ref index in child[1] */
+        else if (idn->token == ARRAY_REF) {
             if ((r=expression_eval_reduce(idn->child[1])) != 0)
                 return r;
 
