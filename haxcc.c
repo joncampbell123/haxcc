@@ -1252,6 +1252,18 @@ int expression_eval_reduce_sub(struct c_node *idn) {
         return r;
     if ((r=expression_eval_reduce(idn->child[1])) != 0)
         return r;
+
+    if (idn->child[0]->token == F_CONSTANT && idn->child[1]->token == I_CONSTANT) {
+        /* if float + int, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[1])) != 0)
+            return r;
+    }
+    else if (idn->child[1]->token == F_CONSTANT && idn->child[0]->token == I_CONSTANT) {
+        /* if int + float, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[0])) != 0)
+            return r;
+    }
+
     if (idn->child[0]->token != idn->child[1]->token)
         return 0;
 
