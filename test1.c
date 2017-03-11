@@ -539,5 +539,7 @@ void functt(const uitype x) {
     fltype1 t[5];
     t[0] = (fltype2)x;
     xyz.c = (int)x;
+
+    float floatexpr1 = 3.1 + 0.9;
 }
 

@@ -467,7 +467,7 @@ uint64_t strescp(char ** const s) {
 
 void c_node_f_constant_parse(struct c_node *d,char *s) {
     d->value.value_F_CONSTANT.bwidth = double_width_b; /* default double */
-    d->value.value_F_CONSTANT.val = strtof(s,&s);
+    d->value.value_F_CONSTANT.val = strtold(s,&s);
 
     if (*s == 'f' || *s == 'F')
         d->value.value_F_CONSTANT.bwidth = float_width_b;
@@ -944,7 +944,7 @@ void c_node_dumptree(struct c_node *n,int indent) {
 
         if (n->token == F_CONSTANT) {
             fprintf_indent_node(stderr,indent+1);
-            fprintf(stderr,"F_CONSTANT value=%.20f width=%u\n",
+            fprintf(stderr,"F_CONSTANT value=%.20Lf width=%u\n",
                 n->value.value_F_CONSTANT.val,
                 n->value.value_F_CONSTANT.bwidth);
         }

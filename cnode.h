@@ -31,7 +31,7 @@ struct c_node {
             unsigned char   bsign;      // 1=signed 0=unsigned
         } value_I_CONSTANT;
         struct c_node_F_CONSTANT {
-            double          val;        // FIXME: what about long double?
+            long double     val;        // FIXME: On some compilers long double == double
             unsigned char   bwidth;     // width, in bytes
         } value_F_CONSTANT;
         struct c_node_IDENTIFIER {      // token == IDENTIFIER or token == ENUMERATION_CONSTANT or TYPEDEF_NAME
