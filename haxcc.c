@@ -1945,6 +1945,18 @@ int expression_eval_reduce_lt_op(struct c_node *idn) { /* < less than */
         return r;
     if ((r=expression_eval_reduce(idn->child[1])) != 0)
         return r;
+
+    if (idn->child[0]->token == F_CONSTANT && idn->child[1]->token == I_CONSTANT) {
+        /* if float + int, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[1])) != 0)
+            return r;
+    }
+    else if (idn->child[1]->token == F_CONSTANT && idn->child[0]->token == I_CONSTANT) {
+        /* if int + float, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[0])) != 0)
+            return r;
+    }
+
     if (idn->child[0]->token != idn->child[1]->token)
         return 0;
 
@@ -1959,6 +1971,23 @@ int expression_eval_reduce_lt_op(struct c_node *idn) { /* < less than */
             p1->value.value_I_CONSTANT.v.uint = (p1->value.value_I_CONSTANT.v.uint < p2->value.value_I_CONSTANT.v.uint) ? 1 : 0;
         p1->value.value_I_CONSTANT.bsign = 0;
         idn->value = p1->value;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+
+        memset(&(p2->value),0,sizeof(p2->value));
+        c_node_move_to_child_link(idn,1,&nullnode);
+        c_node_release_autodelete(&(p2));
+    }
+    else if ((p1=idn->child[0])->token == F_CONSTANT) {
+        /* remember child[1]->token == I_CONSTANT because of check */
+        p2 = idn->child[1];
+        idn->token = I_CONSTANT;
+
+        idn->value.value_I_CONSTANT.bsign = 1;
+        idn->value.value_I_CONSTANT.bwidth = int_width_b;
+        idn->value.value_I_CONSTANT.v.uint = (p1->value.value_F_CONSTANT.val < p2->value.value_F_CONSTANT.val) ? 1 : 0;
 
         memset(&(p1->value),0,sizeof(p1->value));
         c_node_move_to_child_link(idn,0,&nullnode);
