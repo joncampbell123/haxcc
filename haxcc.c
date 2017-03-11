@@ -2514,6 +2514,11 @@ int optimization_pass1(struct c_node **node) {
         }
         else {
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
+                    return r;
+            }
+
+            for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) != 0)
                     return r;
             }
