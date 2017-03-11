@@ -1709,6 +1709,14 @@ int expression_eval_reduce_positive(struct c_node *idn) {
         c_node_move_to_child_link(idn,0,&nullnode);
         c_node_release_autodelete(&(p1));
     }
+    else if ((p1=idn->child[0])->token == F_CONSTANT) {
+        idn->token = F_CONSTANT;
+        idn->value = p1->value;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+    }
 
     return 0;
 }
