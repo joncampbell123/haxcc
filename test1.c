@@ -560,5 +560,7 @@ void functt(const uitype x) {
     float floatexpr5 = 1.5 + 1; /* float + int = 2.5 */
     float floatexpr5b = 1.5 + -1; /* float + -int = 0.5 */
     float floatexpr5c = 1.5 - 1; /* float - int = 0.5 */
+    float floatexpr6 = (1.5 * 3) + 2.5; /* 4.5 + 2.5 = 7.0 */
+    float floatexpr7 = (1.5 * -3) + 2.5; /* -4.5 + 2.5 = -2.0 */
 }
 
