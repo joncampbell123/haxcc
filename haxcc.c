@@ -2044,6 +2044,56 @@ int expression_eval_reduce_logical_or(struct c_node *idn) { /* logical or (||) o
     return 0;
 }
 
+int expression_eval_reduce_ternary(struct c_node *idn) { /* ternary ? : operator */
+    struct c_node *nullnode = NULL;
+    struct c_node *c1,*p1,*p2;
+    int r;
+
+    assert(idn != NULL);
+    assert(idn->token == TERNARY);
+
+    if (idn->child[0] == NULL || idn->child[1] == NULL || idn->child[2] == NULL)
+        return 0;
+
+    if ((r=expression_eval_reduce(idn->child[0])) != 0)
+        return r;
+    if ((r=expression_eval_reduce(idn->child[1])) != 0)
+        return r;
+    if ((r=expression_eval_reduce(idn->child[2])) != 0)
+        return r;
+    if (idn->child[0]->token != idn->child[1]->token)
+        return 0;
+    if (idn->child[1]->token != idn->child[2]->token)
+        return 0;
+
+    c1 = idn->child[0];
+    p1 = idn->child[1];
+    p2 = idn->child[2];
+
+    if (c1->token == I_CONSTANT) {
+        /* if value of condition is nonzero, copy p1 value, else copy p2 value */
+        idn->token = I_CONSTANT;
+        if (c1->value.value_I_CONSTANT.v.uint != 0)
+            idn->value = p1->value;
+        else
+            idn->value = p2->value;
+
+        memset(&(c1->value),0,sizeof(c1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(c1));
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,1,&nullnode);
+        c_node_release_autodelete(&(p1));
+
+        memset(&(p2->value),0,sizeof(p2->value));
+        c_node_move_to_child_link(idn,2,&nullnode);
+        c_node_release_autodelete(&(p2));
+    }
+
+    return 0;
+}
+
 int expression_eval_reduce(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *sn;
@@ -2246,6 +2296,14 @@ int expression_eval_reduce(struct c_node *idn) {
         else if (idn->token == OR_OP) {
             /* express child nodes */
             if ((r=expression_eval_reduce_logical_or(idn)) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
+        else if (idn->token == TERNARY) {
+            /* express child nodes */
+            if ((r=expression_eval_reduce_ternary(idn)) != 0)
                 return r;
 
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))

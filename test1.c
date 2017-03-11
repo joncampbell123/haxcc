@@ -170,7 +170,10 @@ enum named_enum {
     framexpr63 = (1 || 1),
     framexpr64 = (1 || 0),
     framexpr65 = (0 || 1),
-    framexpr66 = (0 || 0)
+    framexpr66 = (0 || 0),
+    framexpr67 = ((1 + 1) == 2 ? 88 : 44),
+    framexpr68 = ((1 + 1) == 3 ? 88 : 44),
+    framexpr69 = 4 + ((1 + 1) ? (2 ? 40 : 20) : (0))
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
