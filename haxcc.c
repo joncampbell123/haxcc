@@ -2519,7 +2519,36 @@ int expression_eval_reduce_typecast(struct c_node *idn) {
                     nsign = 1;
             }
 
-            if (p2->token == I_CONSTANT) {
+            if (p2->token == F_CONSTANT && (new_major_type == FLOAT || new_major_type == DOUBLE)) {
+                idn->token = p2->token;
+                idn->value = p2->value;
+
+                if (idn->token == F_CONSTANT) {
+                    if (new_major_type == FLOAT)
+                        idn->value.value_F_CONSTANT.bwidth = float_width_b;
+                    else if (nlong == 0)
+                        idn->value.value_F_CONSTANT.bwidth = double_width_b;
+                    else
+                        idn->value.value_F_CONSTANT.bwidth = longdouble_width_b;
+                }
+            }
+            else if (p2->token == I_CONSTANT && (new_major_type == FLOAT || new_major_type == DOUBLE)) {
+                if ((r=expression_eval_int_to_float(p2)) != 0)
+                    return r;
+
+                idn->token = p2->token;
+                idn->value = p2->value;
+
+                if (idn->token == F_CONSTANT) {
+                    if (new_major_type == FLOAT)
+                        idn->value.value_F_CONSTANT.bwidth = float_width_b;
+                    else if (nlong == 0)
+                        idn->value.value_F_CONSTANT.bwidth = double_width_b;
+                    else
+                        idn->value.value_F_CONSTANT.bwidth = longdouble_width_b;
+                }
+            }
+            else if (p2->token == I_CONSTANT) {
                 if (new_major_type == CHAR || new_major_type == BOOL)
                     nwidth = char_width_b;
                 else if (new_major_type == INT) {
