@@ -2485,10 +2485,6 @@ int expression_eval_reduce_typecast(struct c_node *idn) {
     p1 = idn->child[0];
     p2 = idn->child[1];
     if (p2->token == I_CONSTANT || p2->token == F_CONSTANT) {
-        /* remember child[1]->token == I_CONSTANT because of check */
-        idn->token = p2->token;
-        idn->value = p2->value;
-
         {
             unsigned char nshort = 0,nlong = 0,unknown = 0;
             int new_major_type = -1;
@@ -2539,6 +2535,10 @@ int expression_eval_reduce_typecast(struct c_node *idn) {
                 else {
                     return 0;
                 }
+
+                /* remember child[1]->token == I_CONSTANT because of check */
+                idn->token = p2->token;
+                idn->value = p2->value;
 
                 if (nwidth > 0) {
                     if (nsign > 0) {
