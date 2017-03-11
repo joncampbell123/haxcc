@@ -579,5 +579,13 @@ void functt(const uitype x) {
     float floatexpr11k = 4.3 != 3;
     float floatexpr11l = 4.3 != 4.29;
     float floatexpr11m = 4.3 != 4.3;
+    float floatexpr11n = 4.3 >= 4.0;
+    float floatexpr11o = 4.3 >= 4;
+    float floatexpr11p = 4 >= 3.3;
+    float floatexpr11q = 3.3 >= 4.0;
+    float floatexpr11r = -4.3 <= -4.0;
+    float floatexpr11s = -4.3 <= -4;
+    float floatexpr11t = -4 <= -3.3;
+    float floatexpr11v = -3.3 <= -4.0;
 }
 
