@@ -166,7 +166,11 @@ enum named_enum {
     framexpr59 = (1 && 1),
     framexpr60 = (1 && 0),
     framexpr61 = (0 && 1),
-    framexpr62 = (0 && 0)
+    framexpr62 = (0 && 0),
+    framexpr63 = (1 || 1),
+    framexpr64 = (1 || 0),
+    framexpr65 = (0 || 1),
+    framexpr66 = (0 || 0)
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,
