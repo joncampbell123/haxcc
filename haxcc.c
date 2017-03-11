@@ -2309,6 +2309,24 @@ int expression_eval_reduce(struct c_node *idn) {
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
                 break;
         }
+        else if (
+            idn->token == POINTER_DEREF) {
+            /* array ref index in child[1] */
+            if ((r=expression_eval_reduce(idn->child[0])) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
+        else if (
+            idn->token == ARRAY_REF) {
+            /* array ref index in child[1] */
+            if ((r=expression_eval_reduce(idn->child[1])) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
         else {
             break;
         }
@@ -2430,8 +2448,18 @@ int optimization_pass1(struct c_node *node) {
     int r;
 
     for (sc=node;sc!=NULL;sc=sc->next) {
-        if (sc->token == INIT_DECLARATOR) {
-            /* child[0] = identifier
+        if (sc->token == STATIC_ASSERT) {
+            if ((idn=sc->child[0]) != NULL) {
+                if (idn->token != I_CONSTANT) {
+                    if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                        fprintf(stderr,"expression evaluation failure\n");
+                        return -1;
+                    }
+                }
+            }
+        }
+        else if (sc->token == INIT_DECLARATOR) {
+            /* child[0] = identifier / array ref
              * child[1] = init value (if any) */
             if ((idn=sc->child[1]) != NULL) {
                 if (idn->token != I_CONSTANT) {

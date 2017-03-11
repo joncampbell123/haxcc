@@ -286,6 +286,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     }
 
     {
+        char arrayrefexpr1 = array1[(8*4)+1];
         int a = 1 | 2,b = 1 || 2,c = 1 ^ 3,d = 3 & 2,e = 1 && 1,f = 1 == 1,g = 1 != 1,
             h = 1 >= 1,i = 1 <= 1,j = 1 > 1,k = 1 < 1,l = 1 >> 1,m = 1 << 1;
         char aa = array1[0],bb = array1[32] + array1[16];
@@ -439,6 +440,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int typecastarraya = (int[](int,long,float)(int))y;
             int doublenegative0 = ~~(1 + 1);
             int doublenegative1 = ~~(x + y);
+            int doublenegative2 = ~~(x + y + (5 + 5 + 5 + (y * (3 + 3))));
+            int doublenegative3 = ~~(x + y + (5 + 5 + 5 + *(xx + (5 + 5))));
         }
 
         _Static_assert(1 == 1,"Hello");
