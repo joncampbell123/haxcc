@@ -440,8 +440,12 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int typecastarraya = (int[](int,long,float)(int))y;
             int doublenegative0 = ~~(1 + 1);
             int doublenegative1 = ~~(x + y);
+            int doublenegative1b = ~~~(x + y);
             int doublenegative2 = ~~~~(x + y + ~~(5 + 5 + 5 + (y * (3 + 3))));
             int doublenegative3 = ~~~~~~~~(x + y + ~~(5 + 5 + 5 + *(xx + (5 + 5))));
+            int doublenegative4 = -(-1);
+            int doublenegative5 = -(-(-1));
+            int doublenegative6 = -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-1)))))))))))))))));
         }
 
         _Static_assert(1 == 1,"Hello");

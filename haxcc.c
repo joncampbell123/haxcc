@@ -2442,6 +2442,32 @@ int enumerator_pass(struct c_node *node) {
     return 0;
 }
 
+int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
+    struct c_node *nullnode = NULL;
+    struct c_node *a,*b,*c;
+
+    do {
+        a = node->child[chidx];
+        if (a == NULL) break;
+        if (!(a->token == '~' || a->token == '!' || a->token == NEGATE)) break;
+
+        b = a->child[0];
+        if (b == NULL) break;
+        if (b->token != a->token) break;
+
+        c = b->child[0];
+
+        /* lift up the node */
+        c_node_move_to_child_link(a,0,&nullnode);
+        c_node_move_to_child_link(b,0,&nullnode);
+        c_node_move_to_child_link(node,chidx,&c);
+        c_node_release_autodelete(&(a));
+        c_node_release_autodelete(&(b));
+    } while (1);
+
+    return 0;
+}
+
 int optimization_pass1(struct c_node **node) {
     struct c_node *sc,*idn;
     unsigned int i;
@@ -2450,6 +2476,9 @@ int optimization_pass1(struct c_node **node) {
     for (sc=*node;sc!=NULL;sc=sc->next) {
         if (sc->token == STATIC_ASSERT) {
             if ((idn=sc->child[0]) != NULL) {
+                if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
+                    return r;
+
                 if (idn->token != I_CONSTANT) {
                     if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
                         fprintf(stderr,"expression evaluation failure\n");
@@ -2467,6 +2496,9 @@ int optimization_pass1(struct c_node **node) {
             /* child[0] = identifier / array ref
              * child[1] = init value (if any) */
             if ((idn=sc->child[1]) != NULL) {
+                if ((r=optimization_pass1_child_dneg(sc,1)) != 0)
+                    return r;
+
                 if (idn->token != I_CONSTANT) {
                     if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
                         fprintf(stderr,"expression evaluation failure\n");
