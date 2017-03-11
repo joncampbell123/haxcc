@@ -1230,6 +1230,26 @@ int expression_eval_reduce_sub(struct c_node *idn) {
         c_node_move_to_child_link(idn,1,&nullnode);
         c_node_release_autodelete(&(p2));
     }
+    else if ((p1=idn->child[0])->token == F_CONSTANT) {
+        /* remember child[1]->token == I_CONSTANT because of check */
+        p2 = idn->child[1];
+        idn->token = F_CONSTANT;
+
+        if (p1->value.value_F_CONSTANT.bwidth < p2->value.value_F_CONSTANT.bwidth)
+            p1->value.value_F_CONSTANT.bwidth = p2->value.value_F_CONSTANT.bwidth;
+
+        p1->value.value_F_CONSTANT.val -= p2->value.value_F_CONSTANT.val;
+
+        idn->value = p1->value;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+
+        memset(&(p2->value),0,sizeof(p2->value));
+        c_node_move_to_child_link(idn,1,&nullnode);
+        c_node_release_autodelete(&(p2));
+    }
 
     return 0;
 }

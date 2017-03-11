@@ -544,5 +544,7 @@ void functt(const uitype x) {
     float floatexpr1b = 3.1f + 0.9f; /* result should be float */
     float floatexpr1c = 3.1f + 0.9; /* should promote result to double */
     float floatexpr1d = 3.1f + 0.9l; /* should promote result to long double */
+    float floatexpr2 = (3.1 + 0.9) + ((4.0 + 4.0) - 7.0); /* =5.0 */
+    float floatexpr3 = ((10.0 - 3.3) + 0.3 - 6.0) - 0.5; /* =0.5 */
 }
 
