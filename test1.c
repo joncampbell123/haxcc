@@ -173,7 +173,21 @@ enum named_enum {
     framexpr66 = (0 || 0),
     framexpr67 = ((1 + 1) == 2 ? 88 : 44),
     framexpr68 = ((1 + 1) == 3 ? 88 : 44),
-    framexpr69 = 4 + ((1 + 1) ? (2 ? 40 : 20) : (0))
+    framexpr69 = 4 + ((1 + 1) ? (2 ? 40 : 20) : (0)),
+    framexpr70 = (char)1,
+    framexpr71 = (unsigned char)1,
+    framexpr72 = (int)(char)1,
+    framexpr73 = (char)255, /* should become 0xFFFFFFFFFFFFFFFF */
+    framexpr74 = (unsigned char)255,
+    framexpr75 = (short)65535, /* should become 0xFFFFFFFFFFFFFFFF */
+    framexpr76 = (unsigned short)65535,
+    framexpr77 = (unsigned char)0x101,
+    framexpr78 = (unsigned short)0x10001,
+    framexpr79 = (int)0xFFFFFFFF, /* should become 0xFFFFFFFFFFFFFFFF */
+    framexpr80 = (unsigned int)0xFFFFFFFF,
+    framexpr81 = (signed short int)65535,
+    framexpr82 = (unsigned long long)1,
+    framexpr83 = (unsigned long)1
 };
 enum named_enum_trailing {
     wowoiqwr = 22222,

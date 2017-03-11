@@ -2094,6 +2094,125 @@ int expression_eval_reduce_ternary(struct c_node *idn) { /* ternary ? : operator
     return 0;
 }
 
+void c_node_delete_tree(struct c_node **node);
+
+int expression_eval_reduce_typecast(struct c_node *idn) {
+    struct c_node *nullnode = NULL;
+    struct c_node *p1,*p2,*tsc;
+    int r;
+
+    assert(idn != NULL);
+    assert(idn->token == TYPECAST);
+
+    if (idn->child[0] == NULL || idn->child[1] == NULL)
+        return 0;
+
+    if ((r=expression_eval_reduce(idn->child[0])) != 0)
+        return r;
+    if ((r=expression_eval_reduce(idn->child[1])) != 0)
+        return r;
+
+    p1 = idn->child[0];
+    p2 = idn->child[1];
+    if (p2->token == I_CONSTANT || p2->token == F_CONSTANT) {
+        /* remember child[1]->token == I_CONSTANT because of check */
+        idn->token = p2->token;
+        idn->value = p2->value;
+
+        {
+            unsigned char nshort = 0,nlong = 0,unknown = 0;
+            int new_major_type = -1;
+            int nwidth = -1;
+            int nsign = -1;
+
+            for (tsc=p1;tsc!=NULL;tsc=tsc->next) {
+                if (tsc->token == UNSIGNED)
+                    nsign = 0;
+                else if (tsc->token == SIGNED)
+                    nsign = 1;
+                else if (tsc->token == INT || tsc->token == CHAR || tsc->token == FLOAT || tsc->token == DOUBLE || tsc->token == BOOL)
+                    new_major_type = tsc->token;
+                else if (tsc->token == LONG)
+                    nlong++;
+                else if (tsc->token == SHORT)
+                    nshort++;
+                else
+                    unknown++;
+            }
+
+            if (unknown != 0)
+                return 0;
+
+            if (new_major_type == -1 && (nlong != 0 || nshort != 0 || nsign >= 0))
+                new_major_type = INT;
+
+            if (nsign == -1) {
+                if (new_major_type == BOOL)
+                    nsign = 0;
+                else
+                    nsign = 1;
+            }
+
+            if (p2->token == I_CONSTANT) {
+                if (new_major_type == CHAR || new_major_type == BOOL)
+                    nwidth = char_width_b;
+                else if (new_major_type == INT) {
+                    if (nlong >= 2)
+                        nwidth = longlong_width_b;
+                    else if (nlong == 1)
+                        nwidth = long_width_b;
+                    else if (nshort != 0)
+                        nwidth = short_width_b;
+                    else
+                        nwidth = int_width_b;
+                }
+                else {
+                    return 0;
+                }
+
+                if (nwidth > 0) {
+                    if (nsign > 0) {
+                        uint64_t sgn = (uint64_t)1ULL << (((uint64_t)nwidth * (uint64_t)8ULL) - (uint64_t)1ULL);
+                        uint64_t msk = sgn - (uint64_t)1ULL;
+
+                        if (idn->value.value_I_CONSTANT.v.uint & sgn)
+                            idn->value.value_I_CONSTANT.v.uint |= ~msk;
+                        else
+                            idn->value.value_I_CONSTANT.v.uint &=  msk;
+                    }
+                    else {
+                        /* NTS: we shift by nwidth*8 - 1 because on x86_64, 1 << 64 is the same as 1 << 0. */
+                        uint64_t sgn = (uint64_t)1ULL << (((uint64_t)nwidth * (uint64_t)8ULL) - (uint64_t)1ULL);
+                        uint64_t msk = (sgn << (uint64_t)1ULL) - (uint64_t)1ULL;
+
+                        idn->value.value_I_CONSTANT.v.uint &= msk;
+                    }
+
+                    idn->value.value_I_CONSTANT.bwidth = nwidth;
+                }
+
+                if (nsign >= 0)
+                    idn->value.value_I_CONSTANT.bsign = nsign;
+            }
+            else {
+                return 0;
+            }
+        }
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_delete_tree(&(p1));
+        c_node_release_autodelete(&(p1));
+
+        memset(&(p2->value),0,sizeof(p2->value));
+        c_node_move_to_child_link(idn,1,&nullnode);
+        c_node_delete_tree(&(p2));
+        c_node_release_autodelete(&(p2));
+    }
+
+    return 0;
+}
+
 int expression_eval_reduce(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *sn;
@@ -2309,8 +2428,15 @@ int expression_eval_reduce(struct c_node *idn) {
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
                 break;
         }
+        else if (idn->token == TYPECAST) {
+            if ((r=expression_eval_reduce_typecast(idn)) != 0)
+                return r;
+
+            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
+                break;
+        }
         else if (
-            idn->token == POINTER_DEREF) {
+                idn->token == POINTER_DEREF) {
             /* array ref index in child[1] */
             if ((r=expression_eval_reduce(idn->child[0])) != 0)
                 return r;
