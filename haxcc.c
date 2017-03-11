@@ -1116,6 +1116,46 @@ int enum_const_eval(struct c_node *idn) {
 
 int expression_eval_reduce(struct c_node *idn);
 
+int expression_eval_int_to_float(struct c_node *idn) {
+    struct c_node_I_CONSTANT sint;
+
+    if (idn->token != I_CONSTANT)
+        return 0;
+
+    sint = idn->value.value_I_CONSTANT;
+    idn->token = F_CONSTANT;
+
+    if (sint.bsign < 0)
+        sint.bsign = 1;
+
+    /* pick the floating point type according to how many bits are needed to hold the integer.
+     * float has a 23-bit mantissa.
+     * double has a 52-bit mantissa.
+     * long double (on Intel x86) has a 63-bit mantissa with one additional bit for the integer portion. */
+    {
+        uint64_t specval;
+
+        if (sint.bsign > 0)
+            specval = (uint64_t)llabs((long long)sint.v.sint);
+        else
+            specval = sint.v.uint;
+
+        if (specval >= ((uint64_t)1 << (uint64_t)51))
+            idn->value.value_F_CONSTANT.bwidth = longdouble_width_b;
+        else if (specval >= ((uint64_t)1 << (uint64_t)22))
+            idn->value.value_F_CONSTANT.bwidth = double_width_b;
+        else
+            idn->value.value_F_CONSTANT.bwidth = float_width_b;
+    }
+
+    if (sint.bsign > 0)
+        idn->value.value_F_CONSTANT.val = (long double)sint.v.sint;
+    else
+        idn->value.value_F_CONSTANT.val = (long double)sint.v.uint;
+
+    return 0;
+}
+
 int expression_eval_reduce_add(struct c_node *idn) {
     struct c_node *nullnode = NULL;
     struct c_node *p1,*p2;
@@ -1131,6 +1171,18 @@ int expression_eval_reduce_add(struct c_node *idn) {
         return r;
     if ((r=expression_eval_reduce(idn->child[1])) != 0)
         return r;
+
+    if (idn->child[0]->token == F_CONSTANT && idn->child[1]->token == I_CONSTANT) {
+        /* if float + int, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[1])) != 0)
+            return r;
+    }
+    else if (idn->child[1]->token == F_CONSTANT && idn->child[0]->token == I_CONSTANT) {
+        /* if int + float, then convert to float + float */
+        if ((r=expression_eval_int_to_float(idn->child[0])) != 0)
+            return r;
+    }
+
     if (idn->child[0]->token != idn->child[1]->token)
         return 0;
 
