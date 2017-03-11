@@ -437,6 +437,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int typecastarrayabs3[] = (int[32][64])y;
             int typecastarraya = (int[]())y;
             int typecastarraya = (int[](int,long,float)(int))y;
+            int doublenegative0 = ~~(1 + 1);
+            int doublenegative1 = ~~(x + y);
         }
 
         _Static_assert(1 == 1,"Hello");

@@ -2424,6 +2424,35 @@ int enumerator_pass(struct c_node *node) {
     return 0;
 }
 
+int optimization_pass1(struct c_node *node) {
+    struct c_node *sc,*idn;
+    unsigned int i;
+    int r;
+
+    for (sc=node;sc!=NULL;sc=sc->next) {
+        if (sc->token == INIT_DECLARATOR) {
+            /* child[0] = identifier
+             * child[1] = init value (if any) */
+            if ((idn=sc->child[1]) != NULL) {
+                if (idn->token != I_CONSTANT) {
+                    if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                        fprintf(stderr,"expression evaluation failure\n");
+                        return -1;
+                    }
+                }
+            }
+        }
+        else {
+            for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                if ((r=optimization_pass1(sc->child[i])) != 0)
+                    return r;
+            }
+        }
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     int res;
 
@@ -2443,6 +2472,10 @@ int main(int argc, char **argv) {
     /* first pass: enumerator marking */
     if (res == 0 && last_translation_unit != NULL)
         res = enumerator_pass(last_translation_unit);
+
+    /* second pass: optimization pass 1 */
+    if (res == 0 && last_translation_unit != NULL)
+        res = optimization_pass1(last_translation_unit);
 
     /* finish parsing final tree */
     if (last_translation_unit != NULL) {
