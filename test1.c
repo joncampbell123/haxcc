@@ -248,7 +248,11 @@ label2:
     a[3] = 7;
 }
 
+int enumref1 = willkill;
+int doublenegative3x = *(xx + (5 + 5));
+
 unsigned int unarystuff(unsigned int a,unsigned int b) {
+    int enumref1 = willkill;
     unsigned int c = ~a,cc = ~~a;
     unsigned int *addr = &a;
     unsigned int aaa = +a;
@@ -273,6 +277,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     function1();
 
     {
+        int enumref1 = willkill;
+        int enumref2[willkill];
         int a = 5;
         int b = ++a; /* b = 6 */
         int c = a++; /* c = 6, then a = 7 */
@@ -439,7 +445,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     {
         int x = joe + 5;
         int y = joe + bob * 3;
-        int sarrr[joe+bob];
+        int sarrr[joe+bob+harry];
         void *xptraa = (int){1, 2, 3, 4};
         void *xp2 = (long){3, 1, -1, 4, +2, 1, (char){'a', 'b', 'c'}, 3, 1};
         void *xp3 = (int){1, 1, 1, 1, 1,};

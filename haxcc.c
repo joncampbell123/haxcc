@@ -2834,20 +2834,6 @@ int expression_eval_reduce(struct c_node *idn) {
             if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
                 break;
         }
-        else if (idn->token == POINTER_DEREF) {
-            if ((r=expression_eval_reduce(idn->child[0])) != 0)
-                return r;
-
-            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
-                break;
-        }
-        else if (idn->token == ARRAY_REF) {
-            if ((r=expression_eval_reduce(idn->child[1])) != 0)
-                return r;
-
-            if (!(idn->token == I_CONSTANT || idn->token == F_CONSTANT))
-                break;
-        }
         else {
             break;
         }
@@ -2995,7 +2981,7 @@ int optimization_pass1(struct c_node **node) {
     int r;
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
-        if (sc->token == STATIC_ASSERT) {
+        if (sc->token == STATIC_ASSERT || sc->token == POINTER_DEREF || sc->token == EXPRESSION) {
             if ((idn=sc->child[0]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
                     return r;
@@ -3013,7 +2999,7 @@ int optimization_pass1(struct c_node **node) {
                     return r;
             }
         }
-        else if (sc->token == INIT_DECLARATOR) {
+        else if (sc->token == INIT_DECLARATOR || sc->token == ARRAY_REF) {
             /* child[0] = identifier / array ref
              * child[1] = init value (if any) */
             if ((idn=sc->child[1]) != NULL) {
