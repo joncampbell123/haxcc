@@ -258,7 +258,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     unsigned int aaa = +a;
     unsigned int bbb = -a + b;
     unsigned int notty = !a,notty2 = !!a,notty3 = !!!a,notty4 = !!!!a;
-    unsigned int noctty = !0,noctty2 = !!0,noctty3 = !!!0,noctty4 = !!!!0,noctty5 = !!!!!0,noctty6 = !!!!!!0;
+    /* NTS: We expect ! to result in a boolean, even that !!2 == 1 and !!!2 == 0 */
+    unsigned int noctty = !0,noctty2 = !!0,noctty3 = !!!0,noctty4 = !!!!0,noctty5 = !!!!!0,noctty6 = !!!!!!0,noctty7 = !2,noctty8 = !!2,noctty9 = !!!2, noctty10 = !!!!2;
     unsigned int sz1 = sizeof a;
     unsigned int sz2 = sizeof(a);
     unsigned int sz3 = sizeof(*addr);

@@ -3012,15 +3012,11 @@ int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
 
         c = b->child[0];
         if (a->token == '!') {
-            /* replace !! with nothing,
-             *   always if "c" is an integer constant,
-             *   always if "c" is another '!' operator,
-             *   but not if "c" is anything else.
+            /* replace !!! with !
              *
-             * the reason for this is the amount of code out there (including DOSBox)
-             * that expects to convert an integer into a boolean value that is 1 if
-             * the integer was nonzero, like this: !!x */
-            if (c->token != '!' && c->token != I_CONSTANT) break;
+             * we want to make sure that the result of ! is a boolean (1 or 0).
+             * there's code out there that assumes !!x results in a boolean. */
+            if (c->token != '!' ) break;
         }
 
         /* lift up the node */
