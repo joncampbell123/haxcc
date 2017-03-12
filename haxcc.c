@@ -1116,6 +1116,20 @@ int enum_const_eval(struct c_node *idn) {
 
 int expression_eval_reduce(struct c_node *idn);
 
+int expression_eval_float_to_bool(struct c_node *idn) {
+    struct c_node_F_CONSTANT sint;
+
+    if (idn->token != F_CONSTANT)
+        return 0;
+
+    sint = idn->value.value_F_CONSTANT;
+    idn->token = I_CONSTANT;
+    idn->value.value_I_CONSTANT.bsign = 1;
+    idn->value.value_I_CONSTANT.bwidth = int_width_b;
+    idn->value.value_I_CONSTANT.v.uint = (sint.val != 0.0) ? 1 : 0;
+    return 0;
+}
+
 int expression_eval_int_to_float(struct c_node *idn) {
     struct c_node_I_CONSTANT sint;
 
@@ -2403,6 +2417,15 @@ int expression_eval_reduce_logical_or(struct c_node *idn) { /* logical or (||) o
         return r;
     if (idn->child[0]->token != idn->child[1]->token)
         return 0;
+
+    if ((p1=idn->child[0])->token == F_CONSTANT) {
+        if ((r=expression_eval_float_to_bool(p1)) != 0)
+            return r;
+    }
+    if ((p2=idn->child[0])->token == F_CONSTANT) {
+        if ((r=expression_eval_float_to_bool(p2)) != 0)
+            return r;
+    }
 
     if ((p1=idn->child[0])->token == I_CONSTANT) {
         /* remember child[1]->token == I_CONSTANT because of check */
