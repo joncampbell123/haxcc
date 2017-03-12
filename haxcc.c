@@ -3153,8 +3153,8 @@ again:
              *        IDENTIFIER
              *        IDENTIFIER
              *      IDENTIFIER */
-            if (sc->token == '+' && sc->child[0] != NULL && sc->child[1] != NULL &&
-                sc->child[0]->token == '+' && sc->child[1]->token == IDENTIFIER &&
+            if ((sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
                 sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
                 sc->child[0]->child[0]->token == IDENTIFIER && sc->child[0]->child[1]->token == IDENTIFIER) {
                 struct c_node *outer = sc->child[1];
