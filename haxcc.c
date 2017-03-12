@@ -3198,8 +3198,9 @@ again:
                         goto again;
                     }
                 }
-                /* and then shuffle from upwards */
-                if (c_node_identifier_is_equ(inner1,inner2)) {
+
+                /* try to shuffle the same identifier together, upwards */
+                {
                     struct c_node *swapwith2 = NULL;
                     struct c_node *swapwith = NULL;
 
