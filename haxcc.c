@@ -2486,6 +2486,8 @@ int expression_eval_reduce_ternary(struct c_node *idn) { /* ternary ? : operator
         cond = (c1->value.value_I_CONSTANT.v.uint != 0);
     else if (c1->token == F_CONSTANT)
         cond = (c1->value.value_F_CONSTANT.val != 0.0);
+    else
+        return 0;
 
     /* if value of condition is nonzero, copy p1 value, else copy p2 value */
     if (cond) {
