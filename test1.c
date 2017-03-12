@@ -412,6 +412,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int combsortme1=(a + b + b + a + b + a + b + a) * (b + a + b + a + b + c + a + b + a + b + a);
             int combsortme2= a + b + b + a + a + b + a + b + a * c * a * c * b;
             int combsortme3= a + b + b + b + a + b + a * b * a * b * a * b * a;
+            int combsortme4= a + b + b + a + a + b + a + b + a * b + a + b + b + a + b + a;
+            int combsortme4b=a + b + b + a + a + b + a + b + a * b * b * a * b + a + b + b + a + b + a;
         }
 
         if (a == b) {
