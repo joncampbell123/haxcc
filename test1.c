@@ -400,11 +400,13 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int addsortme1a= a + a + b + b + a + b + a + b + a + b + a + b;
             int addsortme1b= a + b + c + a + b + c + a + b + c;
             int addsortme1c= a + b + c + a + b + c + a + b + c + a + b + c + a + b + c;
+            int addsortme1d= a + b + c + d + a + b + c + d + a + b + c + d + a + b + c + d + a + b + c + d;
             int addsortme2 = a + b - c + a + b - c + a + b - c;
             int addsortme3 = a + b - b - a + a + b - b - a;
             int addsortme4 = (a + b + a) + b + (a + b) + a + b;
             int mulsortme1 = a * b * a * b * a * b * a * b;
             int mulsortme1a= a * a * b * b * a * b * a * b;
+            int mulsortme1b= a * a * b * b * a * c * d * b * c * c * d * a * c * d * b;
         }
 
         if (a == b) {

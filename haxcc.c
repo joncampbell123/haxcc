@@ -3203,10 +3203,14 @@ again:
                 {
                     struct c_node *swapwith2 = NULL;
                     struct c_node *swapwith = NULL;
+                    struct c_node *start = sc;
 
+uscan_start_again:
                     /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
-                    pss = sc->child[0];
-                    for (ss=sc;ss != NULL;ss=ss->parent) {
+                    swapwith = NULL;
+                    swapwith2 = NULL;
+                    pss = start->child[0];
+                    for (ss=start;ss != NULL;ss=ss->parent) {
                         if (ss->token != sc->token) break;
                         if (ss->child[0] == NULL) break;
                         if (ss->child[0]->token != sc->token) break;
@@ -3246,6 +3250,12 @@ again:
                         assert(swapwith2->child[1] != NULL);
                         c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
                         goto again;
+                    }
+                    else if (swapwith != NULL) {
+                        /* well, we can start again from swapwith... */
+                        inner1 = swapwith->child[1];
+                        start = swapwith;
+                        goto uscan_start_again;
                     }
                 }
             }
