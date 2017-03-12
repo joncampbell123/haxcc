@@ -429,12 +429,16 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
     switch (a) {
         case 1:
             b = 5;
+            c = 7;
             break;
         case 4:
             b = 99;
+            c = 9;
+            d = 2;
             break;
         case 7:
             b = 111;
+            c = 22;
             break;
         default:
             b = -1;
