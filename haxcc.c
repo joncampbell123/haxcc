@@ -9,6 +9,8 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+unsigned char               enable_commutative_optimizations = 1;
+
 struct c_node*              last_translation_unit = NULL;
 
 int yyparse();
@@ -3153,7 +3155,8 @@ again:
              *        IDENTIFIER
              *        IDENTIFIER
              *      IDENTIFIER */
-            if ((sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
+            if (enable_commutative_optimizations &&
+                (sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
                 sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
                 sc->child[0]->child[0]->token == IDENTIFIER && sc->child[0]->child[1]->token == IDENTIFIER) {
