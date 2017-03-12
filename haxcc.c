@@ -2982,7 +2982,7 @@ int optimization_pass1(struct c_node **node) {
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
 again:
-        if (sc->token == STATIC_ASSERT || sc->token == POINTER_DEREF || sc->token == EXPRESSION) {
+        if (sc->token == STATIC_ASSERT || sc->token == POINTER_DEREF || sc->token == EXPRESSION || sc->token == CASE) {
             if ((idn=sc->child[0]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
                     return r;
