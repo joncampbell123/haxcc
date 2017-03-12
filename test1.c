@@ -409,6 +409,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int mulsortme1 = a * b * a * b * a * b * a * b;
             int mulsortme1a= a * a * b * b * a * b * a * b;
             int mulsortme1b= a * a * b * b * a * c * d * b * c * c * d * a * c * d * b;
+            int combsortme1=(a + b + b + a + b + a + b + a) * (b + a + b + a + b + c + a + b + a + b + a);
         }
 
         if (a == b) {
