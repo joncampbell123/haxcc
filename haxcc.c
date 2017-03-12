@@ -2997,12 +2997,12 @@ again:
             if ((idn=sc->child[0]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
                     return r;
+            }
 
-                if (idn->token != I_CONSTANT) {
-                    if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
-                        fprintf(stderr,"expression evaluation failure\n");
-                        return -1;
-                    }
+            if ((idn=sc->child[0]) != NULL) {
+                if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                    fprintf(stderr,"expression evaluation failure\n");
+                    return -1;
                 }
             }
 
@@ -3045,12 +3045,12 @@ again:
             if ((idn=sc->child[1]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,1)) != 0)
                     return r;
+            }
 
-                if (idn->token != I_CONSTANT) {
-                    if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
-                        fprintf(stderr,"expression evaluation failure\n");
-                        return -1;
-                    }
+            if ((idn=sc->child[1]) != NULL) {
+                if (expression_eval_reduce(idn)) { /* will eval expressions upward then change token to I_CONSTANT */
+                    fprintf(stderr,"expression evaluation failure\n");
+                    return -1;
                 }
             }
 
