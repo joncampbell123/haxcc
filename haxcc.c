@@ -3061,7 +3061,7 @@ void c_node_identifier_swap(struct c_node *a,struct c_node *b) {
 }
 
 int optimization_pass1(struct c_node **node) {
-    struct c_node *sc,*idn,*nullnode=NULL;
+    struct c_node *ss,*pss,*sc,*idn,*nullnode=NULL;
     unsigned int i;
     int r;
 
@@ -3195,6 +3195,55 @@ again:
                     else if (c_node_identifier_is_equ(inner2,outer)) {
                         /* swap outer with inner1 */
                         c_node_identifier_swap(inner1,outer);
+                        goto again;
+                    }
+                }
+                /* and then shuffle from upwards */
+                if (c_node_identifier_is_equ(inner1,inner2)) {
+                    struct c_node *swapwith2 = NULL;
+                    struct c_node *swapwith = NULL;
+
+                    /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
+                    pss = sc->child[0];
+                    for (ss=sc;ss != NULL;ss=ss->parent) {
+                        if (ss->token != '+') break;
+                        if (ss->child[0] == NULL) break;
+                        if (ss->child[0]->token != '+') break;
+                        if (ss->child[1] == NULL) break;
+                        if (ss->child[1]->token != IDENTIFIER) break;
+                        if (ss->child[0] != pss) break;
+
+                        if (!c_node_identifier_is_equ(ss->child[1],inner1)) {
+                            swapwith = ss;
+                            break;
+                        }
+
+                        pss = ss;
+                    }
+
+                    /* then continue to scan upward to find a node that does match inner1 */
+                    if (swapwith != NULL) {
+                        for (;ss != NULL;ss=ss->parent) {
+                            if (ss->token != '+') break;
+                            if (ss->child[0] == NULL) break;
+                            if (ss->child[0]->token != '+') break;
+                            if (ss->child[1] == NULL) break;
+                            if (ss->child[1]->token != IDENTIFIER) break;
+                            if (ss->child[0] != pss) break;
+
+                            if (c_node_identifier_is_equ(ss->child[1],inner1)) {
+                                swapwith2 = ss;
+                                break;
+                            }
+
+                            pss = ss;
+                        }
+                    }
+
+                    if (swapwith != NULL && swapwith2 != NULL) {
+                        assert(swapwith->child[1] != NULL);
+                        assert(swapwith2->child[1] != NULL);
+                        c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
                         goto again;
                     }
                 }
