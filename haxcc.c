@@ -3263,6 +3263,82 @@ uscan_start_again:
                     }
                 }
             }
+            /* match:
+             *
+             *    +
+             *      +
+             *        (neither + nor IDENTIFIER)
+             *        IDENTIFIER
+             *      IDENTIFIER */
+            else if (enable_commutative_optimizations &&
+                (sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
+                sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
+                sc->child[0]->child[0]->token != IDENTIFIER &&
+                sc->child[0]->child[0]->token != sc->token &&
+                sc->child[0]->child[1]->token == IDENTIFIER) {
+                struct c_node *inner1 = sc->child[0]->child[1];
+
+                /* try to shuffle the same identifier together, upwards */
+                {
+                    struct c_node *swapwith2 = NULL;
+                    struct c_node *swapwith = NULL;
+                    struct c_node *start = sc;
+
+uscan_start_again2:
+                    /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
+                    swapwith = NULL;
+                    swapwith2 = NULL;
+                    pss = start->child[0];
+                    for (ss=start;ss != NULL;ss=ss->parent) {
+                        if (ss->token != sc->token) break;
+                        if (ss->child[0] == NULL) break;
+                        if (ss->child[0]->token != sc->token) break;
+                        if (ss->child[1] == NULL) break;
+                        if (ss->child[1]->token != IDENTIFIER) break;
+                        if (ss->child[0] != pss) break;
+
+                        if (!c_node_identifier_is_equ(ss->child[1],inner1)) {
+                            swapwith = ss;
+                            break;
+                        }
+
+                        pss = ss;
+                    }
+
+                    /* then continue to scan upward to find a node that does match inner1 */
+                    if (swapwith != NULL) {
+                        for (;ss != NULL;ss=ss->parent) {
+                            if (ss->token != sc->token) break;
+                            if (ss->child[0] == NULL) break;
+                            if (ss->child[0]->token != sc->token) break;
+                            if (ss->child[1] == NULL) break;
+                            if (ss->child[1]->token != IDENTIFIER) break;
+                            if (ss->child[0] != pss) break;
+
+                            if (c_node_identifier_is_equ(ss->child[1],inner1)) {
+                                swapwith2 = ss;
+                                break;
+                            }
+
+                            pss = ss;
+                        }
+                    }
+
+                    if (swapwith != NULL && swapwith2 != NULL) {
+                        assert(swapwith->child[1] != NULL);
+                        assert(swapwith2->child[1] != NULL);
+                        c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
+                        goto uscan_start_again2;
+                    }
+                    else if (swapwith != NULL) {
+                        /* well, we can start again from swapwith... */
+                        inner1 = swapwith->child[1];
+                        start = swapwith;
+                        goto uscan_start_again2;
+                    }
+                }
+            }
         }
     }
 
