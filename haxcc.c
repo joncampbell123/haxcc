@@ -3032,6 +3032,32 @@ int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
     return 0;
 }
 
+int c_node_identifier_is_equ(struct c_node *a,struct c_node *b) {
+    assert(a->token == IDENTIFIER);
+    assert(b->token == IDENTIFIER);
+
+    if (a->value.value_IDENTIFIER.id != c_identref_t_NONE &&
+        b->value.value_IDENTIFIER.id != c_identref_t_NONE)
+        return (a->value.value_IDENTIFIER.id == b->value.value_IDENTIFIER.id);
+
+    if (a->value.value_IDENTIFIER.name != NULL &&
+        b->value.value_IDENTIFIER.name != NULL)
+        return !strcmp(a->value.value_IDENTIFIER.name,b->value.value_IDENTIFIER.name);
+
+    return 0;
+}
+
+void c_node_identifier_swap(struct c_node *a,struct c_node *b) {
+    struct c_node_IDENTIFIER t;
+
+    assert(a->token == IDENTIFIER);
+    assert(b->token == IDENTIFIER);
+
+    t = a->value.value_IDENTIFIER;
+    a->value.value_IDENTIFIER = b->value.value_IDENTIFIER;
+    b->value.value_IDENTIFIER = t;
+}
+
 int optimization_pass1(struct c_node **node) {
     struct c_node *sc,*idn,*nullnode=NULL;
     unsigned int i;
@@ -3114,6 +3140,61 @@ again:
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) != 0)
                     return r;
+            }
+
+            /* optimization: addition is communative so we can reorder the order of addition
+             *               of variables which would allow use of LEA instead of multiple
+             *               ADD instructions.
+             *
+             * match:
+             *
+             *    +
+             *      +
+             *        IDENTIFIER
+             *        IDENTIFIER
+             *      IDENTIFIER */
+            if (sc->token == '+' && sc->child[0] != NULL && sc->child[1] != NULL &&
+                sc->child[0]->token == '+' && sc->child[1]->token == IDENTIFIER &&
+                sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
+                sc->child[0]->child[0]->token == IDENTIFIER && sc->child[0]->child[1]->token == IDENTIFIER) {
+                struct c_node *outer = sc->child[1];
+                struct c_node *inner1 = sc->child[0]->child[0];
+                struct c_node *inner2 = sc->child[0]->child[1];
+                /* if the variables are different. we're looking for
+                 *
+                 * +
+                 *   +
+                 *     'a'
+                 *     'b'
+                 *   'a'
+                 *
+                 * or
+                 *
+                 * +
+                 *   +
+                 *     'b'
+                 *     'a'
+                 *   'a'
+                 *
+                 * to correct to:
+                 *
+                 * +
+                 *   +
+                 *     'a'
+                 *     'a'
+                 *   'b' */
+                if (!c_node_identifier_is_equ(inner1,inner2)) {
+                    if (c_node_identifier_is_equ(inner1,outer)) {
+                        /* swap outer with inner2 */
+                        c_node_identifier_swap(inner2,outer);
+                        goto again;
+                    }
+                    else if (c_node_identifier_is_equ(inner2,outer)) {
+                        /* swap outer with inner1 */
+                        c_node_identifier_swap(inner1,outer);
+                        goto again;
+                    }
+                }
             }
         }
     }
