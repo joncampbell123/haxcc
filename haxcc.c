@@ -2976,11 +2976,12 @@ int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
 }
 
 int optimization_pass1(struct c_node **node) {
-    struct c_node *sc,*idn;
+    struct c_node *sc,*idn,*nullnode=NULL;
     unsigned int i;
     int r;
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
+again:
         if (sc->token == STATIC_ASSERT || sc->token == POINTER_DEREF || sc->token == EXPRESSION) {
             if ((idn=sc->child[0]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
@@ -2997,6 +2998,34 @@ int optimization_pass1(struct c_node **node) {
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) != 0)
                     return r;
+            }
+
+            /* EXPRESSION nodes are there to say "the user used parenthesis around this expression", get rid of them */
+            if (sc->token == EXPRESSION) {
+                struct c_node *sn = sc->child[0];
+
+                assert(sc->child[1] == NULL);
+                assert(sc->child[2] == NULL);
+                assert(sc->child[3] == NULL);
+                assert(sc->prev == NULL);
+                assert(sc->next == NULL);
+
+                if (sn != NULL) {
+                    c_node_release_child_link(sc,0); /* let go of it */
+
+                    sc->token = sn->token;
+                    sc->value = sn->value;
+                    memset(&(sn->value),0,sizeof(sn->value));
+                    for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                        struct c_node *cn = sn->child[i];
+
+                        c_node_move_to_child_link(sn,i,&nullnode);
+                        c_node_move_to_child_link(sc,i,&nullnode);
+                        c_node_move_to_child_link(sc,i,&cn);
+                    }
+                    c_node_release_autodelete(&(sn));
+                    goto again;
+                }
             }
         }
         else if (sc->token == INIT_DECLARATOR || sc->token == ARRAY_REF) {
