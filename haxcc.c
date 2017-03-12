@@ -3249,7 +3249,11 @@ uscan_start_again:
                         assert(swapwith->child[1] != NULL);
                         assert(swapwith2->child[1] != NULL);
                         c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
-                        goto again;
+
+                        if (swapwith == sc && !c_node_identifier_is_equ(inner1,inner2))
+                            goto again;
+
+                        goto uscan_start_again;
                     }
                     else if (swapwith != NULL) {
                         /* well, we can start again from swapwith... */
