@@ -2376,6 +2376,16 @@ int expression_eval_reduce_logical_and(struct c_node *idn) { /* logical and (&&)
         return r;
     if ((r=expression_eval_reduce(idn->child[1])) != 0)
         return r;
+
+    if ((p1=idn->child[0])->token == F_CONSTANT) {
+        if ((r=expression_eval_float_to_bool(p1)) != 0)
+            return r;
+    }
+    if ((p2=idn->child[1])->token == F_CONSTANT) {
+        if ((r=expression_eval_float_to_bool(p2)) != 0)
+            return r;
+    }
+
     if (idn->child[0]->token != idn->child[1]->token)
         return 0;
 
@@ -2415,17 +2425,18 @@ int expression_eval_reduce_logical_or(struct c_node *idn) { /* logical or (||) o
         return r;
     if ((r=expression_eval_reduce(idn->child[1])) != 0)
         return r;
-    if (idn->child[0]->token != idn->child[1]->token)
-        return 0;
 
     if ((p1=idn->child[0])->token == F_CONSTANT) {
         if ((r=expression_eval_float_to_bool(p1)) != 0)
             return r;
     }
-    if ((p2=idn->child[0])->token == F_CONSTANT) {
+    if ((p2=idn->child[1])->token == F_CONSTANT) {
         if ((r=expression_eval_float_to_bool(p2)) != 0)
             return r;
     }
+
+    if (idn->child[0]->token != idn->child[1]->token)
+        return 0;
 
     if ((p1=idn->child[0])->token == I_CONSTANT) {
         /* remember child[1]->token == I_CONSTANT because of check */
