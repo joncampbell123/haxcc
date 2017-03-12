@@ -1777,6 +1777,17 @@ int expression_eval_reduce_not(struct c_node *idn) { /* logical NOT */
         c_node_move_to_child_link(idn,0,&nullnode);
         c_node_release_autodelete(&(p1));
     }
+    else if ((p1=idn->child[0])->token == F_CONSTANT) {
+        idn->token = I_CONSTANT;
+
+        idn->value.value_I_CONSTANT.bsign = 1;
+        idn->value.value_I_CONSTANT.bwidth = int_width_b;
+        idn->value.value_I_CONSTANT.v.uint = (p1->value.value_F_CONSTANT.val != 0.0) ? 1 : 0;
+
+        memset(&(p1->value),0,sizeof(p1->value));
+        c_node_move_to_child_link(idn,0,&nullnode);
+        c_node_release_autodelete(&(p1));
+    }
 
     return 0;
 }

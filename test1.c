@@ -603,5 +603,9 @@ void functt(const uitype x) {
     float floatexpr11w = (double)4;
     float floatexpr11x = (long double)4;
     float floatexpr11y = (float)(long double)4;
+    float floatexpr12a = !0.0;
+    float floatexpr12b = !1.0;
+    float floatexpr12c = !(1.0 - 1.0);
+    float floatexpr12d = !(1.0 + 1.5 - 0.5);
 }
 
