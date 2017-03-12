@@ -3206,9 +3206,9 @@ again:
                     /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
                     pss = sc->child[0];
                     for (ss=sc;ss != NULL;ss=ss->parent) {
-                        if (ss->token != '+') break;
+                        if (ss->token != sc->token) break;
                         if (ss->child[0] == NULL) break;
-                        if (ss->child[0]->token != '+') break;
+                        if (ss->child[0]->token != sc->token) break;
                         if (ss->child[1] == NULL) break;
                         if (ss->child[1]->token != IDENTIFIER) break;
                         if (ss->child[0] != pss) break;
@@ -3224,9 +3224,9 @@ again:
                     /* then continue to scan upward to find a node that does match inner1 */
                     if (swapwith != NULL) {
                         for (;ss != NULL;ss=ss->parent) {
-                            if (ss->token != '+') break;
+                            if (ss->token != sc->token) break;
                             if (ss->child[0] == NULL) break;
-                            if (ss->child[0]->token != '+') break;
+                            if (ss->child[0]->token != sc->token) break;
                             if (ss->child[1] == NULL) break;
                             if (ss->child[1]->token != IDENTIFIER) break;
                             if (ss->child[0] != pss) break;
