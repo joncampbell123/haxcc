@@ -463,6 +463,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int doublenegative1b = ~~~(x + y);
             int doublenegative2 = ~~~~(x + y + ~~(5 + 5 + 5 + (y * (3 + 3))));
             int doublenegative3 = ~~~~~~~~(x + y + ~~(5 + 5 + 5 + *(xx + (5 + 5))));
+            int doublenegative3x = ~~~~~~~~(x + y + ~~(5 + (5 + 5 + 5 + (3 + 3 + 3)) + 5 + 5 + *(xx + (5 + 5))));
             int doublenegative4 = -(-1);
             int doublenegative5 = -(-(-1));
             int doublenegative6 = -(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-(-1)))))))))))))))));
