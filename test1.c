@@ -615,5 +615,7 @@ void functt(const uitype x) {
     float floatexpr12i = (1.0 || 0.0);
     float floatexpr12j = (0.0 || 1.0);
     float floatexpr12k = (0.0 || 0.0);
+    float floatexpr12l = (1.0 || 0.0) ? 4.1 : 1.5;
+    float floatexpr12m = (0.0 || 0.0) ? 4.1 : 1.5;
 }
 
