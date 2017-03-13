@@ -3146,7 +3146,7 @@ again:
                     return r;
             }
 
-            /* optimization: addition is communative so we can reorder the order of addition
+            /* optimization: addition is commutative so we can reorder the order of addition
              *               of variables which would allow use of LEA instead of multiple
              *               ADD instructions.
              *
