@@ -9,6 +9,7 @@
 #include "cparsb.c.h"
 #include "cparsl.c.h"
 
+unsigned char               enable_addsub_combo_optimization = 1;
 unsigned char               enable_commutative_optimizations = 1;
 unsigned char               enable_associative_optimizations = 1;
 
@@ -3598,6 +3599,54 @@ uscan_start_again3:
                 c_node_move_to_child_link(p2,1,&c);
                 c_node_move_to_child_link(sc,0,&p2);
                 c_node_move_to_child_link(sc,1,&d);
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
+                        return r;
+                }
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1(&sc->child[i])) != 0)
+                        return r;
+                }
+            }
+            /* match:           a - b + c
+             *
+             *    +          <- sc
+             *      -        <- other = sc->child[0]
+             *        a...   <- other->child[0] (does not change)
+             *        b...   <- other->child[1]
+             *      c...     <- sc->child[1]
+             *
+             * change to:       a + c - b (shift subtraction to the end, up the expression tree)
+             *
+             *    -          <- sc
+             *      +        <- other = sc->child[0]
+             *        a...   <- other->child[0] (does not change)
+             *        c...   <- other->child[1]
+             *      b...     <- sc->child[1]
+             */
+            else if (enable_addsub_combo_optimization &&
+                sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[0]->token == '-') {
+                struct c_node *other = sc->child[0];
+/*              struct c_node *a = sc->child[0]->child[0]; */
+                struct c_node *b = sc->child[0]->child[1];
+                struct c_node *c = sc->child[1];
+
+/*              c_node_release_child_link(other,0); *//* a */
+                c_node_release_child_link(other,1); /* b */
+                c_node_release_child_link(sc,0); /* other */
+                c_node_release_child_link(sc,1); /* c */
+
+                /* switch + and - */
+                sc->token = '-';
+                other->token = '+';
+
+                c_node_move_to_child_link(other,1,&c);
+                c_node_move_to_child_link(sc,0,&other);
+                c_node_move_to_child_link(sc,1,&b);
 
                 for (i=0;i < c_node_MAX_CHILDREN;i++) {
                     if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
