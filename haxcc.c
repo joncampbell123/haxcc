@@ -3392,7 +3392,7 @@ uscan_start_again2:
              *        IDENTIFIER
              *      IDENTIFIER */
             else if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*') &&
+                (sc->token == '+' || sc->token == '*' || sc->token == '-') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token &&
@@ -3492,7 +3492,7 @@ uscan_start_again3:
              *      IDENTIFIER
              */
             else if (enable_commutative_optimizations &&
-                sc->token == '+' &&
+                (sc->token == '+' || sc->token == '-') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token &&
