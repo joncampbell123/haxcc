@@ -3150,6 +3150,18 @@ again:
              *               of variables which would allow use of LEA instead of multiple
              *               ADD instructions.
              *
+             *               subtraction is NOT commutative, but additional subtractions past
+             *               the first expression are, so we can reorder those.
+             *
+             *               example:
+             *                  10 - 5 - 3 - 1 = 1
+             *                  10 - 1 - 3 - 5 = 1
+             *                  10 - 1 - 5 - 3 = 1
+             *
+             *               but you cannot switch the order of the first two operands of subtraction:
+             *                  5 - 10 - 3 - 1 = -9
+             *                  3 - 5 - 10 - 1 = -13
+             *
              * match:
              *
              *    +
@@ -3158,7 +3170,7 @@ again:
              *        IDENTIFIER
              *      IDENTIFIER */
             if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
+                (sc->token == '+' || sc->token == '*' || sc->token == '-') && sc->child[0] != NULL && sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
                 sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
                 sc->child[0]->child[0]->token == IDENTIFIER && sc->child[0]->child[1]->token == IDENTIFIER) {
@@ -3187,14 +3199,43 @@ again:
                  *   +
                  *     'a'
                  *     'a'
-                 *   'b' */
+                 *   'b'
+                 *
+                 * for subtraction, we cannot swap the first child node without changing the result of the expression
+                 * because subtraction is not commutative. but successive subtraction up the tree is commutative.
+                 *
+                 * -
+                 *   -
+                 *     'a'
+                 *     'b'
+                 *   'c'
+                 *
+                 *          a - b - c
+                 *
+                 *          (a - b) - c
+                 *
+                 *      swapping 'a' and 'b' changes the result of the expression
+                 *
+                 *          b - a - c != a - b - c
+                 *
+                 *      swapping 'a' and 'c' changes the result of the expression
+                 *
+                 *          c - b - a != a - b - c
+                 *
+                 *      swapping 'b' and 'c' does not change the result expression
+                 *
+                 *          a - c - b == a - b - c
+                 *
+                 *          a - (c + b) = a + -c + -b = a - c - b
+                 *          a - (b + c) = a + -b + -c = a - b - c
+                 */
                 if (!c_node_identifier_is_equ(inner1,inner2)) {
                     if (c_node_identifier_is_equ(inner1,outer)) {
                         /* swap outer with inner2 */
                         c_node_identifier_swap(inner2,outer);
                         goto again;
                     }
-                    else if (c_node_identifier_is_equ(inner2,outer)) {
+                    else if ((sc->token == '+' || sc->token == '*') && c_node_identifier_is_equ(inner2,outer)) {
                         /* swap outer with inner1 */
                         c_node_identifier_swap(inner1,outer);
                         goto again;
@@ -3273,7 +3314,7 @@ uscan_start_again:
              *        IDENTIFIER
              *      IDENTIFIER */
             else if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*') && sc->child[0] != NULL && sc->child[1] != NULL &&
+                (sc->token == '+' || sc->token == '*' || sc->token == '-') && sc->child[0] != NULL && sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
                 sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
                 sc->child[0]->child[0]->token != IDENTIFIER &&
