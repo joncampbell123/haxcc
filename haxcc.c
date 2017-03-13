@@ -3424,6 +3424,95 @@ uscan_start_again3:
                     }
                 }
             }
+            /* match:
+             *
+             *    +
+             *      +
+             *        ...
+             *        IDENTIFIER
+             *      *
+             *        ...
+             *        ... */
+            else if (enable_commutative_optimizations &&
+                sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token &&
+                sc->child[1]->token == '*' &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[0]->child[0]->token == sc->token &&
+                sc->child[0]->child[1]->token == IDENTIFIER) {
+                /* switch them, to push the expression deeper */
+                struct c_node *p1 = sc->child[1];
+                struct c_node *p2 = sc->child[0]->child[1];
+
+                c_node_release_child_link(sc,1);
+                c_node_release_child_link(sc->child[0],1);
+
+                c_node_move_to_child_link(sc,1,&p2);
+                c_node_move_to_child_link(sc->child[0],1,&p1);
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
+                        return r;
+                }
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1(&sc->child[i])) != 0)
+                        return r;
+                }
+            }
+            /* match:
+             *
+             *    +
+             *      +
+             *        IDENTIFIER
+             *        IDENTIFIER
+             *      *
+             *        ...
+             *        ...
+             *
+             * change to:
+             *
+             *    +
+             *      +
+             *        *
+             *          ...
+             *          ...
+             *        IDENTIFIER
+             *      IDENTIFIER
+             */
+            else if (enable_commutative_optimizations &&
+                sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token &&
+                sc->child[1]->token == '*' &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[0]->child[0]->token == IDENTIFIER &&
+                sc->child[0]->child[1]->token == IDENTIFIER) {
+                /* switch them, to push the expression deeper */
+                struct c_node *p1 = sc->child[0]->child[0];
+                struct c_node *p2 = sc->child[1];
+
+                c_node_release_child_link(sc,1);
+                c_node_release_child_link(sc->child[0],0);
+
+                c_node_move_to_child_link(sc,1,&p1);
+                c_node_move_to_child_link(sc->child[0],0,&p2);
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
+                        return r;
+                }
+
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    if ((r=optimization_pass1(&sc->child[i])) != 0)
+                        return r;
+                }
+            }
         }
     }
 
@@ -3451,6 +3540,8 @@ int main(int argc, char **argv) {
         res = enumerator_pass(last_translation_unit);
 
     /* second pass: optimization pass 1 */
+    if (res == 0 && last_translation_unit != NULL)
+        res = optimization_pass1(&last_translation_unit);
     if (res == 0 && last_translation_unit != NULL)
         res = optimization_pass1(&last_translation_unit);
 
