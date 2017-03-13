@@ -406,9 +406,11 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int addsortme2c= a + b + b + a + a + b - c + b + a + b + a + b + b + a + a + b + a + b + a - c + a + b + b + a + b +a;
             int addsortme3 = a + b - b - a + a + b - b - a;
             int addsortme4 = (a + b + a) + b + (a + b) + a + b;
+            int addsortme4b= (a + b + c + a) + b + c + a + b + (c + a + b + (c + a + (b + c) + a + b) + c + a) + b + c;
             int mulsortme1 = a * b * a * b * a * b * a * b;
             int mulsortme1a= a * a * b * b * a * b * a * b;
             int mulsortme1b= a * a * b * b * a * c * d * b * c * c * d * a * c * d * b;
+            int mulsortme1c=(a * b * c * a) * b * c * a * (b * c * a * b * (c * a * (b * (c * a * b))) * c) * a * b * c;
             int combsortme0= a + b + b + a + b + a + b + a * b + a + b + a + b + c + a + b + a + b + a;
             int combsortme0b=a + b + b + a * b + a + b + a * b + a + b + a + b + c * a + b + a + b + a;
             int combsortme1=(a + b + b + a + b + a + b + a) * (b + a + b + a + b + c + a + b + a + b + a);
