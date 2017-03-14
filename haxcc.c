@@ -3540,7 +3540,7 @@ again:
              *     b...                 <- sc->child[1]
              *
              */
-            else if (sc->token == '+' &&
+            else if ((sc->token == '+' || sc->token == '-') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
                 sc->child[0]->child[0] != NULL &&
@@ -3558,7 +3558,10 @@ again:
                 struct c_node *n1 = sc->child[1]->child[1];
                 struct c_node *nullnode = NULL;
 
-                sc->token = '-';
+                if (sc->token == '+')
+                    sc->token = '-';
+                else
+                    sc->token = '+';
 
                 c_node_move_to_child_link(m,0,&nullnode);
                 c_node_move_to_child_link(m,1,&nullnode);
