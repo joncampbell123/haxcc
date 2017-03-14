@@ -3410,7 +3410,42 @@ again:
 
                 goto again;
             }
+            /* subtraction elimination:
+             *
+             * match:
+             *   -
+             *     a
+             *     a
+             *
+             * change to:
+             *   0
+             *
+             * something subtracted from itself is zero
+             */
+            else if (sc->token == '-' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == IDENTIFIER &&
+                sc->child[1]->token == IDENTIFIER &&
+                c_node_identifier_is_equ(sc->child[0],sc->child[1])) {
+                struct c_node *nullnode = NULL;
+                struct c_node *a,*b;
 
+                a = sc->child[0];
+                b = sc->child[1];
+                c_node_move_to_child_link(sc,0,&nullnode);
+                c_node_move_to_child_link(sc,1,&nullnode);
+                c_node_release_autodelete(&(a));
+                c_node_release_autodelete(&(b));
+
+                /* integer constant zero */
+                sc->token = I_CONSTANT;
+                sc->value.value_I_CONSTANT.bwidth = 1;
+                sc->value.value_I_CONSTANT.bsign = 0;
+                sc->value.value_I_CONSTANT.v.uint = 0;
+
+                goto again;
+            }
         }
     }
 
