@@ -3146,6 +3146,46 @@ again:
                     return r;
             }
 
+            /* match:           a - b + c
+             *
+             *    +          <- sc
+             *      -        <- other = sc->child[0]
+             *        a...   <- other->child[0] (does not change)
+             *        b...   <- other->child[1]
+             *      c...     <- sc->child[1]
+             *
+             * change to:       a + c - b (shift subtraction to the end, up the expression tree)
+             *
+             *    -          <- sc
+             *      +        <- other = sc->child[0]
+             *        a...   <- other->child[0] (does not change)
+             *        c...   <- other->child[1]
+             *      b...     <- sc->child[1]
+             */
+            if (sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == '-' &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[1] != NULL) {
+                struct c_node *other = sc->child[0];
+                struct c_node *b = other->child[1];
+                struct c_node *c = sc->child[1];
+
+#if 0
+                fprintf(stderr,"+ - switch\n");
+#endif
+
+                sc->token = '-';
+                other->token = '+';
+
+                c_node_release_child_link(other,1);
+                c_node_release_child_link(sc,1);
+                c_node_move_to_child_link(other,1,&c);
+                c_node_move_to_child_link(sc,1,&b);
+                goto again;
+            }
             /* commutative add/multiply reordering.
              *
              * if the first child is not an identifier, and the second is,
@@ -3163,7 +3203,7 @@ again:
              *     IDENTIFIER
              *     (not an identifier)
              */
-            if ((sc->token == '+' || sc->token == '*') &&
+            else if ((sc->token == '+' || sc->token == '*') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
                 sc->child[0]->token != sc->token &&
