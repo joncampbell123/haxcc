@@ -399,6 +399,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int addsortme0 = a + b + a + b + a + b + 4 + a + b + a + 3 + b + a + b;
             int addsortme0b= a + b + a + b + a + b + (4 + 3 + 7) + a + b + a + 3 + b + a + b;
             int addsortme0c= a + b + a + b + a + b + 4 + 3 + 2 + 6 + 3 + a + b + a + 2 + 1 + 8 + a + 6 + b + 3;
+            int addsortme0d= 2 + a + b + a + b + a + b + 4 + 3 + 2 + 6 + 3 + a + b + a + 2 + 1 + 8 + a + 6 + b + 3;
             int addsortme1 = a + b + a + b + a + b + a + b + a + b + a + b;
             int addsortme1a= a + a + b + b + a + b + a + b + a + b + a + b;
             int addsortme1b= a + b + c + a + b + c + a + b + c;
