@@ -3063,7 +3063,7 @@ void c_node_identifier_swap(struct c_node *a,struct c_node *b) {
 }
 
 int optimization_pass1(struct c_node **node) {
-    struct c_node *ss,*pss,*sc,*idn,*nullnode=NULL;
+    struct c_node *sc,*idn,*nullnode=NULL;
     unsigned int i;
     int r;
 
@@ -3146,612 +3146,88 @@ again:
                     return r;
             }
 
-            /* optimization: addition is commutative so we can reorder the order of addition
-             *               of variables which would allow use of LEA instead of multiple
-             *               ADD instructions.
+            /* commutative add/multiply reordering.
              *
-             *               subtraction is NOT commutative, but additional subtractions past
-             *               the first expression are, so we can reorder those.
-             *
-             *               example:
-             *                  10 - 5 - 3 - 1 = 1
-             *                  10 - 1 - 3 - 5 = 1
-             *                  10 - 1 - 5 - 3 = 1
-             *
-             *               but you cannot switch the order of the first two operands of subtraction:
-             *                  5 - 10 - 3 - 1 = -9
-             *                  3 - 5 - 10 - 1 = -13
+             * if the first child is not an identifier, and the second is,
+             * then switch the order of the children as part of moving
+             * the expression up the tree.
              *
              * match:
              *
-             *    +
-             *      +
-             *        IDENTIFIER
-             *        IDENTIFIER
-             *      IDENTIFIER */
-            if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*' || sc->token == '-') && sc->child[0] != NULL && sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
-                sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token == IDENTIFIER && sc->child[0]->child[1]->token == IDENTIFIER) {
-                struct c_node *outer = sc->child[1];
-                struct c_node *inner1 = sc->child[0]->child[0];
-                struct c_node *inner2 = sc->child[0]->child[1];
-                /* if the variables are different. we're looking for
-                 *
-                 * +
-                 *   +
-                 *     'a'
-                 *     'b'
-                 *   'a'
-                 *
-                 * or
-                 *
-                 * +
-                 *   +
-                 *     'b'
-                 *     'a'
-                 *   'a'
-                 *
-                 * to correct to:
-                 *
-                 * +
-                 *   +
-                 *     'a'
-                 *     'a'
-                 *   'b'
-                 *
-                 * for subtraction, we cannot swap the first child node without changing the result of the expression
-                 * because subtraction is not commutative. but successive subtraction up the tree is commutative.
-                 *
-                 * -
-                 *   -
-                 *     'a'
-                 *     'b'
-                 *   'c'
-                 *
-                 *          a - b - c
-                 *
-                 *          (a - b) - c
-                 *
-                 *      swapping 'a' and 'b' changes the result of the expression
-                 *
-                 *          b - a - c != a - b - c
-                 *
-                 *      swapping 'a' and 'c' changes the result of the expression
-                 *
-                 *          c - b - a != a - b - c
-                 *
-                 *      swapping 'b' and 'c' does not change the result expression
-                 *
-                 *          a - c - b == a - b - c
-                 *
-                 *          a - (c + b) = a + -c + -b = a - c - b
-                 *          a - (b + c) = a + -b + -c = a - b - c
-                 */
-                if (!c_node_identifier_is_equ(inner1,inner2)) {
-                    if (c_node_identifier_is_equ(inner1,outer)) {
-                        /* swap outer with inner2 */
-                        c_node_identifier_swap(inner2,outer);
-                        goto again;
-                    }
-                    else if ((sc->token == '+' || sc->token == '*') && c_node_identifier_is_equ(inner2,outer)) {
-                        /* swap outer with inner1 */
-                        c_node_identifier_swap(inner1,outer);
-                        goto again;
-                    }
-                }
-
-                /* try to shuffle the same identifier together, upwards */
-                {
-                    struct c_node *swapwith2 = NULL;
-                    struct c_node *swapwith = NULL;
-                    struct c_node *start = sc;
-
-uscan_start_again:
-                    /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
-                    swapwith = NULL;
-                    swapwith2 = NULL;
-                    pss = start->child[0];
-                    for (ss=start;ss != NULL;ss=ss->parent) {
-                        if (ss->token != sc->token) break;
-                        if (ss->child[0] == NULL) break;
-                        if (ss->child[0]->token != sc->token) break;
-                        if (ss->child[1] == NULL) break;
-                        if (ss->child[1]->token != IDENTIFIER) break;
-                        if (ss->child[0] != pss) break;
-
-                        if (!c_node_identifier_is_equ(ss->child[1],inner1)) {
-                            swapwith = ss;
-                            break;
-                        }
-
-                        pss = ss;
-                    }
-
-                    /* then continue to scan upward to find a node that does match inner1 */
-                    if (swapwith != NULL) {
-                        for (;ss != NULL;ss=ss->parent) {
-                            if (ss->token != sc->token) break;
-                            if (ss->child[0] == NULL) break;
-                            if (ss->child[0]->token != sc->token) break;
-                            if (ss->child[1] == NULL) break;
-                            if (ss->child[1]->token != IDENTIFIER) break;
-                            if (ss->child[0] != pss) break;
-
-                            if (c_node_identifier_is_equ(ss->child[1],inner1)) {
-                                swapwith2 = ss;
-                                break;
-                            }
-
-                            pss = ss;
-                        }
-                    }
-
-                    if (swapwith != NULL && swapwith2 != NULL) {
-                        assert(swapwith->child[1] != NULL);
-                        assert(swapwith2->child[1] != NULL);
-                        c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
-
-                        if (swapwith == sc && !c_node_identifier_is_equ(inner1,inner2))
-                            goto again;
-
-                        goto uscan_start_again;
-                    }
-                    else if (swapwith != NULL) {
-                        /* well, we can start again from swapwith... */
-                        inner1 = swapwith->child[1];
-                        start = swapwith;
-                        goto uscan_start_again;
-                    }
-                }
-            }
-            /* match:
-             *
-             *    +
-             *      +
-             *        (neither + nor IDENTIFIER)
-             *        IDENTIFIER
-             *      IDENTIFIER */
-            else if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*' || sc->token == '-') && sc->child[0] != NULL && sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token && sc->child[1]->token == IDENTIFIER &&
-                sc->child[0]->child[0] != NULL && sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token != IDENTIFIER &&
-                sc->child[0]->child[0]->token != sc->token &&
-                sc->child[0]->child[1]->token == IDENTIFIER) {
-                struct c_node *inner1 = sc->child[0]->child[1];
-
-                /* try to shuffle the same identifier together, upwards */
-                {
-                    struct c_node *swapwith2 = NULL;
-                    struct c_node *swapwith = NULL;
-                    struct c_node *start = sc;
-
-uscan_start_again2:
-                    /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
-                    swapwith = NULL;
-                    swapwith2 = NULL;
-                    pss = start->child[0];
-                    for (ss=start;ss != NULL;ss=ss->parent) {
-                        if (ss->token != sc->token) break;
-                        if (ss->child[0] == NULL) break;
-                        if (ss->child[0]->token != sc->token) break;
-                        if (ss->child[1] == NULL) break;
-                        if (ss->child[1]->token != IDENTIFIER) break;
-                        if (ss->child[0] != pss) break;
-
-                        if (!c_node_identifier_is_equ(ss->child[1],inner1)) {
-                            swapwith = ss;
-                            break;
-                        }
-
-                        pss = ss;
-                    }
-
-                    /* then continue to scan upward to find a node that does match inner1 */
-                    if (swapwith != NULL) {
-                        for (;ss != NULL;ss=ss->parent) {
-                            if (ss->token != sc->token) break;
-                            if (ss->child[0] == NULL) break;
-                            if (ss->child[0]->token != sc->token) break;
-                            if (ss->child[1] == NULL) break;
-                            if (ss->child[1]->token != IDENTIFIER) break;
-                            if (ss->child[0] != pss) break;
-
-                            if (c_node_identifier_is_equ(ss->child[1],inner1)) {
-                                swapwith2 = ss;
-                                break;
-                            }
-
-                            pss = ss;
-                        }
-                    }
-
-                    if (swapwith != NULL && swapwith2 != NULL) {
-                        assert(swapwith->child[1] != NULL);
-                        assert(swapwith2->child[1] != NULL);
-                        c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
-                        goto uscan_start_again2;
-                    }
-                    else if (swapwith != NULL) {
-                        /* well, we can start again from swapwith... */
-                        inner1 = swapwith->child[1];
-                        start = swapwith;
-                        goto uscan_start_again2;
-                    }
-                }
-            }
-            /* match:
-             *
-             *    +
-             *      +
-             *        +
-             *          ...
-             *          not IDENTIFIER
-             *        IDENTIFIER
-             *      IDENTIFIER */
-            else if (enable_commutative_optimizations &&
-                (sc->token == '+' || sc->token == '*' || sc->token == '-') &&
-                sc->child[0] != NULL &&
-                sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token &&
-                sc->child[1]->token == IDENTIFIER &&
-                sc->child[0]->child[0] != NULL &&
-                sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token == sc->token &&
-                sc->child[0]->child[1]->token == IDENTIFIER &&
-                sc->child[0]->child[0]->child[0] != NULL &&
-                sc->child[0]->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->child[0]->token == sc->token &&
-                sc->child[0]->child[0]->child[1]->token != IDENTIFIER) {
-                struct c_node *inner1 = sc->child[0]->child[1];
-
-                /* try to shuffle the same identifier together, upwards */
-                {
-                    struct c_node *swapwith2 = NULL;
-                    struct c_node *swapwith = NULL;
-                    struct c_node *start = sc;
-
-uscan_start_again3:
-                    /* scan upward, until we find a + node that adds NOT from the same identifier as inner1 */
-                    swapwith = NULL;
-                    swapwith2 = NULL;
-                    pss = start->child[0];
-                    for (ss=start;ss != NULL;ss=ss->parent) {
-                        if (ss->token != sc->token) break;
-                        if (ss->child[0] == NULL) break;
-                        if (ss->child[0]->token != sc->token) break;
-                        if (ss->child[1] == NULL) break;
-                        if (ss->child[1]->token != IDENTIFIER) break;
-                        if (ss->child[0] != pss) break;
-
-                        if (!c_node_identifier_is_equ(ss->child[1],inner1)) {
-                            swapwith = ss;
-                            break;
-                        }
-
-                        pss = ss;
-                    }
-
-                    /* then continue to scan upward to find a node that does match inner1 */
-                    if (swapwith != NULL) {
-                        for (;ss != NULL;ss=ss->parent) {
-                            if (ss->token != sc->token) break;
-                            if (ss->child[0] == NULL) break;
-                            if (ss->child[0]->token != sc->token) break;
-                            if (ss->child[1] == NULL) break;
-                            if (ss->child[1]->token != IDENTIFIER) break;
-                            if (ss->child[0] != pss) break;
-
-                            if (c_node_identifier_is_equ(ss->child[1],inner1)) {
-                                swapwith2 = ss;
-                                break;
-                            }
-
-                            pss = ss;
-                        }
-                    }
-
-                    if (swapwith != NULL && swapwith2 != NULL) {
-                        assert(swapwith->child[1] != NULL);
-                        assert(swapwith2->child[1] != NULL);
-                        c_node_identifier_swap(swapwith->child[1],swapwith2->child[1]);
-                        goto uscan_start_again3;
-                    }
-                    else if (swapwith != NULL) {
-                        /* well, we can start again from swapwith... */
-                        inner1 = swapwith->child[1];
-                        start = swapwith;
-                        goto uscan_start_again3;
-                    }
-                }
-            }
-            /* match:
-             *
-             *    +
-             *      +
-             *        +
-             *          ...
-             *          ...
-             *        IDENTIFIER
-             *      *
-             *        ...
-             *        ...
+             *   +
+             *     (not an identifier)
+             *     IDENTIFIER
              *
              * change to:
-             *
-             *    +
-             *      +
-             *        +
-             *          ...
-             *          ...
-             *        *
-             *          ...
-             *          ...
-             *      IDENTIFIER
+             *   +
+             *     IDENTIFIER
+             *     (not an identifier)
              */
-            else if (enable_commutative_optimizations &&
-                sc->token == '+' &&
+            if ((sc->token == '+' || sc->token == '*') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token &&
-                sc->child[1]->token == '*' &&
-                sc->child[0]->child[0] != NULL &&
-                sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token == sc->token &&
-                sc->child[0]->child[1]->token == IDENTIFIER) {
-                /* switch them, to push the expression deeper */
-                struct c_node *p1 = sc->child[1];
-                struct c_node *p2 = sc->child[0]->child[1];
-
-                c_node_release_child_link(sc,1);
-                c_node_release_child_link(sc->child[0],1);
-
-                c_node_move_to_child_link(sc,1,&p2);
-                c_node_move_to_child_link(sc->child[0],1,&p1);
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
-                        return r;
-                }
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1(&sc->child[i])) != 0)
-                        return r;
-                }
-            }
-            /* match:
-             *
-             *    -
-             *      -
-             *        -
-             *          ...
-             *          ...
-             *        *
-             *          ...
-             *          ...
-             *      IDENTIFIER
-             *
-             * change to:
-             *
-             *    -
-             *      -
-             *        -
-             *          ...
-             *          ...
-             *        IDENTIFIER
-             *      *
-             *        ...
-             *        ...
-             */
-            else if (enable_commutative_optimizations &&
-                sc->token == '-' &&
-                sc->child[0] != NULL &&
-                sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token &&
-                sc->child[1]->token == IDENTIFIER &&
-                sc->child[0]->child[0] != NULL &&
-                sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token == sc->token &&
-                sc->child[0]->child[1]->token == '*') {
-                /* switch them, to push the expression deeper */
-                struct c_node *p1 = sc->child[1];
-                struct c_node *p2 = sc->child[0]->child[1];
-
-                c_node_release_child_link(sc,1);
-                c_node_release_child_link(sc->child[0],1);
-
-                c_node_move_to_child_link(sc,1,&p2);
-                c_node_move_to_child_link(sc->child[0],1,&p1);
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
-                        return r;
-                }
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1(&sc->child[i])) != 0)
-                        return r;
-                }
-            }
-            /* match:
-             *
-             *    +
-             *      +
-             *        IDENTIFIER
-             *        IDENTIFIER
-             *      *
-             *        ...
-             *        ...
-             *
-             * change to:
-             *
-             *    +
-             *      +
-             *        *
-             *          ...
-             *          ...
-             *        IDENTIFIER
-             *      IDENTIFIER
-             */
-            else if (enable_commutative_optimizations &&
-                sc->token == '+' &&
-                sc->child[0] != NULL &&
-                sc->child[1] != NULL &&
-                sc->child[0]->token == sc->token &&
-                sc->child[1]->token == '*' &&
-                sc->child[0]->child[0] != NULL &&
-                sc->child[0]->child[1] != NULL &&
-                sc->child[0]->child[0]->token == IDENTIFIER &&
-                sc->child[0]->child[1]->token == IDENTIFIER) {
-                /* switch them, to push the expression deeper */
-                struct c_node *p1 = sc->child[0]->child[0];
+                sc->child[0]->token != sc->token &&
+                sc->child[0]->token != IDENTIFIER &&
+                sc->child[1]->token == IDENTIFIER) {
+                struct c_node *p1 = sc->child[0];
                 struct c_node *p2 = sc->child[1];
 
+#if 0
+                fprintf(stderr,"node %p: swapping children (%p vs %p) to put identifier '%s' first\n",
+                    (void*)sc,
+                    (void*)sc->child[0],
+                    (void*)sc->child[1],
+                    sc->child[1]->value.value_IDENTIFIER.name);
+#endif
+
+                c_node_release_child_link(sc,0);
                 c_node_release_child_link(sc,1);
-                c_node_release_child_link(sc->child[0],0);
-
+                c_node_move_to_child_link(sc,0,&p2);
                 c_node_move_to_child_link(sc,1,&p1);
-                c_node_move_to_child_link(sc->child[0],0,&p2);
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
-                        return r;
-                }
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1(&sc->child[i])) != 0)
-                        return r;
-                }
+                goto again;
             }
-            /* match:
+            /* commutative add/multiply reordering.
+             * also works with subtraction and division because it does not change the first parameter of the subtraction
              *
-             *    +
-             *      +
-             *        a...
-             *        b...
-             *      +
-             *        c...
-             *        d...
+             * match:
+             *
+             *   +
+             *     +                        sc->child[0]
+             *       ...
+             *       (not an identifier)    sc->child[0]->child[1]
+             *     IDENTIFIER               sc->child[1]
              *
              * change to:
-             *
-             *    +
-             *      +
-             *        +
-             *          a...
-             *          b...
-             *        c...
-             *      d..
+             *   +
+             *     +                        sc->child[0]
+             *       ...
+             *       IDENTIFIER             sc->child[0]->child[1]
+             *     (not an identifier)      sc->child[1]
              */
-            else if (enable_associative_optimizations &&
-                (sc->token == '+' || sc->token == '*') &&
+            else if ((sc->token == '+' || sc->token == '*' || sc->token == '-' || sc->token == '/') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
                 sc->child[0]->token == sc->token &&
-                sc->child[1]->token == sc->token &&
-                sc->child[0]->child[0] != NULL &&
+                sc->child[1]->token == IDENTIFIER &&
                 sc->child[0]->child[1] != NULL &&
-                sc->child[1]->child[0] != NULL &&
-                sc->child[1]->child[1] != NULL) {
-             /* struct c_node *a = sc->child[0]->child[0]; */
-             /* struct c_node *b = sc->child[0]->child[1]; */
-                struct c_node *c = sc->child[1]->child[0];
-                struct c_node *d = sc->child[1]->child[1];
-                struct c_node *p1 = sc->child[0]; /* contains a and b */
-                struct c_node *p2 = sc->child[1]; /* contains c and d */
+                sc->child[0]->child[1]->token != sc->token &&
+                sc->child[0]->child[1]->token != IDENTIFIER) {
+                struct c_node *p1 = sc->child[0]->child[1];
+                struct c_node *p2 = sc->child[1];
 
-                /* remove c and d from sc->child[1] */
-                c_node_release_child_link(sc->child[1],0);
-                c_node_release_child_link(sc->child[1],1);
-                /* remove child nodes from sc */
-                c_node_release_child_link(sc,0);
+#if 0
+                fprintf(stderr,"node %p: swapping children sc->child[0]->child[1] and sc->child[1] (%p vs %p) to move down identifier '%s' to leaf\n",
+                    (void*)sc,
+                    (void*)sc->child[0]->child[1],
+                    (void*)sc->child[1],
+                    sc->child[1]->value.value_IDENTIFIER.name);
+#endif
+
+                c_node_release_child_link(sc->child[0],1);
                 c_node_release_child_link(sc,1);
-
-                /* p1 =
-                 *   a...
-                 *   b...
-                 *
-                 * do:
-                 *
-                 * p2 =
-                 *   p1
-                 *     a...
-                 *     b...
-                 *   c
-                 *
-                 * then:
-                 *
-                 * sc =
-                 *   p2
-                 *     p1
-                 *       a...
-                 *       b...
-                 *     c
-                 *   d*/
-                c_node_move_to_child_link(p2,0,&p1);
-                c_node_move_to_child_link(p2,1,&c);
-                c_node_move_to_child_link(sc,0,&p2);
-                c_node_move_to_child_link(sc,1,&d);
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
-                        return r;
-                }
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1(&sc->child[i])) != 0)
-                        return r;
-                }
-            }
-            /* match:           a - b + c
-             *
-             *    +          <- sc
-             *      -        <- other = sc->child[0]
-             *        a...   <- other->child[0] (does not change)
-             *        b...   <- other->child[1]
-             *      c...     <- sc->child[1]
-             *
-             * change to:       a + c - b (shift subtraction to the end, up the expression tree)
-             *
-             *    -          <- sc
-             *      +        <- other = sc->child[0]
-             *        a...   <- other->child[0] (does not change)
-             *        c...   <- other->child[1]
-             *      b...     <- sc->child[1]
-             */
-            else if (enable_addsub_combo_optimization &&
-                sc->token == '+' &&
-                sc->child[0] != NULL &&
-                sc->child[0]->token == '-') {
-                struct c_node *other = sc->child[0];
-/*              struct c_node *a = sc->child[0]->child[0]; */
-                struct c_node *b = sc->child[0]->child[1];
-                struct c_node *c = sc->child[1];
-
-/*              c_node_release_child_link(other,0); *//* a */
-                c_node_release_child_link(other,1); /* b */
-                c_node_release_child_link(sc,0); /* other */
-                c_node_release_child_link(sc,1); /* c */
-
-                /* switch + and - */
-                sc->token = '-';
-                other->token = '+';
-
-                c_node_move_to_child_link(other,1,&c);
-                c_node_move_to_child_link(sc,0,&other);
-                c_node_move_to_child_link(sc,1,&b);
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
-                        return r;
-                }
-
-                for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                    if ((r=optimization_pass1(&sc->child[i])) != 0)
-                        return r;
-                }
+                c_node_move_to_child_link(sc->child[0],1,&p2);
+                c_node_move_to_child_link(sc,1,&p1);
+                goto again;
             }
         }
     }

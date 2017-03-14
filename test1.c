@@ -401,6 +401,8 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int addsortme1b= a + b + c + a + b + c + a + b + c;
             int addsortme1c= a + b + c + a + b + c + a + b + c + a + b + c + a + b + c;
             int addsortme1d= a + b + c + d + a + b + c + d + a + b + c + d + a + b + c + d + a + b + c + d;
+            int addsortme1e= a + b + c * d + a + b + c + d + a * b + c + d + a + b + c + d + a + b + c + d;
+            int addsortme1f= a + b + c * (d + e * f + d + e) * f + a + b + b + a;
             int addsortme2 = a + b - c + a + b - c + a + b - c;
             int addsortme2b= a + b + b + a + a + b - c + b + a + b + a;
             int addsortme2c= a + b + b + a + a + b - c + b + a + b + a + b + b + a + a + b + a + b + a - c + a + b + b + a + b + a;
@@ -418,6 +420,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int subsortme1e= a - b - a - b + b - a - b + a - b - a + a + b - a + b;
             int subsortme1f= a - b - a * b + b - a - b + a - b * a + a + b - a + b + b * a + b + a + b - a - b - a - a * b - a - b - a - b - a - b;
             int subsortme1g= a - b - a - (b - a - b - a) - b - a - b - (a - b);
+            int subsortme1h= c - b - a - b * a - b - a * b - c - a - c;
             int mulsortme1 = a * b * a * b * a * b * a * b;
             int mulsortme1a= a * a * b * b * a * b * a * b;
             int mulsortme1b= a * a * b * b * a * c * d * b * c * c * d * a * c * d * b;
