@@ -421,6 +421,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int addsortme5c= a + b + 0 + a + b + 0 + c + 0 + 0 + a;
             int addsortme5d= ((a + b + 0 + a) + 0 + a) + 0 + 0 + 0 + 0 + a;
             int addsortme5e= 0;
+            int addsortme5f= a + b + 0.0 + a + b + 0 + 0.0 + 0.0 + a + b + 0;
             int subsortme1 = a - b - a - b - b - a - b - a - b - a;
             int subsortme1b= a - b - a - b + b - a - b + a - b - a;
             int subsortme1c= c - a - b - b - a - b - a - c - c - b - a;
