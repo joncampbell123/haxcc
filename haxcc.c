@@ -3448,8 +3448,13 @@ again:
             }
             /* add by zero elimination:
              *
-             * match:
+             * match: a + 0
              *   +                      <- sc
+             *     a...                 <- a = sc->child[0]
+             *     0                    <- b = sc->child[1]
+             *
+             * or match: a - 0
+             *   -                      <- sc
              *     a...                 <- a = sc->child[0]
              *     0                    <- b = sc->child[1]
              *
@@ -3457,7 +3462,7 @@ again:
              *   a...                   <- sc
              *
              */
-            else if (sc->token == '+' &&
+            else if ((sc->token == '+' || sc->token == '-') &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
 /*              sc->child[0]->token == doesn't matter && */
