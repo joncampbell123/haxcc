@@ -3490,6 +3490,41 @@ again:
                 c_node_release_autodelete(&(a));
                 goto again;
             }
+            /* multiply by zero elimination:
+             *
+             * match: a * 0
+             *   +                      <- sc
+             *     a...                 <- a = sc->child[0]
+             *     0                    <- b = sc->child[1]
+             *
+             * change to: 0
+             *   0...                   <- sc
+             *
+             * a * 0 == 0
+             */
+            else if (sc->token == '*' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+/*              sc->child[0]->token == doesn't matter && */
+                ((sc->child[1]->token == I_CONSTANT && sc->child[1]->value.value_I_CONSTANT.v.uint == 0) || /* integer constant 0 */
+                 (sc->child[1]->token == F_CONSTANT && sc->child[1]->value.value_F_CONSTANT.val == 0.0))) { /* float constant 0 */
+                struct c_node *a,*b,*nullnode = NULL;
+
+                a = sc->child[0];
+                b = sc->child[1];
+                c_node_move_to_child_link(sc,0,&nullnode);
+                c_node_move_to_child_link(sc,1,&nullnode);
+                c_node_release_autodelete(&(b)); /* discard constant */
+                c_node_delete_tree(&(a)); /* discard a */
+
+                /* integer constant zero */
+                sc->token = I_CONSTANT;
+                sc->value.value_I_CONSTANT.bwidth = 1;
+                sc->value.value_I_CONSTANT.bsign = 0;
+                sc->value.value_I_CONSTANT.v.uint = 0;
+
+                goto again;
+            }
         }
     }
 
