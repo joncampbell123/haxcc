@@ -3161,7 +3161,45 @@ again:
              *        a...   <- other->child[0] (does not change)
              *        c...   <- other->child[1]
              *      b...     <- sc->child[1]
-             */
+             *
+             * NTS: Although in the real math domain you can do the same with multiply/divide,
+             *      you CANNOT do the same within the integer (boolean) math domain. This is
+             *      because division with integers always rounds down, and the fractional
+             *      part is discarded, after each integer divide.
+             *
+             *      Consider:
+             *          a = 5
+             *          b = 2
+             *          c = 4
+             *
+             *      result1 = a / b * c
+             *      result2 = a * c / b
+             *
+             *      Now if a, b, and c were floating point, switching multiply/divide would
+             *      work, because:
+             *
+             *      a / b * c                   | a * c / b
+             *      ----------------------------+--------------------------
+             *      a / b = 5 / 2 = 2.5         | a * c = 5 * 4 = 20
+             *      2.5 * c = 2.5 * 4 = 10      | 20 / 2 = 10
+             *      result1 = 10                | result2 = 10                  <- result is the same
+             *
+             *      But, if a, b, and c were integers:
+             *
+             *      a / b * c                   | a * c / b
+             *      ----------------------------+--------------------------
+             *      a / b = 5 / 2 = 2           | a * c = 5 * 4 = 20            <- integer 5 / 2 = 2 because truncation
+             *      2 * c = 2 * 4 = 8           | 20 / 2 = 10
+             *      result1 = 8                 | result2 = 10                  <- result does not match
+             *
+             *      Note that the same expressions, whether with constant integers or int variables, produces
+             *      the same results with GCC.
+             *
+             *      The only way this optimization can be legitimately applied is if we know the child nodes
+             *      represent floating point identifiers. Which means that at some point, this code will have
+             *      to pass over the node tree to first register identifiers and their types BEFORE applying
+             *      this optimization pass so that this code can query the type of the identifier and make
+             *      sure the type is appropriate for that kind of optimization. */
             if (sc->token == '+' &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
