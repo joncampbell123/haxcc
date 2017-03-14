@@ -3195,11 +3195,11 @@ again:
              *      Note that the same expressions, whether with constant integers or int variables, produces
              *      the same results with GCC.
              *
-             *      The only way this optimization can be legitimately applied is if we know the child nodes
-             *      represent floating point identifiers. Which means that at some point, this code will have
-             *      to pass over the node tree to first register identifiers and their types BEFORE applying
-             *      this optimization pass so that this code can query the type of the identifier and make
-             *      sure the type is appropriate for that kind of optimization. */
+             *      The only way this optimization can be legitimately applied to * and / is when we know the
+             *      child nodes represent floating point numbers. Which means that at some point, this code
+             *      will have to pass over the node tree to first register identifiers and their types BEFORE
+             *      applying this optimization pass so that this code can query the type of the identifier and
+             *      make sure the type is appropriate for that kind of optimization. */
             if (sc->token == '+' &&
                 sc->child[0] != NULL &&
                 sc->child[1] != NULL &&
