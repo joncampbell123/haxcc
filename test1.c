@@ -442,6 +442,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
             int mulsortme1e= a * 0 + a + b * c * 0 - b - a;
             int mulsortme1f= ((a + b + c + b + a + 4 + 1) * 0) + a + b + c * 0 - b - a;
             int mulsortme1g= a * -1 + b * -1 + c * -1;
+            int mulsortme1h= -1 * a + -1 * b + -1 * c;
             int combsortme0= a + b + b + a + b + a + b + a * b + a + b + a + b + c + a + b + a + b + a;
             int combsortme0b=a + b + b + a * b + a + b + a * b + a + b + a + b + c * a + b + a + b + a;
             int combsortme1=(a + b + b + a + b + a + b + a) * (b + a + b + a + b + c + a + b + a + b + a);
