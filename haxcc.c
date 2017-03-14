@@ -3539,6 +3539,18 @@ again:
              *     a...                 <- sc->child[0]
              *     b...                 <- sc->child[1]
              *
+             * match: (a...) - (b... * -1)
+             *   -                      <- sc
+             *     a...                 <- sc->child[0] (doesn't matter)
+             *     *                    <- m = sc->child[1]
+             *       b...               <- b = sc->child[1]->child[0] (doesn't matter)
+             *       -1                 <- n1 = sc->child[1]->child[1]
+             *
+             * change to: (a...) + (b...)
+             *   +                      <- sc
+             *     a...                 <- sc->child[0]
+             *     b...                 <- sc->child[1]
+             *
              */
             else if ((sc->token == '+' || sc->token == '-') &&
                 sc->child[0] != NULL &&
