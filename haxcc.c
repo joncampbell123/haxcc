@@ -3525,6 +3525,50 @@ again:
 
                 goto again;
             }
+            /* multiply by -1 elimination:
+             *
+             * match: (a...) + (b... * -1)
+             *   +                      <- sc
+             *     a...                 <- sc->child[0] (doesn't matter)
+             *     *                    <- m = sc->child[1]
+             *       b...               <- b = sc->child[1]->child[0] (doesn't matter)
+             *       -1                 <- n1 = sc->child[1]->child[1]
+             *
+             * change to: (a...) - (b...)
+             *   -                      <- sc
+             *     a...                 <- sc->child[0]
+             *     b...                 <- sc->child[1]
+             *
+             */
+            else if (sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[1]->child[0] != NULL &&
+                sc->child[1]->child[1] != NULL &&
+                sc->child[1]->token == '*' &&
+                ((sc->child[1]->child[1]->token == I_CONSTANT &&
+                  sc->child[1]->child[1]->value.value_I_CONSTANT.v.sint == -1LL &&
+                  sc->child[1]->child[1]->value.value_I_CONSTANT.bsign > 0) || /* integer constant -1 */
+                 (sc->child[1]->child[1]->token == F_CONSTANT &&
+                  sc->child[1]->child[1]->value.value_F_CONSTANT.val == -1.0))) { /* float constant -1 */
+                struct c_node *m = sc->child[1];
+                struct c_node *b = sc->child[1]->child[0];
+                struct c_node *n1 = sc->child[1]->child[1];
+                struct c_node *nullnode = NULL;
+
+                sc->token = '-';
+
+                c_node_move_to_child_link(m,0,&nullnode);
+                c_node_move_to_child_link(m,1,&nullnode);
+                c_node_release_autodelete(&(n1));
+                c_node_move_to_child_link(sc,1,&nullnode);
+                c_node_release_autodelete(&(m));
+                c_node_move_to_child_link(sc,1,&b);
+
+                goto again;
+            }
         }
     }
 
