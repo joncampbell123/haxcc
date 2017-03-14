@@ -3229,6 +3229,63 @@ again:
                 c_node_move_to_child_link(sc,1,&p1);
                 goto again;
             }
+            /* commutative add/multiply reordering.
+             *
+             * match: ex. (a + b) + (c + d) = a + b + c + d
+             *
+             *   +
+             *     +                    <- p1
+             *       a...               <- a
+             *       b...               <- b
+             *     +                    <- p2
+             *       c...               <- c
+             *       d...               <- d
+             *
+             * change to: ex. (((a + b) + c) + d) = a + b + c + d
+             *   +
+             *     +
+             *       +
+             *         a...
+             *         b...
+             *       c...
+             *     d...
+             */
+            else if ((sc->token == '+' || sc->token == '*') &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token &&
+                sc->child[1]->token == sc->token &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[1]->child[0] != NULL &&
+                sc->child[1]->child[1] != NULL) {
+                struct c_node *a = sc->child[0]->child[0];
+                struct c_node *b = sc->child[0]->child[1];
+                struct c_node *c = sc->child[1]->child[0];
+                struct c_node *d = sc->child[1]->child[1];
+                struct c_node *p1 = sc->child[0];
+                struct c_node *p2 = sc->child[1];
+
+#if 0
+                fprintf(stderr,"node %p: (a+b)+(c+d) => (((a+b)+c)+d) conversion\n",(void*)sc);
+#endif
+
+                c_node_release_child_link(sc,0);
+                c_node_release_child_link(sc,1);
+                c_node_release_child_link(p1,0);
+                c_node_release_child_link(p1,1);
+                c_node_release_child_link(p2,0);
+                c_node_release_child_link(p2,1);
+
+                c_node_move_to_child_link(p2,0,&a);
+                c_node_move_to_child_link(p2,1,&b);
+                c_node_move_to_child_link(p1,0,&p2);
+                c_node_move_to_child_link(p1,1,&c);
+                c_node_move_to_child_link(sc,0,&p1);
+                c_node_move_to_child_link(sc,1,&d);
+
+                goto again;
+            }
         }
     }
 
