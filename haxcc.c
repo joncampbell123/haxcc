@@ -3364,6 +3364,53 @@ again:
 
                 goto again;
             }
+            /* reorder add/sub/multiply to help combine like terms.
+             *
+             * match: ex. a + b + a
+             *
+             *   +
+             *     +                        <- sc->child[0]
+             *       a                      <- sc->child[0]->child[0]
+             *       b                      <- sc->child[0]->child[1]
+             *     a                        <- sc->child[1]
+             *
+             * change to: ex. a + a + b
+             *   +
+             *     +
+             *       a
+             *       a
+             *     b
+             *
+             * this works with subtraction because:
+             *
+             *      a - b - a == a - a - b
+             *
+             *      a - (b + a) == a - (a + b)
+             *
+             */
+            else if ((sc->token == '+' || sc->token == '-' || sc->token == '*') &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+                sc->child[0]->token == sc->token &&
+                sc->child[1]->token == IDENTIFIER &&
+                sc->child[0]->child[0] != NULL &&
+                sc->child[0]->child[1] != NULL &&
+                sc->child[0]->child[0]->token == IDENTIFIER &&
+                sc->child[0]->child[1]->token == IDENTIFIER &&
+                c_node_identifier_is_equ(sc->child[1],sc->child[0]->child[0]) &&
+                !c_node_identifier_is_equ(sc->child[1],sc->child[0]->child[1])) {
+                struct c_node *p1 = sc->child[0]->child[1];
+                struct c_node *p2 = sc->child[1];
+
+                c_node_release_child_link(sc->child[0],1);
+                c_node_release_child_link(sc,1);
+
+                c_node_move_to_child_link(sc->child[0],1,&p2);
+                c_node_move_to_child_link(sc,1,&p1);
+
+                goto again;
+            }
+
         }
     }
 
