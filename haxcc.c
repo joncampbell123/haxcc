@@ -3446,6 +3446,45 @@ again:
 
                 goto again;
             }
+            /* add by zero elimination:
+             *
+             * match:
+             *   +                      <- sc
+             *     a...                 <- a = sc->child[0]
+             *     0                    <- b = sc->child[1]
+             *
+             * change to:
+             *   a...                   <- sc
+             *
+             */
+            else if (sc->token == '+' &&
+                sc->child[0] != NULL &&
+                sc->child[1] != NULL &&
+/*              sc->child[0]->token == doesn't matter && */
+                ((sc->child[1]->token == I_CONSTANT && sc->child[1]->value.value_I_CONSTANT.v.uint == 0) || /* integer constant 0 */
+                 (sc->child[1]->token == F_CONSTANT && sc->child[1]->value.value_F_CONSTANT.val == 0.0))) { /* float constant 0 */
+                struct c_node *a,*b,*nullnode = NULL;
+
+                a = sc->child[0];
+                b = sc->child[1];
+                c_node_move_to_child_link(sc,0,&nullnode);
+                c_node_move_to_child_link(sc,1,&nullnode);
+                c_node_release_autodelete(&(b)); /* discard constant */
+
+                /* lift 'a' up to 'sc' node */
+                sc->token = a->token;
+                sc->value = a->value;
+                memset(&(a->value),0,sizeof(a->value));
+                for (i=0;i < c_node_MAX_CHILDREN;i++) {
+                    b = a->child[i];
+                    assert(sc->child[i] == NULL);
+                    c_node_move_to_child_link(a,i,&nullnode);
+                    assert(a->child[i] == NULL);
+                    c_node_move_to_child_link(sc,i,&b);
+                }
+                c_node_release_autodelete(&(a));
+                goto again;
+            }
         }
     }
 
