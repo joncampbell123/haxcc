@@ -86,6 +86,46 @@ simplification are ignored:
   - Prune 'a' and all child nodes beneath 'a'. Unreference and delete 'a'.
 
 ===============================================================================
+* Add/subtract by zero elimination:
+
+  a + 0 = a
+  a - 0 = a
+
+* How it would be implemented:
+
+  Match: (a + 0) or (a - 0)
+
+  +                         <- node
+    a                       <- a = node->child[0]
+    0                       <- zero = node->child[1]
+
+  Convert to: a
+
+  a                         <- node
+
+  Results:
+
+  + or - operator is replaced with 'a' node, child nodes included.
+
+  How:
+
+  - Release and clear child node 'zero' from 'node', unreference and delete 'zero'.
+
+  - Release and clear child node 'a' from 'node'. Keep a reference to 'a'.
+
+  - All child nodes in 'node' should be NULL at this point. The - and + operators
+    should have no more than two child nodes.
+
+  - Copy token and value union from 'a' to 'node'.
+
+  - For each child node in 'a', detach from 'a' and attach to 'node' (maintain
+    child node index).
+
+  - All child nodes in 'a' should be NULL at this point.
+
+  - Unreference and delete 'a'.
+
+===============================================================================
 * Addition/subtraction reordering: Move addition to the right (down to the
   leaves), subtraction to the left (up from the leaves).
 
