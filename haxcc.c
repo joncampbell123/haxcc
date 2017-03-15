@@ -3076,8 +3076,10 @@ again:
             if ((idn=sc->child[0]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,0)) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
 
             if ((idn=sc->child[0]) != NULL) {
@@ -3090,8 +3092,10 @@ again:
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
 
             /* EXPRESSION nodes are there to say "the user used parenthesis around this expression", get rid of them */
@@ -3118,6 +3122,7 @@ again:
                         c_node_move_to_child_link(sc,i,&cn);
                     }
                     c_node_release_autodelete(&(sn));
+                    ret = 1;
                     goto again;
                 }
             }
@@ -3128,8 +3133,10 @@ again:
             if ((idn=sc->child[1]) != NULL) {
                 if ((r=optimization_pass1_child_dneg(sc,1)) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
 
             if ((idn=sc->child[1]) != NULL) {
@@ -3142,23 +3149,29 @@ again:
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
         }
         else {
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1_child_dneg(sc,i)) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
 
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
-                else if (r > 0)
+                else if (r > 0) {
+                    ret = 1;
                     goto again;
+                }
             }
 
             /* match:           a - b + c
@@ -3237,6 +3250,7 @@ again:
                 c_node_release_child_link(sc,1);
                 c_node_move_to_child_link(other,1,&c);
                 c_node_move_to_child_link(sc,1,&b);
+                ret = 1;
                 goto again;
             }
             /* commutative add/multiply reordering.
@@ -3277,6 +3291,7 @@ again:
                 c_node_release_child_link(sc,1);
                 c_node_move_to_child_link(sc,0,&p2);
                 c_node_move_to_child_link(sc,1,&p1);
+                ret = 1;
                 goto again;
             }
             /* commutative add/multiply reordering.
@@ -3320,6 +3335,7 @@ again:
                 c_node_release_child_link(sc,1);
                 c_node_move_to_child_link(sc->child[0],1,&p2);
                 c_node_move_to_child_link(sc,1,&p1);
+                ret = 1;
                 goto again;
             }
             /* commutative add/multiply reordering.
@@ -3377,6 +3393,7 @@ again:
                 c_node_move_to_child_link(sc,0,&p1);
                 c_node_move_to_child_link(sc,1,&d);
 
+                ret = 1;
                 goto again;
             }
             /* reorder add/sub/multiply to help combine like terms.
@@ -3423,6 +3440,7 @@ again:
                 c_node_move_to_child_link(sc->child[0],1,&p2);
                 c_node_move_to_child_link(sc,1,&p1);
 
+                ret = 1;
                 goto again;
             }
             /* subtraction elimination:
@@ -3459,6 +3477,7 @@ again:
                 sc->value.value_I_CONSTANT.bsign = 0;
                 sc->value.value_I_CONSTANT.v.uint = 0;
 
+                ret = 1;
                 goto again;
             }
             /* add by zero elimination:
@@ -3503,6 +3522,7 @@ again:
                     c_node_move_to_child_link(sc,i,&b);
                 }
                 c_node_release_autodelete(&(a));
+                ret = 1;
                 goto again;
             }
             /* multiply by zero elimination:
@@ -3538,6 +3558,7 @@ again:
                 sc->value.value_I_CONSTANT.bsign = 0;
                 sc->value.value_I_CONSTANT.v.uint = 0;
 
+                ret = 1;
                 goto again;
             }
             /* multiply by -1 elimination:
@@ -3597,6 +3618,7 @@ again:
                 c_node_release_autodelete(&(m));
                 c_node_move_to_child_link(sc,1,&b);
 
+                ret = 1;
                 goto again;
             }
         }
