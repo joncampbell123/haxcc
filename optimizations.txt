@@ -51,6 +51,40 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Add/subtract by NEGATE
+
+* How it would be implemented:
+
+  Match: (a + -b) or (a - -b)
+
+  +                         <- node
+    a                       <- a = node->child[0]
+    NEGATE                  <- neg = node->child[1]
+      b                     <- b = neg->child[0] = node->child[1]->child[0]
+
+  Convert to: (a - b) or (a + b)
+
+  -                         <- node
+    a                       <- a = node->child[0]
+    b                       <- b = node->child[1]
+
+  Results:
+
+  Addition is converted to subtraction, or subtraction converted to addition,
+  and NEGATE node is removed. 'b' node is moved up into second child node
+  slot of 'node'.
+
+  How:
+
+  - Change node->token from '-' to '+', or '+' or '-'
+
+  - Remove and clear child node 'b' from node 'neg'. Keep a reference to 'b'.
+
+  - Remove and clear child node 'neg' from node 'node'. Unreference and delete 'neg'.
+
+  - Attach node 'b' to second child slot of 'node'.
+
+===============================================================================
 * Multiply by -1: a * -1 = -a
 
 * How it would be implemented:
