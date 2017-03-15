@@ -10,9 +10,25 @@ carried out first.
 
   would be
 
-  +
-    -
-      +
+     __
+    |\
+      \
+  +    \
+    -   \
+      +  \
+        a \______ Evaluation order
+        b
+      c
+    d
+
+
+  +             <---- (a + b)
+    a
+    b
+
+  +             <---- ((result of - operator) + d)
+    -           <---- ((result of + operator) - c)
+      +         <---- (a + b)
         a
         b
       c
