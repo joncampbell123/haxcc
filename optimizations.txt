@@ -51,6 +51,32 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Subtract a from a
+
+* How it would be implemented:
+
+  Match: (a - a)
+
+  -                         <- node
+    a                       <- a1 = node->child[0]
+    a                       <- a2 = node->child[1]
+
+  Convert to: 0
+
+  0
+
+  Results:
+
+  Both child nodes are released, cleared, and deleted. 'node' is set to integer
+  constant '0'.
+
+  How:
+
+  - Change 'node' token from / to I_CONSTANT. Set node integer constant to 0.
+
+  - Release and clear child nodes 'a1' and 'a2'. Unreference and delete them.
+
+===============================================================================
 * Multiply/divide where both operands are negated
 
 * How it would be implemented:
