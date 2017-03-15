@@ -3165,13 +3165,6 @@ again:
                 }
             }
 
-            if ((r=optimization_2op_move_identifier_to_first_child(sc)) != 0) {
-                if (r > 0)
-                    goto again;
-                else
-                    return r;
-            }
-
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
                 if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
