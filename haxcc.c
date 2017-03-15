@@ -3613,8 +3613,6 @@ int main(int argc, char **argv) {
     /* second pass: optimization pass 1 */
     if (res == 0 && last_translation_unit != NULL)
         res = optimization_pass1(&last_translation_unit);
-    if (res == 0 && last_translation_unit != NULL)
-        res = optimization_pass1(&last_translation_unit);
 
     /* finish parsing final tree */
     if (last_translation_unit != NULL) {
