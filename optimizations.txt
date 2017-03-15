@@ -10,7 +10,7 @@ carried out first.
 
   would be
 
-     __
+     _
     |\
       \
   +    \
