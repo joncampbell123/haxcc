@@ -3006,6 +3006,7 @@ int enumerator_pass(struct c_node *node) {
 int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
     struct c_node *nullnode = NULL;
     struct c_node *a,*b,*c;
+    int ret = 0;
 
     do {
         a = node->child[chidx];
@@ -3031,9 +3032,11 @@ int optimization_pass1_child_dneg(struct c_node *node,unsigned int chidx) {
         c_node_move_to_child_link(node,chidx,&c);
         c_node_release_autodelete(&(a));
         c_node_release_autodelete(&(b));
+
+        ret = 1;
     } while (1);
 
-    return 0;
+    return ret;
 }
 
 int c_node_identifier_is_equ(struct c_node *a,struct c_node *b) {
@@ -3065,14 +3068,16 @@ void c_node_identifier_swap(struct c_node *a,struct c_node *b) {
 int optimization_pass1(struct c_node **node) {
     struct c_node *sc,*idn,*nullnode=NULL;
     unsigned int i;
-    int r;
+    int r,ret = 0;
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
 again:
         if (sc->token == STATIC_ASSERT || sc->token == POINTER_DEREF || sc->token == EXPRESSION || sc->token == CASE) {
             if ((idn=sc->child[0]) != NULL) {
-                if ((r=optimization_pass1_child_dneg(sc,0)) != 0)
+                if ((r=optimization_pass1_child_dneg(sc,0)) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
 
             if ((idn=sc->child[0]) != NULL) {
@@ -3083,8 +3088,10 @@ again:
             }
 
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=optimization_pass1(&sc->child[i])) != 0)
+                if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
 
             /* EXPRESSION nodes are there to say "the user used parenthesis around this expression", get rid of them */
@@ -3119,8 +3126,10 @@ again:
             /* child[0] = identifier / array ref
              * child[1] = init value (if any) */
             if ((idn=sc->child[1]) != NULL) {
-                if ((r=optimization_pass1_child_dneg(sc,1)) != 0)
+                if ((r=optimization_pass1_child_dneg(sc,1)) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
 
             if ((idn=sc->child[1]) != NULL) {
@@ -3131,19 +3140,25 @@ again:
             }
 
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=optimization_pass1(&sc->child[i])) != 0)
+                if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
         }
         else {
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=optimization_pass1_child_dneg(sc,i)) != 0)
+                if ((r=optimization_pass1_child_dneg(sc,i)) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
 
             for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=optimization_pass1(&sc->child[i])) != 0)
+                if ((r=optimization_pass1(&sc->child[i])) < 0)
                     return r;
+                else if (r > 0)
+                    goto again;
             }
 
             /* match:           a - b + c
@@ -3587,11 +3602,11 @@ again:
         }
     }
 
-    return 0;
+    return ret;
 }
 
 int main(int argc, char **argv) {
-    int res;
+    int r,res;
 
     // debug
     extern int yydebug;
@@ -3611,8 +3626,10 @@ int main(int argc, char **argv) {
         res = enumerator_pass(last_translation_unit);
 
     /* second pass: optimization pass 1 */
-    if (res == 0 && last_translation_unit != NULL)
-        res = optimization_pass1(&last_translation_unit);
+    if (res == 0 && last_translation_unit != NULL) {
+        r = optimization_pass1(&last_translation_unit);
+        if (r < 0) res = r;
+    }
 
     /* finish parsing final tree */
     if (last_translation_unit != NULL) {
