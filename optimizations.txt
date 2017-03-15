@@ -51,6 +51,33 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Multiply by -1: a * -1 = -a
+
+* How it would be implemented:
+
+  Match: (a * -1) or (a * -1.0)
+
+  *                         <- node
+    a                       <- a = node->child[0]
+    -1                      <- neg1 = node->child[1]
+
+  Convert to: -a
+
+  NEGATE                    <- node
+    a                       <- a = node->child[0]
+
+  Results:
+
+  Token is changed from * to NEGATE. 'neg1' is released and cleared, deleted.
+  'a' is not touched.
+
+  How:
+
+  - Change 'node' token from * to NEGATE.
+
+  - Release and clear child node 'neg1' from 'none', unreference and delete 'neg1'.
+
+===============================================================================
 * Multiply by zero elimination: a * 0 = 0
 
   If the optimizer sees that something is multiplied by zero, it should replace
