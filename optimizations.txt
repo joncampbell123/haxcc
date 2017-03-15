@@ -1,0 +1,134 @@
+Expression optimizations to code into this compiler.
+
+Expressions are represented in memory as a tree, with the node as the operator
+and the child nodes the expressions, identifiers, or constants to operate on.
+The expression tree is evaluated by recursion down the child nodes, then the
+result is carried back up the tree. Therefore, operations at the leaves are
+carried out first.
+
+  ((a + b) - c) + d
+
+  would be
+
+  +
+    -
+      +
+        a
+        b
+      c
+    d
+
+The goal of the optimization is to simplify and rework the expression without
+changing the result of the expression. However, some side effects of the
+simplification are ignored:
+
+  - Exact results of integer overflow. Optimizations will not affect the result
+    unless the result relies on intricate knowledge of integer overflow.
+
+    Consider:
+
+    a * b + a * c == a * (b + c)
+
+    Optimization should not affect the result of this expression unless the
+    programmer relies on a * b and a * c overflowing the integer datatype
+    in a specific manner, where then a * b + a * c would overflow differently
+    from a * (b + c).
+
+===============================================================================
+* Multiply by zero elimination: a * 0 = 0
+
+  If the optimizer sees that something is multiplied by zero, it should replace
+  the node and it's children with integer constant zero. All nodes in the tree
+  below that point should be dereferenced and deleted. The expression multiplied
+  by zero should be completely removed because multiplication by zero makes the
+  result irrelevent.
+
+* How it would be implemented:
+
+  Match: a * 0
+
+  *                         <- node
+    a                       <- a = node->child[0]
+    0                       <- zero = node->child[1]
+
+  Convert to: 0
+
+  0                         <- node
+
+  Results:
+
+  Node is replaced by integer constant 0. 'a' and 'zero'
+  are unreferenced and deleted. Child nodes of 'a' are
+  unreferenced and deleted, all the way down the tree.
+
+  How:
+
+  - Release and clear child node 'a' from 'node', keep now-disconnected 'a' node.
+
+  - Release and clear child node 'zero' from 'node'. Unreference and delete 'zero'.
+
+  - Prune 'a' and all child nodes beneath 'a'. Unreference and delete 'a'.
+
+===============================================================================
+* Addition/subtraction reordering: Move addition to the right (down to the
+  leaves), subtraction to the left (up from the leaves).
+
+  Subtraction is not commutative. (a - b) != (b - a). But, subtraction from
+  the first result on can be treated as commutative. You can reorder the
+  operands in a string of subtractions so long as you do not reorder the
+  first operand of the first subtraction.
+
+  a - b - c - d == a - c - b - d == a - d - c - b
+
+  a - b - c - d != b - a - c - d
+
+  Addition and subtraction have the same precedence in order of operations,
+  therefore among a string of addition and subtraction you work left to right.
+  Grouping addition and subtraction is meant to enable further optimization,
+  including grouping by identifiers to convert multiple additions into a
+  multiply by constant.
+
+  a + b - c - d + e - f + g + h - i - j
+
+  would become (as an example)
+
+  a + b + e + g + h - i - j - c - d - f
+
+* How it would be implemented:
+
+  Match: a - b + c
+
+  +                         <- node
+    -                       <- op = node->child[0]
+      a                     <- a = op->child[0] = node->child[0]->child[0]
+      b                     <- b = op->child[1] = node->child[0]->child[1]
+    c                       <- c = node->child[1]
+
+  Convert to: a + c - b
+
+  -                         <- node
+    +                       <- op = node->child[0]
+      a                     <- a = op->child[0] = node->child[0]->child[0]
+      c                     <- c = op->child[1] = node->child[0]->child[1]
+    b                       <- b = node->child[1]
+
+  Results:
+
+  'b' and 'c' switch places.
+  'a' is unchanged.
+  'node' and 'op' switch tokens (operators).
+
+  How:
+
+  - Swap node->token and op->token. Should result node->token == '-' and op->token == '+'.
+
+  - Swap 'b' and 'c':
+
+      - Release and zero op->child[1], keep now-disconnected node 'b'
+
+      - Release and zero node->child[1], keep now-disconnected node 'c'
+
+      - Attach and addref node 'b' to node->child[1]
+
+      - Attach and addref node 'c' to op->child[1]
+
