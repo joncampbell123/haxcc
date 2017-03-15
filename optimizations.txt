@@ -51,6 +51,35 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Subtract from 0
+
+* How it would be implemented:
+
+  Match: (0 - a)
+
+  -                         <- node
+    0                       <- zero = node->child[0]
+    a                       <- a = node->child[1]
+
+  Convert to: -a
+
+  NEGATE                    <- node
+    a                       <- a = node->child[0]
+
+  Results:
+
+  Subtraction is converted to simple negation.
+
+  How:
+
+  - Change node->token to NEGATE.
+
+  - Remove and clear child node 'zero' from node 'node'. Unreference and delete 'neg'.
+
+  - Detach 'a' from second child node slot of 'node' and attach to first child node
+    slot of 'node'.
+
+===============================================================================
 * Add/subtract by NEGATE
 
 * How it would be implemented:
