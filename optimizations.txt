@@ -51,6 +51,32 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Divide a by a
+
+* How it would be implemented:
+
+  Match: (a / a)
+
+  /                         <- node
+    a                       <- a1 = node->child[0]
+    a                       <- a2 = node->child[1]
+
+  Convert to: 1
+
+  1
+
+  Results:
+
+  Both child nodes are released, cleared, and deleted. 'node' is set to integer
+  constant '1'.
+
+  How:
+
+  - Change 'node' token from / to I_CONSTANT. Set node integer constant to 1.
+
+  - Release and clear child nodes 'a1' and 'a2'. Unreference and delete them.
+
+===============================================================================
 * Subtract from 0
 
 * How it would be implemented:
