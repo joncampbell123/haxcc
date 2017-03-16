@@ -51,6 +51,66 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Multiply/divide where one operand is negated
+
+* How it would be implemented:
+
+  Match: (-a * a) or (-a / a)
+
+  *                         <- node
+    NEGATE                  <- op = node->child[0], negate_i = 0
+      a                     <- a1 = op->child[0] = node->child[0]->child[0]
+    a                       <- a2 = node->child[1]
+
+  Convert to: -(a * a) or -(a / a)
+
+  NEGATE                    <- node
+    *                       <- op = node->child[0]
+      a                     <- a1 = op->child[0] = node->child[0]->child[0]
+      a                     <- a2 = op->child[1] = node->child[0]->child[1]
+
+  Match: (a * -a) or (a / -a)
+
+  *                         <- node
+    a                       <- a2 = node->child[0]
+    NEGATE                  <- op = node->child[1], negate_i = 1
+      a                     <- a1 = op->child[0] = node->child[1]->child[0]
+
+  Convert to: -(a * a) or -(a / a)
+
+  NEGATE                    <- node
+    *                       <- op = node->child[0]
+      a                     <- a1 = op->child[0] = node->child[0]->child[0]
+      a                     <- a2 = op->child[1] = node->child[0]->child[1]
+
+  Results:
+
+  The NEGATE operator is moved up out of the multiply/divide.
+
+  How:
+
+  - Determine which child node in node 'node' has the NEGATE token.
+    Store the index of that child node in 'negate_i', update pointer 'op'
+    to point to it:
+
+      op = node->child[negate_i];
+
+  - Change node->token from '*' to NEGATE
+
+  - Change op->token from NEGATE to '*'
+
+  - Remove and clear node 'a2' from child node 'negate_i' of 'node'.
+    Keep a reference to 'a2'.
+
+  - If negate_i == 1 (op comes from second child node of 'node'),
+    Then remove and clear node 'op' from second child node of 'node',
+    attach and reference to first child node of 'node', set negate_i = 0, then:
+
+      op = node->child[negate_i];
+
+  - Attach node 'a2' to second child node slot of node 'op'.
+
+===============================================================================
 * Distributive property in reverse
 
 * How it would be implemented:
