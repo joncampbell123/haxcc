@@ -50,6 +50,39 @@ simplification are ignored:
     in a specific manner, where then a * b + a * c would overflow differently
     from a * (b + c).
 
+Optimizations listed here unless otherwise specified will focus on int/float
+constants and identifiers (variables) only. Function calls will not undergo
+math optimization unless the function is static inline and operates only on
+the parameters given to return a value (does not touch variables outside of
+it's scope) or the function is declared to be one that does not touch variables
+outside of it's own scope (math.h sin(), cos(), etc.), or marked explicitly
+with a special __declspec() supported by haxcc that declares the function can
+be treated as optimizable within an expression. If a function call does
+not meet that criteria, then optimization will happen around the function call
+and within the parameter list for the call, but will not affect the function
+call itself.
+
+So if your code calls function f() like this:
+
+   f(4) / f(2) = (return value of f(4)) / (return value of f(2))
+
+The optimizer will not apply the same optimization that it would for identifiers:
+
+   a / a = 1
+
+Another example:
+
+   f(4) + a - f(3) - b + f(2) + c
+
+Subtraction/addition reordering would make this into (for example):
+
+   f(4) - f(3) + f(2) + a + c - b
+
+The assumption is that there is probably some C source code out there that
+expects function calls in an expression to occur in normal (unoptimized)
+evaluation order. So the optimization will reorder add/subtract operators
+around the function calls.
+
 ===============================================================================
 * Multiply/divide where one operand is negated
 
