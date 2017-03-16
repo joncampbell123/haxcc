@@ -447,6 +447,9 @@ optimization flags of it's own.
 
 * How it would be implemented:
 
+  a can be any type, whether constant, identifier, or function call.
+  this optimization does not affect the order of function call.
+
   Match: (a * -1) or (a * -1.0)
 
   *                         <- node
@@ -480,6 +483,10 @@ optimization flags of it's own.
 
 * How it would be implemented:
 
+  a can be a constant or identifier (int or float). this should not be
+  applied to function calls, unless the function is eligible for expression
+  optimization.
+
   Match: a * 0
 
   *                         <- node
@@ -511,6 +518,9 @@ optimization flags of it's own.
   a - 0 = a
 
 * How it would be implemented:
+
+  a and b can be any type, whether constant, identifier, or function call.
+  this optimization does not affect the order of function call.
 
   Match: (a + 0) or (a - 0)
 
@@ -570,6 +580,10 @@ optimization flags of it's own.
   a + b + e + g + h - i - j - c - d - f
 
 * How it would be implemented:
+
+  a can be a constant or identifier (int or float). this should not be
+  applied to function calls, unless the function is eligible for expression
+  optimization.
 
   Match: a - b + c
 
@@ -637,6 +651,10 @@ optimization flags of it's own.
 
 * How it would be implemented:
 
+  a and b can be a constant or identifier so long as both are floating point.
+  this should not be applied to function calls, unless the function is eligible
+  for expression optimization and the result is floating point.
+
   Match: a / b * c
 
   *                         <- node
@@ -677,6 +695,9 @@ optimization flags of it's own.
 * Add/multiply drawing out subexpressions.
 
 * How it would be implemented:
+
+  a and b can be any type, whether constant, identifier, or function call.
+  this optimization does not affect the order of function call.
 
   Match: (x...) + (a + b), or
          (x...) * (a * b)
