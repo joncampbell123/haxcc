@@ -99,16 +99,44 @@ simplification are ignored:
 
   - Change op->token from NEGATE to '*'
 
-  - Remove and clear node 'b' from child node 'negate_i' of 'node'.
-    Keep a reference to 'b'.
+  - Remove and clear node 'a' from it's parent. Keep the reference.
 
-  - If negate_i == 1 (op comes from second child node of 'node'),
-    Then remove and clear node 'op' from second child node of 'node',
-    attach and reference to first child node of 'node', set negate_i = 0, then:
+  - Remove and clear node 'b' from it's parent. Keep the reference.
 
+  Result so far (possibility 1 of 2):
+
+  NEGATE
+    *
+      (empty child node slot)
+      (empty child node slot)
+    (empty child node slot)
+
+  Result so far (possibility 2 of 2):
+
+  NEGATE
+    (empty child node slot)
+    *
+      (empty child node slot)
+      (empty child node slot)
+
+  - If negate_i == 1 ('op' is second node of 'node'), then remove and clear
+    node 'op' from 'node', then add 'op' to first child node slot of 'node'.
+    Update:
+
+      negate_i = 0
       op = node->child[negate_i];
 
-  - Attach node 'b' to second child node slot of node 'op'.
+  Result so far:
+
+  NEGATE
+    *
+      (empty child node slot)
+      (empty child node slot)
+    (empty child node slot)
+
+  - Attach and reference node 'a' to first child node slot of 'op'.
+
+  - Attach and reference node 'b' to second child node slot of 'op'.
 
 ===============================================================================
 * Distributive property in reverse
