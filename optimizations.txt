@@ -57,10 +57,11 @@ the parameters given to return a value (does not touch variables outside of
 it's scope) or the function is declared to be one that does not touch variables
 outside of it's own scope (math.h sin(), cos(), etc.), or marked explicitly
 with a special __declspec() supported by haxcc that declares the function can
-be treated as optimizable within an expression. If a function call does
-not meet that criteria, then optimization will happen around the function call
-and within the parameter list for the call, but will not affect the function
-call itself.
+be treated as optimizable within an expression. When haxcc supports C++,
+C++ class non-virtual non-static functions marked 'const' will also be treated
+as optimizable. If a function call does not meet that criteria, then
+optimization will happen around the function call and within the parameter
+list for the call, but will not affect the function call itself.
 
 So if your code calls function f() like this:
 
@@ -83,10 +84,17 @@ expects function calls in an expression to occur in normal (unoptimized)
 evaluation order. So the optimization will reorder add/subtract operators
 around the function calls.
 
+Of course, we can always supply compiler flags for the user to say it's OK
+to always reorder function calls within an expression, just as GCC has numerous
+optimization flags of it's own.
+
 ===============================================================================
 * Multiply/divide where one operand is negated
 
 * How it would be implemented:
+
+  a and b can be any type, whether constant, identifier, or function call.
+  this optimization does not affect the order of function call.
 
   Match: (-a * b) or (-a / b)
 
@@ -176,6 +184,19 @@ around the function calls.
 
 * How it would be implemented:
 
+  a can be an integer, float, or a function call to a function that permits
+  reordering within an expression. if a function call, this optimization would
+  reduce two function calls to one, thus the requirement that the function is
+  eligible for expression reordering.
+
+  b and c can be an integer or float constant or identifier. the optimization
+  can be safely performed for floating point math. Integer math is an interesting
+  case, because theoretically the optimization can change the result if the sum
+  of 'b' and 'c' cause integer overflow. However that doesn't seem to be the
+  case, at least on two's complement processors where a, b, and c have the same
+  integer width. Sample code provided that can be run to test where this is true
+  and false.
+
   Match: (a * b) + (a * c) or
          (a * b) - (a * c)
 
@@ -228,6 +249,31 @@ around the function calls.
   - Remove and clear node 'op1' (first child) from node 'node'. Unreference and delete 'op1'.
 
   - Attach 'a1' to first child node of 'node'.
+
+* Sample code that demonstrates a * (b + c) == a * b + a * c even when b + c overflow,
+  int datatype. it will take awhile to run, but should not print anything.
+
+    {
+        int16_t a,b,c;
+        int16_t r1,r2;
+
+        a = 0;
+        do {
+            b = 0;
+            do {
+                c = 0;
+                do {
+                    r1 = a * b + a * c;
+                    r2 = a * (b + c);
+
+                    if (r1 != r2) {
+                        printf("a=%d b=%d c=%d r1=%d r2=%d\n",
+                            a,b,c,r1,r2);
+                    }
+                } while ((++c) != 0);
+            } while ((++b) != 0);
+        } while ((++a) != 0);
+    }
 
 ===============================================================================
 * Subtract a from a
