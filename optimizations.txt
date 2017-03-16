@@ -278,6 +278,10 @@ optimization flags of it's own.
 ===============================================================================
 * Subtract a from a
 
+  a and b can be a constant or identifier (int or float). this should not be
+  applied to function calls, unless the function is eligible for expression
+  optimization.
+
 * How it would be implemented:
 
   Match: (a - a)
@@ -303,6 +307,9 @@ optimization flags of it's own.
 
 ===============================================================================
 * Multiply/divide where both operands are negated
+
+  a and b can be any type, whether constant, identifier, or function call.
+  this optimization does not affect the order of function call.
 
 * How it would be implemented:
 
