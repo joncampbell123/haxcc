@@ -51,6 +51,64 @@ simplification are ignored:
     from a * (b + c).
 
 ===============================================================================
+* Distributive property in reverse
+
+* How it would be implemented:
+
+  Match: (a * b) + (a * c) or
+         (a * b) - (a * c)
+
+  +                             <- node
+    *                           <- op1 = node->child[0]
+      a                         <- a1 = op1->child[0] = node->child[0]->child[0]
+      b                         <- b = op1->child[1] = node->child[0]->child[1]
+    *                           <- op2 = node->child[1]
+      a                         <- a2 = op2->child[0] = node->child[1]->child[0]
+      c                         <- c = op2->child[1] = node->child[1]->child[1]
+
+  Convert to: a * (b + c) or
+              a * (b - c)
+
+  *                             <- node
+    a                           <- a = node->child[0]
+    +                           <- op = node->child[1]
+      b                         <- b = op->child[0] = node->child[1]->child[0]
+      c                         <- c = op->child[1] = node->child[1]->child[1]
+
+  Results:
+
+  The node token is changed to '*'. The first node child is changed to 'a'.
+  op2 token is changed to '+'. 'b' is moved from the first node child to
+  the second node child.
+
+  How:
+
+  - Change node->token to '*'.
+
+  - Change op2->token to '+'.
+
+  - Remove and clear node 'a2' (first child) from node 'op2'. Unreference and delete 'a2'.
+
+  - Remove and clear node 'b' (second child) from node 'op1'. Attach 'b' to first child
+    node slot of 'op2'.
+
+  Result:
+
+  *                             <- node
+    *                           <- op1 = node->child[0]
+      a                         <- a1 = op1->child[0] = node->child[0]->child[0]
+      (null)                    <- b = op1->child[1] = node->child[0]->child[1]
+    +                           <- op2 = node->child[1]
+      b                         <- a2 = op2->child[0] = node->child[1]->child[0]
+      c                         <- c = op2->child[1] = node->child[1]->child[1]
+
+  - Remove and clear node 'a1' (first child) from node 'op1'. Keep a reference to 'a1'.
+
+  - Remove and clear node 'op1' (first child) from node 'node'. Unreference and delete 'op1'.
+
+  - Attach 'a1' to first child node of 'node'.
+
+===============================================================================
 * Subtract a from a
 
 * How it would be implemented:
