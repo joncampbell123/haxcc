@@ -364,3 +364,69 @@ simplification are ignored:
 
       - Attach and addref node 'c' to op->child[1]
 
+===============================================================================
+* Multiply/divide reordering: Move multiplication to the right (down to the
+  leaves), divison to the left (up from the leaves).
+
+  This would work in the same way as the add/subtract reordering.
+
+  Note that this optimization CANNOT work unless all operands are floating
+  point! Integer division uses truncation in a way that alters the result
+  when reordered with multiplication.
+
+  Consider:
+
+        a = 5
+        b = 2
+        c = 4
+
+  a / b * c                 a * c / b
+
+  Floating point result:
+  ---------------------------------------------------------
+  a / b = 5 / 2 = 2.5       a * c = 5 * 4 = 20
+  2.5 * c = 2.5 * 4 = 10    20 / b = 20 / 2 = 10
+
+  Integer result:
+  ---------------------------------------------------------
+  a / b = 5 / 2 = 2         a * c = 5 * 4 = 20
+  2 * c = 2 * 4 = 8         20 / b = 20 / 2 = 10
+
+* How it would be implemented:
+
+  Match: a / b * c
+
+  *                         <- node
+    /                       <- op = node->child[0]
+      a                     <- a = op->child[0] = node->child[0]->child[0]
+      b                     <- b = op->child[1] = node->child[0]->child[1]
+    c                       <- c = node->child[1]
+
+  Convert to: a * c / b
+
+  /                         <- node
+    *                       <- op = node->child[0]
+      a                     <- a = op->child[0] = node->child[0]->child[0]
+      c                     <- c = op->child[1] = node->child[0]->child[1]
+    b                       <- b = node->child[1]
+
+  Results:
+
+  'b' and 'c' switch places.
+  'a' is unchanged.
+  'node' and 'op' switch tokens (operators).
+
+  How:
+
+  - Swap node->token and op->token. Should result node->token == '/' and op->token == '*'.
+
+  - Swap 'b' and 'c':
+
+      - Release and zero op->child[1], keep now-disconnected node 'b'
+
+      - Release and zero node->child[1], keep now-disconnected node 'c'
+
+      - Attach and addref node 'b' to node->child[1]
+
+      - Attach and addref node 'c' to op->child[1]
+
