@@ -278,7 +278,7 @@ optimization flags of it's own.
 ===============================================================================
 * Subtract a from a
 
-  a and b can be a constant or identifier (int or float). this should not be
+  a can be a constant or identifier (int or float). this should not be
   applied to function calls, unless the function is eligible for expression
   optimization.
 
