@@ -3221,6 +3221,97 @@ again:
     return ret;
 }
 
+void init_decl_find_identifier(struct c_node *root,struct c_node **id) {
+    struct c_node *sc;
+    unsigned int ch;
+
+    assert(id != NULL);
+
+    *id = NULL;
+    for (sc=root;sc!=NULL;sc=sc->next) {
+        if (sc->token == DECLARATOR_EXPRESSION ||
+            sc->token == INIT_DECLARATOR ||
+            sc->token == FUNCTION_REF) {
+            init_decl_find_identifier(sc->child[0],id);
+        }
+        else if (sc->token == POINTER) {
+            init_decl_find_identifier(sc->child[1],id);
+        }
+        else if (sc->token == IDENTIFIER) {
+            if (*id != NULL) {
+                *id = NULL;
+                fprintf(stderr,"warning: declarator with more than one identifier\n");
+                return;
+            }
+
+            *id = sc;
+        }
+    }
+}
+
+/* non-temporary identifier registration.
+ * registers global variables, AND static variables inside functions and { } brackets. */
+int ntvar_registration_pass(struct c_node **node) {
+    struct c_node *identifier;
+    struct c_node *sc,*n;
+    int ret = 0;
+
+    for (sc=*node;sc!=NULL;sc=sc->next) {
+        if (sc->token == EXTERNAL_DECLARATION) {
+            /* EXTERNAL_DECLARATION
+             *   child[0] = DECLARATION */
+            n = sc->child[0];
+            if (n != NULL) {
+                /* DECLARATION
+                 *   child[0] = return value type
+                 *   child[1] = INIT_DECLARATOR */
+                n = n->child[1];
+                if (n != NULL) {
+                    /* INIT_DECLARATOR
+                     *
+                     *   child[0] = IDENTIFIER
+                     *
+                     *   child[0] = IDENTIFIER
+                     *   child[1] = I_CONSTANT
+                     *
+                     *   child[0] = FUNCTION_REF
+                     *     child[0] = IDENTIFIER
+                     *
+                     *   child[0] = DECLARATOR_EXPRESSION
+                     *     child[0] = POINTER
+                     *       child[0] = POINTER_DEREF
+                     *       child[1] = IDENTIFIER
+                     *
+                     *   child[0] = POINTER
+                     *     child[0] = POINTER_DEREF
+                     *     child[1] = DECLARATOR_EXPRESSION
+                     *       child[0] = IDENTIFIER */
+                    /* so... find the identifier */
+                    identifier = NULL;
+                    init_decl_find_identifier(n,&identifier);
+
+                    if (identifier != NULL) {
+                        /* assert() may define to nothing, do not remove curly braces */
+                        assert(identifier->token == IDENTIFIER);
+                    }
+
+                    if (identifier != NULL) {
+                        struct identifier_t *id;
+
+                        id = register_identifier(identifier,0);
+                        if (id == NULL)  return 1;
+
+                        id->token = IDENTIFIER;
+                        idents_set_node(idents_ptr_to_ref(id),n);
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
 int main(int argc, char **argv) {
     int r,res;
 
@@ -3241,7 +3332,11 @@ int main(int argc, char **argv) {
     if (res == 0 && last_translation_unit != NULL)
         res = enumerator_pass(last_translation_unit);
 
-    /* second pass: optimization pass 1 */
+    /* second pass: non-temporary variable identifier registration */
+    if (res == 0 && last_translation_unit != NULL)
+        res = ntvar_registration_pass(&last_translation_unit);
+
+    /* third pass: optimization pass 1 */
     if (res == 0 && last_translation_unit != NULL) {
         r = optimization_pass1(&last_translation_unit);
         if (r < 0) res = r;

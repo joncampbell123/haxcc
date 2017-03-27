@@ -252,6 +252,7 @@ int enumref1 = willkill;
 int doublenegative3x = *(xx + (5 + 5));
 
 unsigned int unarystuff(unsigned int a,unsigned int b) {
+    static int alloc_me_in_data;
     int enumref1 = willkill;
     unsigned int c = ~a,cc = ~~a;
     unsigned int *addr = &a;
@@ -381,6 +382,7 @@ unsigned int unarystuff(unsigned int a,unsigned int b) {
                 int ternary1 = (a == 5 ? 9 : a + b);
                 int ternary2 = (a == (b == 7 ? a + c : a + d) ? i : (j == k ? 11 : 4 + c));
                 int ternary3 = (((3 + 3 + 3) ? (2 + 2 + 2) : (1 + 1 + 1)) ? 2 : 1);
+                static int allocmedeeper;
             }
         }
 
