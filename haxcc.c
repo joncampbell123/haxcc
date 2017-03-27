@@ -3038,7 +3038,6 @@ int register_enum(struct c_node *node) {
 
 int enumerator_pass(struct c_node **node) {
     struct c_node *sc;
-    unsigned int i;
     int r;
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
@@ -3046,12 +3045,9 @@ int enumerator_pass(struct c_node **node) {
             if ((r=register_enum(sc)) != 0)
                 return r;
         }
-        else {
-            /* TODO: This does not yet consider scope */
-            for (i=0;i < c_node_MAX_CHILDREN;i++) {
-                if ((r=enumerator_pass(&sc->child[i])) != 0)
-                    return r;
-            }
+        else if (sc->token == EXTERNAL_DECLARATION || sc->token == DECLARATION) {
+            if ((r=enumerator_pass(&sc->child[0])) != 0)
+                return r;
         }
     }
 
