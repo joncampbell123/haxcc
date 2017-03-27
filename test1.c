@@ -593,6 +593,8 @@ typedef unsigned int uitype;
 typedef struct xyz xyztype;
 typedef float fltype1,fltype2;
 
+uitype ui_blah;
+
 typedef int uiblob[32];
 typedef int uiblobblob[16][16];
 typedef int *intptrwhat;
