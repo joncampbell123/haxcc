@@ -564,6 +564,48 @@ struct identifier_t *idents_get(c_identref_t idr) {
     return NULL;
 }
 
+const char *idents_get_name_str(c_identref_t idr) {
+    struct identifier_t *id;
+
+    id = idents_get(idr);
+    if (id == NULL) return NULL;
+    if (id->ident == NULL) return NULL;
+    return id->ident->value.value_IDENTIFIER.name;
+}
+
+void idents_dump(void) {
+    struct identifier_t *id;
+    struct c_node *n;
+    const char *name;
+    c_identref_t idr;
+
+    fprintf(stderr,"Identifiers:\n");
+    for (idr=0;idr < idents_count;idr++) {
+        id = idents_get(idr);
+        if (id == NULL) continue;
+        n = id->node;
+        name = idents_get_name_str(idr);
+
+        fprintf(stderr,"id=%lu ",(unsigned long)idr);
+        fprintf(stderr,"name=\"%s\" ",name?name:"(null)");
+        fprintf(stderr,"token=\"%s\" ",token2string(id->token));
+        fprintf(stderr,"defined=%u deleted=%u ",id->defined?1:0,id->deleted?1:0);
+        fprintf(stderr,"\n");
+
+        if (n != NULL) {
+            if (n->token == ENUMERATION_CONSTANT) {
+                fprintf(stderr,"    "
+                        "ENUMERATION_CONSTANT id=%ld name='%s' value=0x%llx(%llu)\n",
+                        (long)n->value.value_IDENTIFIER.id,
+                        n->value.value_IDENTIFIER.name,
+                        (unsigned long long)n->value.value_IDENTIFIER.enum_constant,
+                        (unsigned long long)n->value.value_IDENTIFIER.enum_constant);
+            }
+        }
+    }
+    fprintf(stderr,"----------------\n");
+}
+
 void idents_free_struct(struct identifier_t *id) {
     if (id->ident != NULL) {
         c_node_release_autodelete(&(id->ident));
@@ -3218,6 +3260,7 @@ int main(int argc, char **argv) {
         c_node_delete(&last_translation_unit);
     }
 
+    idents_dump();
     idents_free_all();
     strings_free_all();
     return (res != 0) ? 1 : 0;
