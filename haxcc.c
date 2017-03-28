@@ -573,6 +573,9 @@ const char *idents_get_name_str(c_identref_t idr) {
     return id->ident->value.value_IDENTIFIER.name;
 }
 
+void fprintf_indent(FILE *fp,int indent);
+void fprintf_indent_node(FILE *fp,int indent);
+
 void idents_dump(void) {
     struct identifier_t *id;
     const char *name;
@@ -591,8 +594,15 @@ void idents_dump(void) {
         fprintf(stderr,"defined=%u deleted=%u ",id->defined?1:0,id->deleted?1:0);
         fprintf(stderr,"\n");
 
-        if (id->node != NULL)
-            c_node_dumptree(id->node,1);
+        if (id->ident != NULL) {
+            fprintf(stderr,"  ident:\n");
+            c_node_dumptree(id->ident,2);
+        }
+
+        if (id->node != NULL) {
+            fprintf(stderr,"  node:\n");
+            c_node_dumptree(id->node,2);
+        }
     }
     fprintf(stderr,"----------------\n");
 }
