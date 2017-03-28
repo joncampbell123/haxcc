@@ -3052,15 +3052,26 @@ int register_enum(struct c_node *node) {
 }
 
 int enumerator_pass(struct c_node **node) {
-    struct c_node *sc;
+    struct c_node *sc,*n,*nullnode = NULL;
     int r;
 
     for (sc=*node;sc!=NULL;sc=sc->next) {
-        if (sc->token == ENUM) {
-            if ((r=register_enum(sc)) != 0)
-                return r;
+        if (sc->token == DECLARATION) {
+            /* DECLARATION
+             *   ENUM */
+            n = sc->child[0];
+            if (n != NULL) {
+                if (n->token == ENUM) {
+                    if ((r=register_enum(n)) != 0)
+                        return r;
+
+                    /* and then remove it */
+                    c_node_move_to_child_link(sc,0,&nullnode);
+                    c_node_release_autodelete(&n);
+                }
+            }
         }
-        else if (sc->token == EXTERNAL_DECLARATION || sc->token == DECLARATION) {
+        else if (sc->token == EXTERNAL_DECLARATION) {
             if ((r=enumerator_pass(&sc->child[0])) != 0)
                 return r;
         }
