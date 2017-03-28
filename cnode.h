@@ -49,11 +49,16 @@ struct c_node {
             unsigned char               extra_elem; // at the end
         } value_TYPECAST_INITIALIZER_LIST;
         struct c_node_DECLARATION {
-            int                         main_type_token;    // BOOL, I_CONSTANT, F_CONSTANT, TYPEDEF_NAME, ENUM, or 0 if not specified
+            unsigned int                is_restrict:1;
+            unsigned int                is_atomic:1;
+            unsigned int                is_static:1;
+            unsigned int                is_extern:1;
+            unsigned int                is_const:1;
+            int                         main_type_token;    // AUTO, VOID, BOOL, INT, FLOAT, TYPEDEF_NAME, ENUM, or 0 if not specified
             union {
                 c_identref_t            ident;              // TYPEDEF_NAME, ENUM, the identifier in question, or c_identref_t_NONE
-                struct c_node_I_CONSTANT ival;              // I_CONSTANT
-                struct c_node_F_CONSTANT fval;              // F_CONSTANT
+                struct c_node_I_CONSTANT ival;              // INT
+                struct c_node_F_CONSTANT fval;              // FLOAT
             } v;
         } value_DECLARATION;
         c_stringref_t       value_STRING_LITERAL;
@@ -92,7 +97,7 @@ void c_node_i_constant_char_parse(struct c_node *d,char *s);
 void c_node_identifier_parse(struct c_node *d,char *s);
 void c_node_f_constant_parse(struct c_node *d,char *s);
 
-void c_node_init_declaration(struct c_node **n);
+int c_node_init_declaration(struct c_node **n);
 
 void yyerror(const char *s);
 

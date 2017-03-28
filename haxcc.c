@@ -1016,6 +1016,29 @@ void c_node_dumptree(struct c_node *n,int indent) {
                 (unsigned long long)n->value.value_IDENTIFIER.enum_constant,
                 (unsigned long long)n->value.value_IDENTIFIER.enum_constant);
         }
+        else if (n->token == DECLARATION) {
+            fprintf_indent_node(stderr,indent+1);
+            fprintf(stderr,"DECLARATION ");
+            if (n->value.value_DECLARATION.is_restrict) fprintf(stderr,"restrict ");
+            if (n->value.value_DECLARATION.is_atomic) fprintf(stderr,"atomic ");
+            if (n->value.value_DECLARATION.is_static) fprintf(stderr,"static ");
+            if (n->value.value_DECLARATION.is_extern) fprintf(stderr,"extern ");
+            if (n->value.value_DECLARATION.is_const) fprintf(stderr,"const ");
+            fprintf(stderr,"main_type='%s' ",token2string(n->value.value_DECLARATION.main_type_token));
+            fprintf(stderr,"\n");
+
+            if (n->value.value_DECLARATION.main_type_token == INT) {
+                fprintf_indent_node(stderr,indent+1);
+                fprintf(stderr,"integer width=%u signed=%d\n",
+                    n->value.value_DECLARATION.v.ival.bwidth,
+                    n->value.value_DECLARATION.v.ival.bsign);
+            }
+            else if (n->value.value_DECLARATION.main_type_token == FLOAT) {
+                fprintf_indent_node(stderr,indent+1);
+                fprintf(stderr,"float width=%u\n",
+                    n->value.value_DECLARATION.v.fval.bwidth);
+            }
+        }
         else if (n->token == TYPEDEF_NAME) {
             fprintf_indent_node(stderr,indent+1);
             fprintf(stderr,"TYPEDEF_NAME id=%ld name='%s'\n",
@@ -2939,10 +2962,205 @@ int expression_eval_reduce(struct c_node *idn) {
     return 0;
 }
 
-void c_node_init_declaration(struct c_node **n) {
+int c_node_init_declaration(struct c_node **n) {
+    unsigned char is_short = 0;
+    unsigned char is_char = 0;
+    unsigned char is_long = 0;
+    signed char is_float = -1; /* -1 unspec  0 float  1 double */
+    char is_signed = -1;
+    struct c_node *esc;
+
     assert(n != NULL);
     assert((*n)->token == DECLARATION);
     memset(&((*n)->value.value_DECLARATION),0,sizeof((*n)->value.value_DECLARATION));
+
+    /* child[0] == linked list of STATIC CONST RESTRICT EXTERN etc */
+    for (esc=(*n)->child[0];esc!=NULL;esc=esc->next) {
+        if (esc->token == STATIC) {
+            if ((*n)->value.value_DECLARATION.is_static) {
+                fprintf(stderr,"duplicate static declaration\n");
+                return -1;
+            }
+            (*n)->value.value_DECLARATION.is_static = 1;
+        }
+        else if (esc->token == CONST) {
+            if ((*n)->value.value_DECLARATION.is_const) {
+                fprintf(stderr,"duplicate const declaration\n");
+                return -1;
+            }
+            (*n)->value.value_DECLARATION.is_const = 1;
+        }
+        else if (esc->token == RESTRICT) {
+            if ((*n)->value.value_DECLARATION.is_restrict) {
+                fprintf(stderr,"duplicate restrict declaration\n");
+                return -1;
+            }
+            (*n)->value.value_DECLARATION.is_restrict = 1;
+        }
+        else if (esc->token == EXTERN) {
+            if ((*n)->value.value_DECLARATION.is_extern) {
+                fprintf(stderr,"duplicate extern declaration\n");
+                return -1;
+            }
+            (*n)->value.value_DECLARATION.is_extern = 1;
+        }
+        else if (esc->token == ATOMIC) {
+            if ((*n)->value.value_DECLARATION.is_atomic) {
+                fprintf(stderr,"duplicate atomic declaration\n");
+                return -1;
+            }
+            (*n)->value.value_DECLARATION.is_atomic = 1;
+        }
+        else if (esc->token == AUTO || esc->token == BOOL || esc->token == TYPEDEF_NAME || esc->token == ENUM || esc->token == VOID) {
+            if ((*n)->value.value_DECLARATION.main_type_token != 0) {
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.main_type_token = esc->token;
+        }
+        else if (esc->token == INT) {
+            if ((*n)->value.value_DECLARATION.main_type_token != 0) {
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.main_type_token = INT;
+        }
+        else if (esc->token == CHAR) {
+            if (is_char != 0) {
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+            if ((*n)->value.value_DECLARATION.main_type_token != 0) {
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+
+            is_char = 1;
+            (*n)->value.value_DECLARATION.main_type_token = INT;
+        }
+        else if (esc->token == SHORT) {
+            if (is_short != 0) {
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+
+            is_short = 1;
+        }
+        else if (esc->token == LONG) {
+            if (is_long > 1) { /* allow "long long" */
+                fprintf(stderr,"duplicate native type declaration\n");
+                return -1;
+            }
+
+            is_long++;
+        }
+        else if (esc->token == UNSIGNED) {
+            if (is_signed == 1) {
+                fprintf(stderr,"signed/unsigned both specified\n");
+                return -1;
+            }
+
+            is_signed = 0;
+        }
+        else if (esc->token == SIGNED) {
+            if (is_signed == 0) {
+                fprintf(stderr,"signed/unsigned both specified\n");
+                return -1;
+            }
+
+            is_signed = 1;
+        }
+        else if (esc->token == FLOAT) {
+            if (is_float == 1) {
+                fprintf(stderr,"float/double both specified\n");
+                return -1;
+            }
+
+            is_float = 0;
+            (*n)->value.value_DECLARATION.main_type_token = FLOAT;
+        }
+        else if (esc->token == DOUBLE) {
+            if (is_float == 0) {
+                fprintf(stderr,"float/double both specified\n");
+                return -1;
+            }
+
+            is_float = 1;
+            (*n)->value.value_DECLARATION.main_type_token = FLOAT;
+        }
+        else {
+            fprintf(stderr,"warning: unexpected declaration token '%s'\n",token2string(esc->token));
+        }
+    }
+
+    if ((*n)->value.value_DECLARATION.main_type_token == 0) {
+        if (is_long || is_short || is_signed >= 0)
+            (*n)->value.value_DECLARATION.main_type_token = INT;
+    }
+
+    if ((*n)->value.value_DECLARATION.main_type_token == FLOAT) {
+        (*n)->value.value_DECLARATION.v.fval.bwidth = double_width_b;
+
+        if (is_float > 0) {
+            /* allow "long double" */
+            if (is_short || is_char) {
+                fprintf(stderr,"float cannot mix with short/char\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.v.fval.bwidth = (is_long) ? longdouble_width_b : double_width_b;
+        }
+        else {
+            if (is_short || is_char || is_long) {
+                fprintf(stderr,"float cannot mix with short/char/long\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.v.fval.bwidth = float_width_b;
+        }
+    }
+    else if ((*n)->value.value_DECLARATION.main_type_token == INT) {
+        if (is_signed < 0) is_signed = 1; /* signed by default */
+
+        (*n)->value.value_DECLARATION.v.ival.bsign = is_signed; /* -1, 0, or 1 */
+        (*n)->value.value_DECLARATION.v.ival.bwidth = int_width_b;
+
+        if (is_char) {
+            if (is_long || is_short) {
+                fprintf(stderr,"char cannot mix with short/long\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.v.ival.bwidth = char_width_b;
+        }
+        else if (is_short) {
+            if (is_long) {
+                fprintf(stderr,"short cannot mix with long\n");
+                return -1;
+            }
+
+            (*n)->value.value_DECLARATION.v.ival.bwidth = short_width_b;
+        }
+        else if (is_long) {
+            if (is_short) {
+                fprintf(stderr,"long cannot mix with short\n");
+                return -1;
+            }
+
+            /* (is_long == 2) ? long long : long */
+            (*n)->value.value_DECLARATION.v.ival.bwidth = (is_long == 2) ? longlong_width_b : long_width_b;
+        }
+    }
+    else {
+        if (is_long || is_short || is_signed >= 0) {
+            fprintf(stderr,"long/short/signed declaration on type where it doesn't belong\n");
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 /* ENUM
@@ -3349,7 +3567,7 @@ int ntvar_registration_pass(struct c_node **node) {
                         if (id == NULL) return 1;
 
                         id->token = IDENTIFIER;
-                        idents_set_node(idents_ptr_to_ref(id),n);
+                        idents_set_node(idents_ptr_to_ref(id),sc->child[0]);
                     }
                 }
             }

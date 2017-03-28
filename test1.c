@@ -23,6 +23,8 @@ static const
     unsigned long
         i_like_to_span_lines =
             12345678UL;
+unsigned long long longconst;
+signed long long longconst2;
 int expressions1 = (4 + 3);
 long expressions2 = (1 + 3 + 5 + 7 + 9 + 11 + 13 + 15);
 unsigned long expressions_with_nested_parens = (((4) + 3 + 2) + 1);
@@ -37,9 +39,9 @@ int typc3 = (int)(long long unsigned int)(signed short int)99;
 int typc4 = (int)(long*)(char****)(const char * const **)999;
 
 /* clearly illegal, but here to test declspec / typespec combining */
-static const static static restrict static static restrict static extern const unsigned unsigned const extern const short static long int static red = 1;
-static extern register const restrict volatile int illegal_combo = 5;
-char * const volatile restrict const volatile restrict const volatile restrict * const volatile const volatile * restrict * const * const * const * const restrict * pp3;
+//static const static static restrict static static restrict static extern const unsigned unsigned const extern const short static long int static red = 1;
+//static extern register const restrict volatile int illegal_combo = 5;
+//char * const volatile restrict const volatile restrict const volatile restrict * const volatile const volatile * restrict * const * const * const * const restrict * pp3;
 /* ------ */
 
 char array0[];
