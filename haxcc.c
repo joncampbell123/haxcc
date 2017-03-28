@@ -3074,6 +3074,19 @@ int enumerator_pass(struct c_node **node) {
         else if (sc->token == EXTERNAL_DECLARATION) {
             if ((r=enumerator_pass(&sc->child[0])) != 0)
                 return r;
+
+            /* EXTERNAL_DECLARATION
+             *   DECLARATION */
+            /* if empty, remove */
+            n = sc->child[0];
+            if (n != NULL) {
+                if (n->token == DECLARATION) {
+                    if (n->child[0] == NULL && n->child[1] == NULL) {
+                        c_node_move_to_child_link(sc,0,&nullnode);
+                        c_node_release_autodelete(&n);
+                    }
+                }
+            }
         }
     }
 
