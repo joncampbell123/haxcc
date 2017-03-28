@@ -2970,6 +2970,11 @@ int register_enum(struct c_node *node) {
 
             id->defined = 1;
         }
+
+        /* remove from node */
+        idn = NULL;
+        c_node_move_to_child_link(node,0,&idn);
+        c_node_release_autodelete(&identifier);
     }
 
     /* and then register enumeration identifiers */
