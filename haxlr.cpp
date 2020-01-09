@@ -15,9 +15,9 @@
 using namespace std;
 
 int main(int argc,char **argv) {
-    for (int i=1;i < argc;i++) {
-        haxpp_linesource ls;
+    haxpp_linesource ls;
 
+    for (int i=1;i < argc;i++) {
         if (!strcmp(argv[i],"-"))
             ls.setsource(stdin);
         else
