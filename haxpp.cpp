@@ -47,7 +47,6 @@ public:
                         haxpp_linesource(const string &path);
                         ~haxpp_linesource();
                         bool lineresize(const size_t newsz);
-                        void linefree();
                         void close();
                         bool is_open() const;
                         bool eof() const;
@@ -64,30 +63,26 @@ inline size_t haxpp_linesource::linesize() const {
     return line_alloc;
 }
 
-void haxpp_linesource::linefree() {
+bool haxpp_linesource::lineresize(const size_t newsz) {
+    if (newsz != 0u) {
+        if (line != NULL && line_alloc == newsz)
+            return true;
+
+        if (newsz < line_alloc_minimum || newsz > line_alloc_maximum)
+            return false;
+    }
+
     if (line != NULL) {
         delete[] line;
         line = NULL;
     }
     line_alloc = 0;
-}
 
-bool haxpp_linesource::lineresize(const size_t newsz) {
-    if (line != NULL && line_alloc == newsz)
-        return true;
-
-    if (newsz < line_alloc_minimum || newsz > line_alloc_maximum)
-        return false;
-
-    if (line != NULL) {
-        delete[] line;
-        line = NULL;
-        line_alloc = 0;
+    if (newsz != 0u) {
+        line = new char[newsz];
+        if (line == NULL) return false;
+        line_alloc = newsz;
     }
-
-    line = new char[newsz];
-    if (line == NULL) return false;
-    line_alloc = newsz;
 
     return true;
 }
@@ -100,7 +95,7 @@ haxpp_linesource::haxpp_linesource(const string &path) {
 }
 
 haxpp_linesource::~haxpp_linesource() {
-    linefree();
+    lineresize(0);
     close();
 }
 
