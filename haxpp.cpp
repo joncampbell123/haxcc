@@ -15,18 +15,8 @@ using namespace std;
 
 typedef uint32_t linecount_t;
 
-bool is_file(const char * const path) {
-    struct stat st;
-
-    if (stat(path,&st))
-        return false;
-
-    return S_ISREG(st.st_mode);
-}
-
-bool is_file(const string &path) {
-    return is_file(path.c_str());
-}
+bool is_file(const char * const path);
+bool is_file(const string &path);
 
 class haxpp_linesource {
 private:
