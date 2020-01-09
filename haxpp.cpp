@@ -153,6 +153,11 @@ static int parse_argv(int argc,char **argv) {
     return 0;
 }
 
+void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
+    string msg = string("#line ") + to_string(line) + " \"" + name + "\"";
+    ls.write(msg.c_str());
+}
+
 int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
@@ -177,6 +182,7 @@ int main(int argc,char **argv) {
         fprintf(stderr,"Unable to open outfile, %s\n",strerror(errno));
         return 1;
     }
+    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
     while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
