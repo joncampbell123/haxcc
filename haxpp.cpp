@@ -158,6 +158,44 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     ls.write(msg.c_str());
 }
 
+/* 's' should point to the first char of a word.
+ * A word is a sequence of chars [a-zA-Z0-9_].
+ * assumes s != NULL */
+bool iswordchar(char c) {
+    return isalnum(c) || c == '_';
+}
+
+void cstrskipwhitespace(char* &s) {
+    while (*s == ' ' || *s == '\t') s++;
+}
+
+string cstrgetword(char* &s) {
+    char *base = s;
+
+    while (*s != 0) {
+        if (iswordchar(*s)) {
+            s++;
+        }
+        else {
+            break;
+        }
+    }
+
+    return string(base,(size_t)(s-base));
+}
+
+string cstrgetstringenclosed(char* &s,char delim,char delimend) {
+    while (*s && *s != delim) s++;
+
+    if (*s == delim) {
+        char *base = ++s; /* skip delim and point to char after */
+        while (*s && *s != delimend) s++;
+        return string(base,(size_t)(s-base));
+    }
+
+    return string();
+}
+
 int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
@@ -197,6 +235,39 @@ int main(int argc,char **argv) {
             else {
                 fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
                 return 1;
+            }
+        }
+
+        /* look for preprocessor directives this code handles by itself */
+        {
+            char *s = line; cstrskipwhitespace(s);
+
+            if (*s == '#') {
+                s++; cstrskipwhitespace(s);
+
+                const string what = cstrgetword(s); cstrskipwhitespace(s);
+
+                if (what == "include") {
+                    string path;
+
+                    if (*s == '<')
+                        path = cstrgetstringenclosed(s,'<','>');
+                    else if (*s == '\"')
+                        path = cstrgetstringenclosed(s,'\"','\"');
+                    else {
+                        fprintf(stderr,"#include statement with junk: %s\n",line);
+                        return 1;
+                    }
+
+                    if (path.empty()) {
+                        fprintf(stderr,"#include statement with no path\n");
+                        return 1;
+                    }
+
+                    // TODO do something with path
+
+                    continue; /* do not send to output */
+                }
             }
         }
 
