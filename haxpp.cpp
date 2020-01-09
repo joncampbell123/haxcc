@@ -36,7 +36,7 @@ private:
     char*               line = NULL;
     size_t              line_alloc = 0;
 public:
-    static constexpr size_t    line_alloc_minimum = 128u;
+    static constexpr size_t    line_alloc_minimum = 32u;
     static constexpr size_t    line_alloc_default = 1200u;
     static constexpr size_t    line_alloc_maximum = 65536u;
 public:
