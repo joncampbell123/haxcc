@@ -67,6 +67,12 @@ void haxpp_linesourcestack::freestack() {
 }
 
 bool haxpp_linesourcestack::push() {
+    if (in_ls == NULL) {
+        if (!allocstack()) {
+            return NULL;
+        }
+    }
+
     if (in_ls != NULL) {
         /* NTS: when in_ls_sp == -1, in_ls_sp+1 == 0 */
         if (size_t(in_ls_sp+1) < max_source_stack) {
@@ -154,14 +160,6 @@ int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
-    if (!in_lstk.allocstack()) {
-        fprintf(stderr,"Failed to alloc input stack\n");
-        return 1;
-    }
-    if (!in_lstk.empty()) {
-        fprintf(stderr,"Stack is not empty??\n");
-        return 1;
-    }
     if (!in_lstk.push()) {
         fprintf(stderr,"Failed to push\n");
         return 1;
