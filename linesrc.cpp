@@ -53,12 +53,17 @@ bool haxpp_linesource::lineresize(const size_t newsz) {
 haxpp_linesource::haxpp_linesource() {
 }
 
-haxpp_linesource::haxpp_linesource(FILE *_fp) {
-    fp = _fp;
-    fp_owner = false;
+void haxpp_linesource::setsource() {
+    close();
 }
 
-haxpp_linesource::haxpp_linesource(const string &path) {
+void haxpp_linesource::setsource(FILE *_fp) {
+    close();
+    fp = _fp;
+}
+
+void haxpp_linesource::setsource(const std::string &path) {
+    close();
     sourcepath = path;
 }
 
@@ -101,9 +106,6 @@ bool haxpp_linesource::open() {
                 return false;
             }
         }
-
-        if (!fp_owner)
-            return true;
 
         if (sourcepath.empty() || line_alloc < line_alloc_minimum) {
             errno = EINVAL;

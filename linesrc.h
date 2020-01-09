@@ -26,10 +26,11 @@ public:
     }
 public:
     haxpp_linesource();
-    haxpp_linesource(FILE *_fp);
-    haxpp_linesource(const std::string &path);
     ~haxpp_linesource();
 public:
+    void setsource();
+    void setsource(FILE *_fp);
+    void setsource(const std::string &path);
     bool lineresize(const size_t newsz);
     void close();
     bool is_open() const;
