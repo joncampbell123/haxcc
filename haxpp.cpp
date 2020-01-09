@@ -15,11 +15,11 @@
 
 using namespace std;
 
-static string           in_file = "-";
-static string           out_file = "-";
+static string                   in_file = "-";
+static string                   out_file = "-";
 
-static haxpp_linesink   out_ls;
-static haxpp_linesource in_ls;
+static haxpp_linesink           out_ls;
+static haxpp_linesource         in_ls;
 
 static void help() {
     fprintf(stderr,"haxpp infile outfile\n");
