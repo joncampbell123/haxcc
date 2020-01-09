@@ -1,4 +1,7 @@
 
+#ifndef LINESRC_HPP
+#define LINESRC_HPP
+
 #include <stdint.h>
 
 #include <string>
@@ -40,4 +43,6 @@ public:
     bool open();
     char *readline();
 };
+
+#endif /*LINESRC_HPP*/
 

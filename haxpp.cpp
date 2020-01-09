@@ -12,6 +12,7 @@
 #include "util.h"
 #include "linesrc.h"
 #include "linesink.h"
+#include "linesrst.h"
 
 #include <stdexcept>
 #include <vector>
@@ -24,93 +25,6 @@ static string                   out_file = "-";
 static haxpp_linesink           out_ls;
 
 static vector<string>           include_search;
-
-class haxpp_linesourcestack {
-    public:
-        haxpp_linesourcestack();
-        ~haxpp_linesourcestack();
-    public:
-        void                        allocstack();
-        void                        freestack();
-        void                        push();
-        void                        pop();
-        haxpp_linesource&           top();
-        const haxpp_linesource&     top() const;
-        void                        clear();
-        bool                        empty() const;
-    private:
-        static constexpr size_t     max_source_stack_default = 64;
-        size_t                      max_source_stack = max_source_stack_default;
-    private:
-        haxpp_linesource*           in_ls = NULL;
-        ssize_t                     in_ls_sp = -1;
-};
-
-haxpp_linesourcestack::haxpp_linesourcestack() {
-}
-
-haxpp_linesourcestack::~haxpp_linesourcestack() {
-    freestack();
-}
-
-void haxpp_linesourcestack::allocstack() {
-    if (in_ls == NULL) {
-        in_ls = new haxpp_linesource[max_source_stack];
-        in_ls_sp = -1;
-    }
-}
-
-void haxpp_linesourcestack::freestack() {
-    if (in_ls != NULL) {
-        clear();
-        delete[] in_ls;
-        in_ls = NULL;
-    }
-    in_ls_sp = -1;
-}
-
-void haxpp_linesourcestack::push() {
-    allocstack();
-
-    /* NTS: when in_ls_sp == -1, in_ls_sp+1 == 0 */
-    if (size_t(in_ls_sp+1) < max_source_stack)
-        in_ls_sp++;
-    else
-        throw overflow_error("linesourcestack overflow");
-}
-
-void haxpp_linesourcestack::pop() {
-    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
-    if (in_ls_sp >= ssize_t(0))
-        in_ls[in_ls_sp--].close();
-    else
-        throw underflow_error("linesourcestack underflow");
-}
-
-haxpp_linesource& haxpp_linesourcestack::top() {
-    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
-    if (in_ls_sp >= ssize_t(0))
-        return in_ls[in_ls_sp];
-
-    throw underflow_error("linesourcestack attempt to read top() when empty");
-}
-
-const haxpp_linesource& haxpp_linesourcestack::top() const {
-    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
-    if (in_ls_sp >= ssize_t(0))
-        return in_ls[in_ls_sp];
-
-    throw underflow_error("linesourcestack attempt to read top() when empty");
-}
-
-void haxpp_linesourcestack::clear() {
-    while (!empty()) pop();
-}
-
-bool haxpp_linesourcestack::empty() const {
-    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
-    return (in_ls_sp == ssize_t(-1));
-}
 
 static haxpp_linesourcestack    in_lstk;
 
