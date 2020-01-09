@@ -278,6 +278,9 @@ int main(int argc,char **argv) {
                 if (what == "include") {
                     string path;
 
+                    /* TODO: Apparently it's legal to write #include SOME_MACRO where SOME_MACRO has the file to include.
+                     *       If it were not, FreeType would not compile. */
+
                     if (*s == '<')
                         path = cstrgetstringenclosed(s,'<','>');
                     else if (*s == '\"')
