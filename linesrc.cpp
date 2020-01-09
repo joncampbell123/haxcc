@@ -118,7 +118,7 @@ bool haxpp_linesource::open() {
         }
 
         fp_owner = true;
-        lineno = 1;
+        lineno = 0;
     }
 
     return true;
@@ -158,6 +158,7 @@ char *haxpp_linesource::readline() {
                 return nullptr;
             }
 
+            lineno++;
             return line;
         }
     }
