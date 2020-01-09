@@ -77,7 +77,7 @@ void haxpp_linesourcestack::push() {
 
 void haxpp_linesourcestack::pop() {
     /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
-    if (in_ls_sp >= 0)
+    if (in_ls_sp >= ssize_t(0))
         in_ls[in_ls_sp--].close();
     else
         throw underflow_error("linesourcestack underflow");
@@ -96,6 +96,7 @@ void haxpp_linesourcestack::clear() {
 }
 
 bool haxpp_linesourcestack::empty() const {
+    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
     return (in_ls_sp == ssize_t(-1));
 }
 
