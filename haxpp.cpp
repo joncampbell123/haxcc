@@ -35,8 +35,6 @@ class haxpp_linesourcestack {
         const haxpp_linesource&     top() const;
         void                        clear();
         bool                        empty() const;
-        bool                        error() const;
-        bool                        eof() const;
     private:
         static constexpr size_t     max_source_stack_default = 64;
         size_t                      max_source_stack = max_source_stack_default;
@@ -111,17 +109,6 @@ bool haxpp_linesourcestack::empty() const {
     return (in_ls_sp == ssize_t(-1));
 }
 
-bool haxpp_linesourcestack::error() const {
-    if (!empty())
-        return top().error();
-
-    return false;
-}
-
-bool haxpp_linesourcestack::eof() const {
-    return empty();
-}
-
 static haxpp_linesourcestack    in_lstk;
 
 static void help() {
@@ -191,14 +178,14 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    while (!in_lstk.eof()) {
+    while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
         if (line == nullptr) {
-            if (!in_lstk.error() && in_lstk.eof()) {
+            if (!in_lstk.top().error() && in_lstk.top().eof()) {
                 break;
             }
             else {
-                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.error(),in_lstk.eof(),strerror(errno));
+                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
                 return 1;
             }
         }
@@ -209,7 +196,7 @@ int main(int argc,char **argv) {
         }
     }
 
-    if (in_lstk.error()) {
+    if (in_lstk.top().error()) {
         fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
         return 1;
     }
