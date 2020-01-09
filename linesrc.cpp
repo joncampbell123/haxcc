@@ -101,7 +101,7 @@ bool haxpp_linesource::error() const {
 
 bool haxpp_linesource::open() {
     if (!is_open()) {
-        if (sourcepath.empty() || line_alloc < line_alloc_minimum) {
+        if (sourcepath.empty()) {
             errno = EINVAL;
             return false;
         }
@@ -135,7 +135,13 @@ char *haxpp_linesource::readline() {
         }
 
         const size_t s = linesize(); /* must be >= 2 */
-        if (!ferror(fp) && !feof(fp) && s >= line_alloc_minimum) {
+
+        if (s < line_alloc_minimum) {
+            errno = ENOMEM;
+            return NULL;
+        }
+
+        if (!ferror(fp) && !feof(fp)) {
             /* write a NUL to the last two bytes of the buffer.
              * if those bytes are no longer NUL it means fgets() read a line that's too long.
              * This is faster than using strlen() on the returned string. */
