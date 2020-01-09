@@ -33,7 +33,12 @@ private:
     linecount_t         lineno = 0;
     string              sourcepath;
     FILE*               fp = NULL;
-    char                line[2048]; /* TODO: Perhaps in the future this could be dynamically chosen */
+    char*               line = NULL;
+    size_t              line_alloc = 0;
+public:
+    static constexpr size_t    line_alloc_minimum = 128u;
+    static constexpr size_t    line_alloc_default = 1200u;
+    static constexpr size_t    line_alloc_maximum = 65536u;
 public:
     inline size_t       linesize() const; /* total buffer size including room for NUL terminator */
     inline const string&getsourcename() const;
@@ -41,6 +46,7 @@ public:
                         haxpp_linesource();
                         haxpp_linesource(const string &path);
                         ~haxpp_linesource();
+                        bool lineresize(const size_t newsz);
                         void close();
                         bool is_open() const;
                         bool eof() const;
@@ -54,7 +60,27 @@ inline const string& haxpp_linesource::getsourcename() const {
 }
 
 inline size_t haxpp_linesource::linesize() const {
-    return sizeof(line);
+    return line_alloc;
+}
+
+bool haxpp_linesource::lineresize(const size_t newsz) {
+    if (line != NULL && line_alloc == newsz)
+        return true;
+
+    if (newsz < line_alloc_minimum || newsz > line_alloc_maximum)
+        return false;
+
+    if (line != NULL) {
+        delete[] line;
+        line = NULL;
+        line_alloc = 0;
+    }
+
+    line = new char[newsz];
+    if (line == NULL) return false;
+    line_alloc = newsz;
+
+    return true;
 }
 
 haxpp_linesource::haxpp_linesource() {
@@ -95,7 +121,11 @@ bool haxpp_linesource::error() const {
 
 bool haxpp_linesource::open() {
     if (!is_open()) {
-        if (sourcepath.empty()) {
+        if (line == NULL && !lineresize(line_alloc_default)) {
+            errno = ENOMEM;
+            return false;
+        }
+        if (sourcepath.empty() || line_alloc < line_alloc_minimum) {
             errno = EINVAL;
             return false;
         }
