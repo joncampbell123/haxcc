@@ -11,36 +11,12 @@
 
 #include "util.h"
 #include "linesrc.h"
+#include "linesink.h"
 
 using namespace std;
 
 static string           in_file = "-";
 static string           out_file = "-";
-
-class haxpp_linesink {
-private:
-    linecount_t         lineno = 0;
-    std::string         sinkpath;
-    FILE*               fp = nullptr;
-    bool                fp_owner = false;
-public:
-    inline const std::string& getsinkname() const {
-        return sinkpath;
-    }
-public:
-    haxpp_linesink();
-    ~haxpp_linesink();
-public:
-    void setsink();
-    void setsink(FILE *_fp);
-    void setsink(const std::string &path);
-    void close();
-    bool is_open() const;
-    bool eof() const;
-    bool error() const;
-    bool open();
-    bool write(const char * const s);
-};
 
 static haxpp_linesink   out_ls;
 static haxpp_linesource in_ls;
@@ -142,89 +118,5 @@ int main(int argc,char **argv) {
     out_ls.close();
     in_ls.close();
     return 0;
-}
-
-/******************************/
-
-haxpp_linesink::haxpp_linesink() {
-}
-
-void haxpp_linesink::setsink() {
-    close();
-}
-
-void haxpp_linesink::setsink(FILE *_fp) {
-    close();
-    fp = _fp;
-    fp_owner = false;
-}
-
-void haxpp_linesink::setsink(const std::string &path) {
-    close();
-    sinkpath = path;
-}
-
-haxpp_linesink::~haxpp_linesink() {
-    close();
-}
-
-void haxpp_linesink::close() {
-    if (fp != nullptr) {
-        if (fp_owner) fclose(fp);
-        fp = nullptr;
-    }
-    fp_owner = false;
-}
-
-bool haxpp_linesink::is_open() const {
-    return (fp != nullptr);
-}
-
-bool haxpp_linesink::eof() const {
-    if (is_open())
-        return (feof(fp) != 0);
-
-    return true;
-}
-
-bool haxpp_linesink::error() const {
-    if (is_open())
-        return (ferror(fp) != 0);
-
-    return true;
-}
-
-bool haxpp_linesink::open() {
-    if (!is_open()) {
-        if (sinkpath.empty()) {
-            errno = EINVAL;
-            return false;
-        }
-
-        if (!is_out_file(sinkpath)) {
-            errno = EINVAL;
-            return false;
-        }
-
-        fp = fopen(sinkpath.c_str(),"w");
-        if (fp == nullptr) {
-            /* fopen set errno */
-            return false;
-        }
-
-        fp_owner = true;
-        lineno = 1;
-    }
-
-    return true;
-}
-
-bool haxpp_linesink::write(const char * const s) {
-    if (is_open()) {
-        if (fputs(s,fp) > 0)
-            return true;
-    }
-
-    return false;
 }
 

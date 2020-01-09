@@ -5,7 +5,7 @@ SUFFIX=
 OUTPUTS=haxpp haxlr
 
 # library
-LIBOBJ=util.o linesrc.o
+LIBOBJ=util.o linesrc.o linesink.o
 
 # default CFLAGS (GCC+Linux)
 CFLAGS=-Wall -Wextra -pedantic -std=c11
