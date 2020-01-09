@@ -101,13 +101,6 @@ bool haxpp_linesource::error() const {
 
 bool haxpp_linesource::open() {
     if (!is_open()) {
-        if (line == nullptr) {
-            if (!lineresize(line_alloc_default)) {
-                errno = ENOMEM;
-                return false;
-            }
-        }
-
         if (sourcepath.empty() || line_alloc < line_alloc_minimum) {
             errno = EINVAL;
             return false;
@@ -134,6 +127,13 @@ bool haxpp_linesource::open() {
 char *haxpp_linesource::readline() {
     errno = 0;
     if (is_open()) {
+        if (line == nullptr) {
+            if (!lineresize(line_alloc_default)) {
+                errno = ENOMEM;
+                return NULL;
+            }
+        }
+
         const size_t s = linesize(); /* must be >= 2 */
         if (!ferror(fp) && !feof(fp) && s >= line_alloc_minimum) {
             /* write a NUL to the last two bytes of the buffer.
