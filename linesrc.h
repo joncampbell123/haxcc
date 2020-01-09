@@ -24,15 +24,16 @@ public:
         return line_alloc;
     }
 public:
-                        haxpp_linesource();
-                        haxpp_linesource(const std::string &path);
-                        ~haxpp_linesource();
-                        bool lineresize(const size_t newsz);
-                        void close();
-                        bool is_open() const;
-                        bool eof() const;
-                        bool error() const;
-                        bool open();
-                        char *readline();
+    haxpp_linesource();
+    haxpp_linesource(const std::string &path);
+    ~haxpp_linesource();
+public:
+    bool lineresize(const size_t newsz);
+    void close();
+    bool is_open() const;
+    bool eof() const;
+    bool error() const;
+    bool open();
+    char *readline();
 };
 
