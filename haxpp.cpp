@@ -18,7 +18,11 @@ int main(int argc,char **argv) {
     for (int i=1;i < argc;i++) {
         haxpp_linesource ls;
 
-        ls.setsource(argv[i]);
+        if (!strcmp(argv[i],"-"))
+            ls.setsource(stdin);
+        else
+            ls.setsource(argv[i]);
+
         if (!ls.open()) {
             fprintf(stderr,"Unable to open %s, error %s\n",ls.getsourcename().c_str(),strerror(errno));
             return 1;
