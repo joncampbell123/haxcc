@@ -26,6 +26,6 @@ distclean: clean
 	rm -f $(OUTPUTS)
 
 # how to link haxpp
-haxpp: haxpp.o util.o
+haxpp: haxpp.o util.o linesrc.o
 	$(CXX) $(LDFLAGS) -o $@ $^
 
