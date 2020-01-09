@@ -60,6 +60,7 @@ void haxpp_linesource::setsource() {
 void haxpp_linesource::setsource(FILE *_fp) {
     close();
     fp = _fp;
+    fp_owner = false;
 }
 
 void haxpp_linesource::setsource(const std::string &path) {
