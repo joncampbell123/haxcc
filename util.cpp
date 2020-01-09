@@ -26,3 +26,20 @@ bool is_file(const string &path) {
     return is_file(path.c_str());
 }
 
+bool is_out_file(const char * const path) {
+    struct stat st;
+
+    if (stat(path,&st)) {
+        if (errno == ENOENT) /* doesn't exist? fine */
+            return true;
+
+        return false;
+    }
+
+    return S_ISREG(st.st_mode);
+}
+
+bool is_out_file(const string &path) {
+    return is_out_file(path.c_str());
+}
+
