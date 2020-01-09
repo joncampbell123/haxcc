@@ -18,8 +18,11 @@ using namespace std;
 static string                   in_file = "-";
 static string                   out_file = "-";
 
+static constexpr size_t         max_source_stack = 64;
+
 static haxpp_linesink           out_ls;
-static haxpp_linesource         in_ls;
+static haxpp_linesource         in_ls[max_source_stack];
+static size_t                   in_ls_sp = 0;
 
 static void help() {
     fprintf(stderr,"haxpp infile outfile\n");
@@ -68,11 +71,11 @@ int main(int argc,char **argv) {
         return 1;
 
     if (in_file == "-")
-        in_ls.setsource(stdin);
+        in_ls[in_ls_sp].setsource(stdin);
     else
-        in_ls.setsource(in_file);
+        in_ls[in_ls_sp].setsource(in_file);
 
-    if (!in_ls.open()) {
+    if (!in_ls[in_ls_sp].open()) {
         fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
         return 1;
     }
@@ -87,14 +90,14 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    while (!in_ls.eof()) {
-        char *line = in_ls.readline();
+    while (!in_ls[in_ls_sp].eof()) {
+        char *line = in_ls[in_ls_sp].readline();
         if (line == nullptr) {
-            if (!in_ls.error() && in_ls.eof()) {
+            if (!in_ls[in_ls_sp].error() && in_ls[in_ls_sp].eof()) {
                 break;
             }
             else {
-                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_ls.error(),in_ls.eof(),strerror(errno));
+                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_ls[in_ls_sp].error(),in_ls[in_ls_sp].eof(),strerror(errno));
                 return 1;
             }
         }
@@ -105,8 +108,8 @@ int main(int argc,char **argv) {
         }
     }
 
-    if (in_ls.error()) {
-        fprintf(stderr,"An error occurred while parsing %s\n",in_ls.getsourcename().c_str());
+    if (in_ls[in_ls_sp].error()) {
+        fprintf(stderr,"An error occurred while parsing %s\n",in_ls[in_ls_sp].getsourcename().c_str());
         return 1;
     }
 
@@ -116,7 +119,7 @@ int main(int argc,char **argv) {
     }
 
     out_ls.close();
-    in_ls.close();
+    in_ls[in_ls_sp].close();
     return 0;
 }
 
