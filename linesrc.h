@@ -3,8 +3,6 @@
 
 #include <string>
 
-typedef uint32_t linecount_t;
-
 class haxpp_linesource {
 private:
     linecount_t         lineno = 0;
