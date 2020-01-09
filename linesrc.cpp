@@ -19,14 +19,14 @@ bool haxpp_linesource::lineresize(const size_t newsz) {
         if (newsz < line_alloc_minimum || newsz > line_alloc_maximum)
             return false;
 
-        if (line != NULL) {
+        if (line != nullptr) {
             /* already allocated, resize it. do nothing if the same size. */
             if (line_alloc == newsz)
                 return true;
 
-            /* NTS: GNU GLIBC is said to support realloc(NULL,newsz) as malloc(), but other platforms might not do that */
+            /* NTS: GNU GLIBC is said to support realloc(nullptr,newsz) as malloc(), but other platforms might not do that */
             char *np = (char*)realloc(line,newsz);
-            if (np == NULL)
+            if (np == nullptr)
                 return false;
 
             line = np;
@@ -35,14 +35,14 @@ bool haxpp_linesource::lineresize(const size_t newsz) {
         else {
             /* not allocated yet */
             line = (char*)malloc(newsz);
-            if (line == NULL) return false;
+            if (line == nullptr) return false;
             line_alloc = newsz;
         }
     }
     else { /* newsz == 0 which is a command to free the buffer */
-        if (line != NULL) {
+        if (line != nullptr) {
             free((void*)line);
-            line = NULL;
+            line = nullptr;
         }
         line_alloc = 0;
     }
@@ -81,7 +81,7 @@ void haxpp_linesource::close() {
 }
 
 bool haxpp_linesource::is_open() const {
-    return (fp != NULL);
+    return (fp != nullptr);
 }
 
 bool haxpp_linesource::eof() const {
@@ -100,7 +100,7 @@ bool haxpp_linesource::error() const {
 
 bool haxpp_linesource::open() {
     if (!is_open()) {
-        if (line == NULL) {
+        if (line == nullptr) {
             if (!lineresize(line_alloc_default)) {
                 errno = ENOMEM;
                 return false;
@@ -118,7 +118,7 @@ bool haxpp_linesource::open() {
         }
 
         fp = fopen(sourcepath.c_str(),"r");
-        if (fp == NULL) {
+        if (fp == nullptr) {
             /* fopen set errno */
             return false;
         }
@@ -142,19 +142,19 @@ char *haxpp_linesource::readline() {
 
             /* fgets() will read up to s-1 bytes, and store a NUL where it stops (which is why we test line[s-2] instead).
              * the returned string will contain the entire line including the '\n' newline. */
-            if (fgets(line,s,fp) == NULL)
-                return NULL;
+            if (fgets(line,s,fp) == nullptr)
+                return nullptr;
 
             /* check for line too long */
             if (line[s-2] != 0) {
                 errno = E2BIG;
-                return NULL;
+                return nullptr;
             }
 
             return line;
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 

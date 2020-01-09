@@ -9,8 +9,8 @@ class haxpp_linesource {
 private:
     linecount_t         lineno = 0;
     std::string         sourcepath;
-    FILE*               fp = NULL;
-    char*               line = NULL;
+    FILE*               fp = nullptr;
+    char*               line = nullptr;
     size_t              line_alloc = 0;
     bool                fp_owner = false;
 public:

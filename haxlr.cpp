@@ -30,7 +30,7 @@ int main(int argc,char **argv) {
 
         while (!ls.eof()) {
             char *line = ls.readline();
-            if (line == NULL) {
+            if (line == nullptr) {
                 if (!ls.error() && ls.eof()) {
                     break;
                 }
