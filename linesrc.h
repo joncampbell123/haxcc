@@ -12,6 +12,7 @@ private:
     FILE*               fp = NULL;
     char*               line = NULL;
     size_t              line_alloc = 0;
+    bool                fp_owner = false;
 public:
     static constexpr size_t    line_alloc_minimum = 32u;
     static constexpr size_t    line_alloc_default = 1200u;
@@ -25,6 +26,7 @@ public:
     }
 public:
     haxpp_linesource();
+    haxpp_linesource(FILE *_fp);
     haxpp_linesource(const std::string &path);
     ~haxpp_linesource();
 public:
