@@ -138,9 +138,11 @@ bool haxpp_linesource::error() const {
 
 bool haxpp_linesource::open() {
     if (!is_open()) {
-        if (line == NULL && !lineresize(line_alloc_default)) {
-            errno = ENOMEM;
-            return false;
+        if (line == NULL) {
+            if (!lineresize(line_alloc_default)) {
+                errno = ENOMEM;
+                return false;
+            }
         }
         if (sourcepath.empty() || line_alloc < line_alloc_minimum) {
             errno = EINVAL;
