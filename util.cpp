@@ -9,9 +9,9 @@
 #include <errno.h>
 #include <fcntl.h>
 
-using namespace std;
+#include "util.h"
 
-#include <string>
+using namespace std;
 
 bool is_file(const char * const path) {
     struct stat st;

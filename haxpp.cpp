@@ -9,14 +9,13 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#include "util.h"
+
 using namespace std;
 
 #include <string>
 
 typedef uint32_t linecount_t;
-
-bool is_file(const char * const path);
-bool is_file(const string &path);
 
 class haxpp_linesource {
 private:
