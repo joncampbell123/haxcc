@@ -4,6 +4,9 @@ SUFFIX=
 # outputs
 OUTPUTS=haxpp haxlr
 
+# library
+LIBOBJ=util.o linesrc.o
+
 # default CFLAGS (GCC+Linux)
 CFLAGS=-Wall -Wextra -pedantic -std=c11
 CXXFLAGS=-Wall -Wextra -pedantic -std=c++11
@@ -26,10 +29,10 @@ distclean: clean
 	rm -f $(OUTPUTS)
 
 # how to link haxlr
-haxlr: haxlr.o util.o linesrc.o
+haxlr: haxlr.o $(LIBOBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 # how to link haxpp
-haxpp: haxpp.o util.o linesrc.o
+haxpp: haxpp.o $(LIBOBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
