@@ -32,8 +32,11 @@ class haxpp_linesourcestack {
         void                        push();
         void                        pop();
         haxpp_linesource&           top();
+        const haxpp_linesource&     top() const;
         void                        clear();
         bool                        empty() const;
+        bool                        error() const;
+        bool                        eof() const;
     private:
         static constexpr size_t     max_source_stack_default = 64;
         size_t                      max_source_stack = max_source_stack_default;
@@ -91,6 +94,14 @@ haxpp_linesource& haxpp_linesourcestack::top() {
     throw underflow_error("linesourcestack attempt to read top() when empty");
 }
 
+const haxpp_linesource& haxpp_linesourcestack::top() const {
+    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
+    if (in_ls_sp >= ssize_t(0))
+        return in_ls[in_ls_sp];
+
+    throw underflow_error("linesourcestack attempt to read top() when empty");
+}
+
 void haxpp_linesourcestack::clear() {
     while (!empty()) pop();
 }
@@ -98,6 +109,17 @@ void haxpp_linesourcestack::clear() {
 bool haxpp_linesourcestack::empty() const {
     /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
     return (in_ls_sp == ssize_t(-1));
+}
+
+bool haxpp_linesourcestack::error() const {
+    if (!empty())
+        return top().error();
+
+    return false;
+}
+
+bool haxpp_linesourcestack::eof() const {
+    return empty();
 }
 
 static haxpp_linesourcestack    in_lstk;
@@ -169,14 +191,14 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    while (!in_lstk.top().eof()) {
+    while (!in_lstk.eof()) {
         char *line = in_lstk.top().readline();
         if (line == nullptr) {
-            if (!in_lstk.top().error() && in_lstk.top().eof()) {
+            if (!in_lstk.error() && in_lstk.eof()) {
                 break;
             }
             else {
-                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
+                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.error(),in_lstk.eof(),strerror(errno));
                 return 1;
             }
         }
@@ -187,7 +209,7 @@ int main(int argc,char **argv) {
         }
     }
 
-    if (in_lstk.top().error()) {
+    if (in_lstk.error()) {
         fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
         return 1;
     }
