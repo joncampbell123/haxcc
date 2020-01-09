@@ -86,44 +86,6 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     ls.write(msg.c_str());
 }
 
-/* 's' should point to the first char of a word.
- * A word is a sequence of chars [a-zA-Z0-9_].
- * assumes s != NULL */
-bool iswordchar(char c) {
-    return isalnum(c) || c == '_';
-}
-
-void cstrskipwhitespace(char* &s) {
-    while (*s == ' ' || *s == '\t') s++;
-}
-
-string cstrgetword(char* &s) {
-    char *base = s;
-
-    while (*s != 0) {
-        if (iswordchar(*s)) {
-            s++;
-        }
-        else {
-            break;
-        }
-    }
-
-    return string(base,(size_t)(s-base));
-}
-
-string cstrgetstringenclosed(char* &s,char delim,char delimend) {
-    while (*s && *s != delim) s++;
-
-    if (*s == delim) {
-        char *base = ++s; /* skip delim and point to char after */
-        while (*s && *s != delimend) s++;
-        return string(base,(size_t)(s-base));
-    }
-
-    return string();
-}
-
 string lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
