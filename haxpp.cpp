@@ -182,7 +182,11 @@ int main(int argc,char **argv) {
         char *line = in_lstk.top().readline();
         if (line == nullptr) {
             if (!in_lstk.top().error() && in_lstk.top().eof()) {
-                break;
+                in_lstk.pop();
+                if (in_lstk.empty())
+                    break;
+                else
+                    continue;
             }
             else {
                 fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
@@ -196,9 +200,11 @@ int main(int argc,char **argv) {
         }
     }
 
-    if (in_lstk.top().error()) {
-        fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
-        return 1;
+    if (!in_lstk.empty()) {
+        if (in_lstk.top().error()) {
+            fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
+            return 1;
+        }
     }
 
     if (out_ls.error()) {
