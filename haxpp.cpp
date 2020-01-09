@@ -13,6 +13,8 @@
 #include "linesrc.h"
 #include "linesink.h"
 
+#include <stdexcept>
+
 using namespace std;
 
 static string                   in_file = "-";
@@ -25,11 +27,11 @@ class haxpp_linesourcestack {
         haxpp_linesourcestack();
         ~haxpp_linesourcestack();
     public:
-        bool                        allocstack();
+        void                        allocstack();
         void                        freestack();
-        bool                        push();
-        bool                        pop();
-        haxpp_linesource*           top();
+        void                        push();
+        void                        pop();
+        haxpp_linesource&           top();
         void                        clear();
         bool                        empty() const;
     private:
@@ -47,61 +49,46 @@ haxpp_linesourcestack::~haxpp_linesourcestack() {
     freestack();
 }
 
-bool haxpp_linesourcestack::allocstack() {
+void haxpp_linesourcestack::allocstack() {
     if (in_ls == NULL) {
-        in_ls = new(nothrow) haxpp_linesource[max_source_stack];
-        if (in_ls == NULL) return false;
+        in_ls = new haxpp_linesource[max_source_stack];
         in_ls_sp = -1;
     }
-
-    return true;
 }
 
 void haxpp_linesourcestack::freestack() {
     if (in_ls != NULL) {
         clear();
         delete[] in_ls;
+        in_ls = NULL;
     }
-    in_ls = NULL;
     in_ls_sp = -1;
 }
 
-bool haxpp_linesourcestack::push() {
-    if (in_ls == NULL) {
-        if (!allocstack()) {
-            return NULL;
-        }
-    }
+void haxpp_linesourcestack::push() {
+    allocstack();
 
-    if (in_ls != NULL) {
-        /* NTS: when in_ls_sp == -1, in_ls_sp+1 == 0 */
-        if (size_t(in_ls_sp+1) < max_source_stack) {
-            in_ls_sp++;
-            return true;
-        }
-    }
-
-    return false;
+    /* NTS: when in_ls_sp == -1, in_ls_sp+1 == 0 */
+    if (size_t(in_ls_sp+1) < max_source_stack)
+        in_ls_sp++;
+    else
+        throw overflow_error("linesourcestack overflow");
 }
 
-bool haxpp_linesourcestack::pop() {
-    if (in_ls != NULL) {
-        if (in_ls_sp >= 0) {
-            in_ls[in_ls_sp--].close();
-            return true;
-        }
-    }
-
-    return false;
+void haxpp_linesourcestack::pop() {
+    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
+    if (in_ls_sp >= 0)
+        in_ls[in_ls_sp--].close();
+    else
+        throw underflow_error("linesourcestack underflow");
 }
 
-haxpp_linesource* haxpp_linesourcestack::top() {
-    if (in_ls != NULL) {
-        if (in_ls_sp >= ssize_t(0)) /* in_ls_sp == -1 stack is empty. normal state will not set sp >= max */
-            return in_ls + in_ls_sp;
-    }
+haxpp_linesource& haxpp_linesourcestack::top() {
+    /* in_ls_sp >= 0 should mean in_ls != NULL or else this code would not permit in_ls_sp >= 0 */
+    if (in_ls_sp >= ssize_t(0))
+        return in_ls[in_ls_sp];
 
-    return NULL;
+    throw underflow_error("linesourcestack attempt to read top() when empty");
 }
 
 void haxpp_linesourcestack::clear() {
@@ -109,7 +96,7 @@ void haxpp_linesourcestack::clear() {
 }
 
 bool haxpp_linesourcestack::empty() const {
-    return (in_ls == NULL) || (in_ls_sp == ssize_t(-1));
+    return (in_ls_sp == ssize_t(-1));
 }
 
 static haxpp_linesourcestack    in_lstk;
@@ -160,17 +147,13 @@ int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
-    if (!in_lstk.push()) {
-        fprintf(stderr,"Failed to push\n");
-        return 1;
-    }
-
+    in_lstk.push();
     if (in_file == "-")
-        in_lstk.top()->setsource(stdin);
+        in_lstk.top().setsource(stdin);
     else
-        in_lstk.top()->setsource(in_file);
+        in_lstk.top().setsource(in_file);
 
-    if (!in_lstk.top()->open()) {
+    if (!in_lstk.top().open()) {
         fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
         return 1;
     }
@@ -185,14 +168,14 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    while (!in_lstk.top()->eof()) {
-        char *line = in_lstk.top()->readline();
+    while (!in_lstk.top().eof()) {
+        char *line = in_lstk.top().readline();
         if (line == nullptr) {
-            if (!in_lstk.top()->error() && in_lstk.top()->eof()) {
+            if (!in_lstk.top().error() && in_lstk.top().eof()) {
                 break;
             }
             else {
-                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top()->error(),in_lstk.top()->eof(),strerror(errno));
+                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
                 return 1;
             }
         }
@@ -203,8 +186,8 @@ int main(int argc,char **argv) {
         }
     }
 
-    if (in_lstk.top()->error()) {
-        fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top()->getsourcename().c_str());
+    if (in_lstk.top().error()) {
+        fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
         return 1;
     }
 
