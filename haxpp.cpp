@@ -65,23 +65,35 @@ inline size_t haxpp_linesource::linesize() const {
 
 bool haxpp_linesource::lineresize(const size_t newsz) {
     if (newsz != 0u) {
-        if (line != NULL && line_alloc == newsz)
-            return true;
-
         if (newsz < line_alloc_minimum || newsz > line_alloc_maximum)
             return false;
-    }
 
-    if (line != NULL) {
-        delete[] line;
-        line = NULL;
-    }
-    line_alloc = 0;
+        if (line != NULL) {
+            /* already allocated, resize it. do nothing if the same size. */
+            if (line_alloc == newsz)
+                return true;
 
-    if (newsz != 0u) {
-        line = new char[newsz];
-        if (line == NULL) return false;
-        line_alloc = newsz;
+            /* NTS: GNU GLIBC is said to support realloc(NULL,newsz) as malloc(), but other platforms might not do that */
+            char *np = (char*)realloc(line,newsz);
+            if (np == NULL)
+                return false;
+
+            line = np;
+            line_alloc = newsz;
+        }
+        else {
+            /* not allocated yet */
+            line = (char*)malloc(newsz);
+            if (line == NULL) return false;
+            line_alloc = newsz;
+        }
+    }
+    else { /* newsz == 0 which is a command to free the buffer */
+        if (line != NULL) {
+            free((void*)line);
+            line = NULL;
+        }
+        line_alloc = 0;
     }
 
     return true;
@@ -155,11 +167,11 @@ bool haxpp_linesource::open() {
 char *haxpp_linesource::readline() {
     errno = 0;
     if (is_open()) {
-        if (!ferror(fp) && !feof(fp)) {
+        const size_t s = linesize(); /* must be >= 2 */
+        if (!ferror(fp) && !feof(fp) && s >= line_alloc_minimum) {
             /* write a NUL to the last two bytes of the buffer.
              * if those bytes are no longer NUL it means fgets() read a line that's too long.
              * This is faster than using strlen() on the returned string. */
-            const size_t s = linesize(); /* must be >= 2 */
             line[s-2] = line[s-1] = 0;
 
             /* fgets() will read up to s-1 bytes, and store a NUL where it stops (which is why we test line[s-2] instead).
