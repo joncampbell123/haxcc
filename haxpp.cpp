@@ -14,6 +14,7 @@
 #include "linesink.h"
 
 #include <stdexcept>
+#include <vector>
 
 using namespace std;
 
@@ -21,6 +22,8 @@ static string                   in_file = "-";
 static string                   out_file = "-";
 
 static haxpp_linesink           out_ls;
+
+static vector<string>           include_search;
 
 class haxpp_linesourcestack {
     public:
@@ -130,6 +133,17 @@ static int parse_argv(int argc,char **argv) {
                 help();
                 return 1;
             }
+            else if (!strcmp(a,"I")) { /* GCC style -I <path> */
+                a = argv[i++];
+                if (a == NULL) return 1;
+                if (*a == 0) return 1;
+                include_search.push_back(a);
+            }
+            else if (*a == 'I') { /* GCC style -I<path> */
+                a++;
+                if (*a == 0) return 1;
+                include_search.push_back(a);
+            }
             else {
                 fprintf(stderr,"Unknown switch %s\n",a);
                 return 1;
@@ -199,6 +213,12 @@ string cstrgetstringenclosed(char* &s,char delim,char delimend) {
 string lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
+
+    for (const auto &spath : include_search) {
+        string fpath = spath + "/" + rpath;
+        if (is_file(fpath))
+            return fpath;
+    }
 
     return string();
 }
