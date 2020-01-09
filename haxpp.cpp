@@ -154,7 +154,7 @@ static int parse_argv(int argc,char **argv) {
 }
 
 void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
-    string msg = string("#line ") + to_string(line) + " \"" + name + "\"";
+    string msg = string("#line ") + to_string(line) + " \"" + name + "\"\n";
     ls.write(msg.c_str());
 }
 
@@ -196,6 +196,13 @@ string cstrgetstringenclosed(char* &s,char delim,char delimend) {
     return string();
 }
 
+string lookup_header(const string &rpath) {
+    if (is_file(rpath))
+        return rpath;
+
+    return string();
+}
+
 int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
@@ -210,6 +217,7 @@ int main(int argc,char **argv) {
         fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
         return 1;
     }
+    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
     if (out_file == "-")
         out_ls.setsink(stdout);
@@ -220,7 +228,6 @@ int main(int argc,char **argv) {
         fprintf(stderr,"Unable to open outfile, %s\n",strerror(errno));
         return 1;
     }
-    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
     while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
@@ -229,8 +236,9 @@ int main(int argc,char **argv) {
                 in_lstk.pop();
                 if (in_lstk.empty())
                     break;
-                else
-                    continue;
+
+                send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
+                continue;
             }
             else {
                 fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
@@ -264,7 +272,20 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    // TODO do something with path
+                    string respath = lookup_header(path);
+                    if (respath.empty()) {
+                        fprintf(stderr,"#include statement unable to find '%s'\n",path.c_str());
+                        return 1;
+                    }
+
+                    /* NTS: Do not permit - to mean stdin */
+                    in_lstk.push();
+                    in_lstk.top().setsource(respath);
+                    if (!in_lstk.top().open()) {
+                        fprintf(stderr,"Unable to open infile '%s', %s\n",respath.c_str(),strerror(errno));
+                        return 1;
+                    }
+                    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
                     continue; /* do not send to output */
                 }

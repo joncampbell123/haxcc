@@ -22,6 +22,9 @@ public:
     inline size_t linesize() const { /* total buffer size including room for NUL terminator */
         return line_alloc;
     }
+    inline linecount_t currentline() const {
+        return lineno;
+    }
 public:
     haxpp_linesource();
     ~haxpp_linesource();
