@@ -14,41 +14,68 @@
 
 using namespace std;
 
-int main(int argc,char **argv) {
-    for (int i=1;i < argc;i++) {
-        haxpp_linesource ls;
+static string           in_file = "-";
+static string           out_file = "-";
 
-        if (!strcmp(argv[i],"-"))
-            ls.setsource(stdin);
-        else
-            ls.setsource(argv[i]);
+static haxpp_linesource in_ls;
 
-        if (!ls.open()) {
-            fprintf(stderr,"Unable to open %s, error %s\n",ls.getsourcename().c_str(),strerror(errno));
-            return 1;
-        }
+static void help() {
+    fprintf(stderr,"haxpp infile outfile\n");
+}
 
-        while (!ls.eof()) {
-            char *line = ls.readline();
-            if (line == nullptr) {
-                if (!ls.error() && ls.eof()) {
-                    break;
-                }
-                else {
-                    fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",ls.error(),ls.eof(),strerror(errno));
-                    return 1;
-                }
+static int parse_argv(int argc,char **argv) {
+    int nwac=0;
+    char *a;
+    int i=1;
+
+    while (i < argc) {
+        a = argv[i++];
+
+        if (*a == '-' && strcmp(a,"-") != 0/*not "-"*/) {
+            do { a++; } while (*a == '-');
+
+            if (!strcmp(a,"h") || !strcmp(a,"help")) {
+                help();
+                return 1;
             }
-
-            printf("%s",line); /* often provides it's own newline */
+            else {
+                fprintf(stderr,"Unknown switch %s\n",a);
+                return 1;
+            }
         }
-
-        if (ls.error()) {
-            fprintf(stderr,"An error occurred while parsing %s\n",ls.getsourcename().c_str());
-            return 1;
+        else {
+            switch (nwac++) {
+                case 0:
+                    in_file = a;
+                    break;
+                case 1:
+                    out_file = a;
+                    break;
+                default:
+                    fprintf(stderr,"Unexpected arg %s\n",a);
+                    return 1;
+            }
         }
     }
 
+    return 0;
+}
+
+int main(int argc,char **argv) {
+    if (parse_argv(argc,argv))
+        return 1;
+
+    if (in_file == "-")
+        in_ls.setsource(stdin);
+    else
+        in_ls.setsource(in_file);
+
+    if (!in_ls.open()) {
+        fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
+        return 1;
+    }
+
+    in_ls.close();
     return 0;
 }
 
