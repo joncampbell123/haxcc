@@ -2,7 +2,7 @@
 SUFFIX=
 
 # outputs
-OUTPUTS=haxpp
+OUTPUTS=haxpp haxlr
 
 # default CFLAGS (GCC+Linux)
 CFLAGS=-Wall -Wextra -pedantic -std=c11
@@ -24,6 +24,10 @@ clean:
 # distclean
 distclean: clean
 	rm -f $(OUTPUTS)
+
+# how to link haxlr
+haxlr: haxlr.o util.o linesrc.o
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 # how to link haxpp
 haxpp: haxpp.o util.o linesrc.o
