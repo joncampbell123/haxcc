@@ -56,11 +56,34 @@ public:
     void                        dump(FILE *fp=NULL) const;
     void                        add_string_subst(char* &base,char* const s);
     void                        add_parameter_subst(size_t pidx);
+    void                        add_parameter_subst_va_opt(size_t pidx,const string &va_opt_sub);
     void                        add_parameter_subst_stringify(size_t pidx);
     void                        add_newline_subst();
     bool                        parse_identifier(string &macroname,char* &s);
     bool                        parse_token_string(bool &to_be_continued,char* &s);
 };
+
+void cstrskipsquote(char* &s) {
+    if (*s == '\'') {
+        s++;
+        while (*s && *s != '\'') {
+            if (*s == '\\') s++;
+            if (*s != 0) s++;
+        }
+        if (*s == '\'') s++;
+    }
+}
+
+void cstrskipstring(char* &s) {
+    if (*s == '\"') {
+        s++;
+        while (*s && *s != '\"') {
+            if (*s == '\\') s++;
+            if (*s != 0) s++;
+        }
+        if (*s == '\"') s++;
+    }
+}
 
 bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
     char *base = s;
@@ -106,8 +129,57 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
              *       That means this code needs to copy the contents within the (..) following __VA_OPT__
              *
              *       As far as GCC documentation suggests this is a way to do macro wrappers around sprintf */
+            if (word == "__VA_OPT__") {
+                string va_opt_sub;
 
-            {
+                if (stringify) fprintf(stderr,"WARNING: Attempting to stringify __VA_OPT__?? Ignored.\n");
+
+                if (*s == '(') {
+                    int paren = 1;
+                    s++;
+
+                    char *vbase = s;
+                    while (*s && paren > 0) {
+                        if (*s == '(') {
+                            paren++;
+                            s++;
+                        }
+                        else if (*s == ')') {
+                            paren--;
+                            if (paren == 0)
+                                va_opt_sub = string(vbase,(size_t)(s-vbase));
+
+                            s++;
+                        }
+                        else if (*s == '\'') {
+                            cstrskipsquote(s);
+                        }
+                        else if (*s == '\"') {
+                            cstrskipstring(s);
+                        }
+                        else {
+                            s++;
+                        }
+                    }
+
+                    if (paren != 0) {
+                        fprintf(stderr,"__VA_OPT__(param) paren mismatch\n");
+                        return false;
+                    }
+                }
+
+                auto pi = find(parameters.begin(),parameters.end(),lookup);
+                if (pi != parameters.end()) {
+                    add_string_subst(base,wordbase);
+
+                    /* add a reference to this parameter */
+                    add_parameter_subst_va_opt(size_t(pi-parameters.begin()),va_opt_sub);
+
+                    /* then resume string scanning after the word */
+                    base = s;
+                }
+            }
+            else {
                 auto pi = find(parameters.begin(),parameters.end(),lookup);
                 if (pi != parameters.end()) {
                     /* cut the string up to the first char of the word. */
@@ -164,7 +236,7 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
     if (*s == '(') {
         s++;
         cstrskipwhitespace(s);
-        if (*s != ')') { /* make sure it's not just () */
+        if (*s != 0 && *s != ')') { /* make sure it's not just () */
             /* yes, it has parameters */
             while (*s != 0) {
                 string param;
@@ -230,6 +302,16 @@ void haxpp_macro::add_parameter_subst_stringify(size_t pidx) {
 
         ms.type = macro_subst::type_t::STRINGIFY_PARAMETER;
         ms.parameter = pidx;
+        substitution.push_back(ms);
+    }
+}
+
+void haxpp_macro::add_parameter_subst_va_opt(size_t pidx,const string &va_opt_sub) {
+    if (pidx < parameters.size()) {
+        macro_subst ms;
+
+        ms.type = macro_subst::type_t::VA_OPT;
+        ms.stringval = va_opt_sub;
         substitution.push_back(ms);
     }
 }

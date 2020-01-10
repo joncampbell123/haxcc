@@ -20,4 +20,5 @@ Aaaaa
 #define HELLO14 MULTIPLE \
     LINE SUPPORT \
     HERE
+#define HELLO15(xx,yy,...) xx,yy __VA_OPT__(,xx)
 Aaaaaaa
