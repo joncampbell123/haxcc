@@ -397,6 +397,8 @@ int main(int argc,char **argv) {
 
                                     /* OK, but does '##' follow? If so, we're being asked to paste tokens together.
                                      * we can accomodate that by eating the "##" and then looping back around to process again. */
+                                    /* NTS: It is expected that if we're at the end of the string for some reason, s[0] == 0 and
+                                     *      execution will skip s[1] == '#', etc. and avoid buffer overrun. */
                                     if (s[0] == '#' && s[1] == '#' && iswordcharfirst(s[2])) {
                                         s += 2;
                                         base = s; /* do not include '##' in the string */
