@@ -683,7 +683,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
         throw runtime_error("macro() invocation wrong number of parameters");
 }
 
-bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexist) {
+bool macro_expand(char *line,char *linefence,bool &multiline,bool nullnonexist) {
     bool changed = false;
     char *scan = line;
 
@@ -714,14 +714,14 @@ bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexis
                 string newstring = expand_macro_string(i->second,multiline,ivparam);
                 string remstr = scan;
 
-                macro_replace(line+linebufsize,line,wordbase,remstr,newstring);
+                macro_replace(linefence,line,wordbase,remstr,newstring);
                 scan = wordbase;
                 changed = true;
             }
             else if (nullnonexist) {
                 string remstr = scan;
 
-                macro_replace(line+linebufsize,line,wordbase,remstr,"");
+                macro_replace(linefence,line,wordbase,remstr,"");
                 scan = wordbase;
                 changed = true;
             }
@@ -992,7 +992,7 @@ int main(int argc,char **argv) {
 
         bool expand_multiline = false;
 
-        macro_expand(line,linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
+        macro_expand(line,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
 
         if (emit_line) {
             send_line(out_ls,linesource,lineno);
