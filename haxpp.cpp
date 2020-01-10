@@ -634,7 +634,11 @@ int main(int argc,char **argv) {
 
                     /* #else was used, no longer allowed at this level.
                      * invert conditional and continue. */
-                    if_cond.cond = !if_cond.cond;
+                    bool parent_cond = true;
+                    if (!if_cond_stack.empty())
+                        parent_cond = if_cond_stack.top().eval();
+
+                    if_cond.cond = parent_cond && !if_cond.cond;
                     if_cond.allow_else = false;
                     continue; /* do not send to output */
                 }
