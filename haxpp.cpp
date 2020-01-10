@@ -636,6 +636,7 @@ int main(int argc,char **argv) {
                      * invert conditional and continue. */
                     if_cond.cond = !if_cond.cond;
                     if_cond.allow_else = false;
+                    continue; /* do not send to output */
                 }
 
                 if (!if_cond.eval())
