@@ -499,6 +499,101 @@ bool eval_ifdef(const string &name) {
     return (i != haxpp_macros.end());
 }
 
+string expand_macro_string(haxpp_macro &macro,bool &multiline/*TODO: ,params*/) {
+    string r;
+
+    for (auto i=macro.substitution.begin();i!=macro.substitution.end();i++) {
+        const auto &sub = *i;
+
+        switch (sub.type) {
+            case haxpp_macro::macro_subst::type_t::STRING:
+                r += sub.stringval;
+                break;
+            case haxpp_macro::macro_subst::type_t::PARAMETER:
+                // TODO
+                break;
+            case haxpp_macro::macro_subst::type_t::STRINGIFY_PARAMETER:
+                // TODO
+                break;
+            case haxpp_macro::macro_subst::type_t::NEWLINE:
+                multiline = true;
+                r += "\n";
+                break;
+            case haxpp_macro::macro_subst::type_t::VA_ARGS:
+                // TODO
+                break;
+            case haxpp_macro::macro_subst::type_t::VA_OPT:
+                // TODO
+                break;
+            default:
+                break;
+        }
+    }
+
+    return r;
+}
+
+void macro_replace(char *fence,char *base,char *to,const string &after,const string &with) {
+    if (to >= fence || to < base || fence <= base)
+        throw invalid_argument("macro_replace() to pointer out of bounds");
+
+    if ((to+after.length()+with.length()) >= (fence - 1))
+        throw overflow_error("macro_replace() not enough buffer space");
+
+    const char *s;
+
+    s = with.c_str();
+    while (*s != 0) *to++ = *s++;
+
+    s = after.c_str();
+    while (*s != 0) *to++ = *s++;
+
+    *to = 0;
+    if (to >= fence)
+        throw runtime_error("macro_replace() buffer overrun detected");
+}
+
+bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexist) {
+    bool changed = false;
+    char *scan = line;
+
+    multiline = false;
+    while (*scan != 0) {
+        if (iswordcharfirst(*scan)) {
+            char *wordbase = scan;
+            string word = cstrgetword(scan);
+
+            auto i = haxpp_macros.find(word);
+            if (i != haxpp_macros.end()) {
+                string newstring = expand_macro_string(i->second,multiline/*TODO: ,params*/);
+                string remstr = scan;
+
+                macro_replace(line+linebufsize,line,wordbase,remstr,newstring);
+                scan = wordbase;
+                changed = true;
+            }
+            else if (nullnonexist) {
+                string remstr = scan;
+
+                macro_replace(line+linebufsize,line,wordbase,remstr,"");
+                scan = wordbase;
+                changed = true;
+            }
+        }
+        else if (*scan == '\'') {
+            cstrskipsquote(scan);
+        }
+        else if (*scan == '\"') {
+            cstrskipstring(scan);
+        }
+        else {
+            scan++;
+        }
+    }
+
+    return changed;
+}
+
 string lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
@@ -572,6 +667,7 @@ int main(int argc,char **argv) {
 
         string linesource = in_lstk.top().getsourcename();
         linecount_t lineno = in_lstk.top().currentline();
+        size_t linebufsize = in_lstk.top().linesize();
 
         /* look for preprocessor directives this code handles by itself */
         {
@@ -748,6 +844,10 @@ int main(int argc,char **argv) {
             }
         }
 
+        bool expand_multiline = false;
+
+        macro_expand(line,linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
+
         if (emit_line) {
             send_line(out_ls,linesource,lineno);
             emit_line = false;
@@ -757,6 +857,9 @@ int main(int argc,char **argv) {
             fprintf(stderr,"Error writing output\n");
             return 1;
         }
+
+        if (expand_multiline)
+            emit_line = true;
     }
 
     if (!if_cond_stack.empty()) {

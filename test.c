@@ -76,3 +76,11 @@ Should see, no such NOT and no such FOO
 # endif
 #endif
 Aaaaaaa
+I said HELLO13 for the win
+I said "HELLO13" 123 for the HELLO13 win and then HELLO14
+#define MACRO1 1234
+#define MACRO2 123 MACRO1 12345
+MACRO1
+MACRO2
+Yeah!
+
