@@ -13,5 +13,6 @@ Aaaaa
 #define HELLO(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,xx,yy,xxx)
 #define HELLO(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,xx,#yy,xxx)
 #define HELLO(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,xx##yy##zzzz,#yy,xxx)
+#define HELLO(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,#xx #yy #zzzz,#yy,xxx)
 #define HELLO WORLD
 Aaaaaaa

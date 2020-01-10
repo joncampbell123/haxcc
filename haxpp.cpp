@@ -395,7 +395,8 @@ int main(int argc,char **argv) {
                                     /* then resume string scanning after the word */
                                     base = s;
 
-                                    /* OK, but does '##' follow? If so, we're being asked to paste tokens together */
+                                    /* OK, but does '##' follow? If so, we're being asked to paste tokens together.
+                                     * we can accomodate that by eating the "##" and then looping back around to process again. */
                                     if (s[0] == '#' && s[1] == '#' && iswordcharfirst(s[2])) {
                                         s += 2;
                                         base = s; /* do not include '##' in the string */
