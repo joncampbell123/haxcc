@@ -342,19 +342,26 @@ int main(int argc,char **argv) {
 
                     char *base = s;
                     while (*s != 0) {
-                        char *pstart = s;
                         bool stringify = false;
 
                         if (*s == '\n')
                             break;
 
-                        if (*s == '#') {
+                        /* # followed by identifier means to stringify it */
+                        if (s[0] == '#' && iswordcharfirst(s[1])) {
                             stringify = true;
                             s++;
                         }
 
                         if (iswordcharfirst(*s)) {
                             char *wordbase = s;
+                            char *cutbase = s;
+
+                            /* unused? */
+                            (void)wordbase;
+
+                            /* if #ident then adjust pointer to cut off '#' */
+                            if (stringify) cutbase--;
 
                             string word = cstrgetword(s);
                             string lookup;
@@ -376,12 +383,8 @@ int main(int argc,char **argv) {
                             {
                                 auto pi = find(macro.parameters.begin(),macro.parameters.end(),lookup);
                                 if (pi != macro.parameters.end()) {
-                                    /* cut the string up to the first char of the word.
-                                     * if  */
-                                    if (stringify) /* do not include leading '#' */
-                                        macro.add_string_subst(base,pstart);
-                                    else
-                                        macro.add_string_subst(base,wordbase);
+                                    /* cut the string up to the first char of the word. */
+                                    macro.add_string_subst(base,cutbase);
 
                                     /* add a reference to this parameter */
                                     if (stringify)
