@@ -15,4 +15,6 @@ Aaaaa
 #define HELLO11(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,xx##yy##zzzz,#yy,xxx)
 #define HELLO12(xx,yy,zzzz,...) (zzzz,__VA_ARGS__,#xx #yy #zzzz,#yy,xxx)
 #define HELLO13 WORLD
+#undef  HELLO13
+#define HELLO13 WORLD HELLO
 Aaaaaaa

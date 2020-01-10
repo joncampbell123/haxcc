@@ -260,7 +260,28 @@ int main(int argc,char **argv) {
 
                 const string what = cstrgetword(s); cstrskipwhitespace(s);
 
-                if (what == "define") {
+                if (what == "undef") {
+                    string macroname;
+
+                    macroname = cstrgetword(s);
+                    if (macroname.empty()) {
+                        fprintf(stderr,"#undef without macro name\n");
+                        return 1;
+                    }
+
+                    {
+                        auto mi = haxpp_macros.find(macroname);
+                        if (mi != haxpp_macros.end()) {
+                            haxpp_macros.erase(mi);
+                        }
+                        else {
+                            fprintf(stderr,"WARNING: Macro %s not defined at #undef\n",macroname.c_str());
+                        }
+                    }
+
+                    continue; /* do not send to output */
+                }
+                else if (what == "define") {
                     string macroname;
 
                     macroname = cstrgetword(s);
