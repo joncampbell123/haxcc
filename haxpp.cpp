@@ -582,11 +582,7 @@ int main(int argc,char **argv) {
                     emit_line = true;
                     continue; /* do not send to output */
                 }
-
-                if (!if_cond)
-                    continue;
-
-                if (what == "ifdef") {
+                else if (what == "ifdef") {
                     string macroname;
 
                     macroname = cstrgetword(s);
@@ -596,7 +592,9 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-                    if_cond = eval_ifdef(macroname);
+
+                    if (if_cond)
+                        if_cond = eval_ifdef(macroname);
 
                     emit_line = true;
                     continue; /* do not send to output */
@@ -611,12 +609,18 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-                    if_cond = !eval_ifdef(macroname);
+
+                    if (if_cond)
+                        if_cond = !eval_ifdef(macroname);
 
                     emit_line = true;
                     continue; /* do not send to output */
                 }
-                else if (what == "undef") {
+
+                if (!if_cond)
+                    continue;
+
+                if (what == "undef") {
                     string macroname;
 
                     macroname = cstrgetword(s);
@@ -727,6 +731,11 @@ int main(int argc,char **argv) {
             fprintf(stderr,"Error writing output\n");
             return 1;
         }
+    }
+
+    if (!if_cond_stack.empty()) {
+        fprintf(stderr,"#if...#endif block mismatch after parsing\n");
+        return 1;
     }
 
     if (!in_lstk.empty()) {

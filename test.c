@@ -33,5 +33,18 @@ Should see, no such NOT
 #ifndef HELLO0
 Hello0 defined, should not see
 #endif
-
+#ifdef NOT
+Should not see, no such NOT
+#ifdef HELLO0
+Hello0 defined, no such NOT, should not see
+#endif
+Still should not see, no such NOT
+#endif
+#ifdef HELLO0
+Should see, hello0 defined 1
+#ifdef NOT
+Should not see, no such NOT, though hello0 defined
+#endif
+Should see, hello0 defined 2
+#endif
 Aaaaaaa
