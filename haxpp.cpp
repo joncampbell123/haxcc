@@ -605,6 +605,7 @@ int main(int argc,char **argv) {
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && eval_ifdef(macroname);
+                    if_cond.allow_else = true; /* #if enables #else */
 
                     emit_line = true;
                     continue; /* do not send to output */
@@ -620,9 +621,21 @@ int main(int argc,char **argv) {
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && !eval_ifdef(macroname);
+                    if_cond.allow_else = true; /* #if enables #else */
 
                     emit_line = true;
                     continue; /* do not send to output */
+                }
+                else if (what == "else") {
+                    if (!if_cond.allow_else) {
+                        fprintf(stderr,"#else is invalid here\n");
+                        return 1;
+                    }
+
+                    /* #else was used, no longer allowed at this level.
+                     * invert conditional and continue. */
+                    if_cond.cond = !if_cond.cond;
+                    if_cond.allow_else = false;
                 }
 
                 if (!if_cond.eval())

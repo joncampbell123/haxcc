@@ -50,4 +50,24 @@ Should not see, hello13 defined but no such NOT
 #endif
 Should see, hello0 defined 2
 #endif
+#ifdef HELLO0
+Should see, hello0 defined
+#else
+Should not see, hello0 defined else condition
+#endif
+#ifdef NOT
+Should not see, no such NOT, #if..#else case
+#else
+Should see, no such NOT #else condition
+#endif
+#ifdef NOT
+Should not see, no such NOT
+#ifdef HELLO0
+Should not see, no such NOT but hello0 defined
+#else
+Should not see, no such NOT and not defined hello0
+#endif
+#else
+Should see, no such NOT
+#endif
 Aaaaaaa
