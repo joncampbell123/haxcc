@@ -53,6 +53,7 @@ public:
 public:
     vector<string>              parameters;
     vector<macro_subst>         substitution;
+    bool                        needs_parens = false;
 public:
     void                        dump(FILE *fp=NULL) const;
     void                        add_string_subst(char* &base,char* const s);
@@ -214,6 +215,7 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
 
     if (*s == '(') {
         s++;
+        needs_parens = true;
         cstrskipwhitespace(s);
         if (*s != 0 && *s != ')') { /* make sure it's not just () */
             /* yes, it has parameters */
