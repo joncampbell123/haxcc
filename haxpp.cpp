@@ -304,6 +304,24 @@ void haxpp_macro::dump(FILE *fp) const {
 
 map<string,haxpp_macro>         haxpp_macros;
 
+bool add_macro(const string &macroname,const haxpp_macro &macro) {
+    /* TODO: Compare if different and then emit warning?
+     *       Should this be an error? */
+    {
+        auto mi = haxpp_macros.find(macroname);
+        if (mi != haxpp_macros.end())
+            fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+    }
+
+#if 0
+    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
+    macro.dump();
+#endif
+
+    haxpp_macros[macroname] = macro;
+    return true;
+}
+
 bool parse_cmdline_macrodef(char* &a) {
     bool to_be_continued = false;
     haxpp_macro macro;
@@ -329,20 +347,9 @@ bool parse_cmdline_macrodef(char* &a) {
         return false;
     }
 
-    /* TODO: Compare if different and then emit warning?
-     *       Should this be an error? */
-    {
-        auto mi = haxpp_macros.find(macroname);
-        if (mi != haxpp_macros.end())
-            fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
-    }
+    if (!add_macro(macroname,macro))
+        return false;
 
-#if 0
-    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
-    macro.dump();
-#endif
-
-    haxpp_macros[macroname] = macro;
     return true;
 }
 
@@ -527,20 +534,9 @@ int main(int argc,char **argv) {
                         }
                     } while (to_be_continued);
 
-                    /* TODO: Compare if different and then emit warning?
-                     *       Should this be an error? */
-                    {
-                        auto mi = haxpp_macros.find(macroname);
-                        if (mi != haxpp_macros.end())
-                            fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
-                    }
+                    if (!add_macro(macroname,macro))
+                        return 1;
 
-#if 0
-                    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
-                    macro.dump();
-#endif
-
-                    haxpp_macros[macroname] = macro;
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
