@@ -50,6 +50,10 @@ bool iswordchar(char c) {
     return isalnum(c) || c == '_';
 }
 
+bool iswordcharfirst(char c) {
+    return isalpha(c) || c == '_';
+}
+
 void cstrskipwhitespace(char* &s) {
     while (*s == ' ' || *s == '\t') s++;
 }
@@ -74,12 +78,14 @@ bool cstrparsedotdotdot(char* &s) {
 string cstrgetword(char* &s) {
     char *base = s;
 
-    while (*s != 0) {
-        if (iswordchar(*s)) {
-            s++;
-        }
-        else {
-            break;
+    if (iswordcharfirst(*s)) {
+        while (*s != 0) {
+            if (iswordchar(*s)) {
+                s++;
+            }
+            else {
+                break;
+            }
         }
     }
 

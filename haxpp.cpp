@@ -36,17 +36,104 @@ public:
         enum class type_t {
             STRING,
             PARAMETER,
+            STRINGIFY_PARAMETER,
             VA_ARGS,            /* __VA_ARGS__ */
             VA_OPT              /* __VA_OPT(x)__ */
         };
         type_t                  type = type_t::STRING;
         string                  stringval;
         size_t                  parameter = 0;
+
+        void                    dump(FILE *fp=NULL) const;
+        const char*             type_str() const;
     };
 public:
     vector<string>              parameters;
     vector<macro_subst>         substitution;
+public:
+    void                        dump(FILE *fp=NULL) const;
+    void                        add_string_subst(char* &base,char* const s);
+    void                        add_parameter_subst(size_t pidx);
+    void                        add_parameter_subst_stringify(size_t pidx);
 };
+
+void haxpp_macro::add_parameter_subst_stringify(size_t pidx) {
+    if (pidx < parameters.size()) {
+        macro_subst ms;
+
+        ms.type = macro_subst::type_t::STRINGIFY_PARAMETER;
+        ms.parameter = pidx;
+        substitution.push_back(ms);
+    }
+}
+
+void haxpp_macro::add_parameter_subst(size_t pidx) {
+    if (pidx < parameters.size()) {
+        macro_subst ms;
+
+        ms.type = macro_subst::type_t::PARAMETER;
+        ms.parameter = pidx;
+        substitution.push_back(ms);
+    }
+}
+
+void haxpp_macro::add_string_subst(char* &base,char* const s) {
+    if (base < s) {
+        macro_subst ms;
+
+        ms.type = macro_subst::type_t::STRING;
+        ms.stringval = string(base,(size_t)(s-base));
+        substitution.push_back(ms);
+
+        base = s;
+    }
+}
+
+const char* haxpp_macro::macro_subst::type_str() const {
+    switch (type) {
+        case type_t::STRING:                return "STRING";
+        case type_t::PARAMETER:             return "PARAMETER";
+        case type_t::STRINGIFY_PARAMETER:   return "STRINGIFY_PARAMETER";
+        case type_t::VA_ARGS:               return "VA_ARGS";
+        case type_t::VA_OPT:                return "VA_OPT";
+        default:                            break;
+    }
+
+    return "?";
+}
+
+void haxpp_macro::macro_subst::dump(FILE *fp) const {
+    if (fp == NULL)
+        fp = stderr;
+
+    fprintf(stderr,"{ type:%s ",type_str());
+    switch (type) {
+        case type_t::STRING:
+        case type_t::VA_OPT:
+            fprintf(stderr,"str:'%s' ",stringval.c_str());
+            break;
+        case type_t::PARAMETER:
+        case type_t::STRINGIFY_PARAMETER:
+        case type_t::VA_ARGS:
+            fprintf(stderr,"param:%zu ",parameter);
+            break;
+        default:
+            break;
+    };
+    fprintf(stderr,"} ");
+}
+
+void haxpp_macro::dump(FILE *fp) const {
+    if (fp == NULL)
+        fp = stderr;
+
+    fprintf(stderr,"  parameters:");
+    for (const auto &x : parameters) fprintf(stderr," '%s'",x.c_str());
+    fprintf(stderr,"\n");
+    fprintf(stderr,"  subst:");
+    for (const auto &x : substitution) x.dump(fp);
+    fprintf(stderr,"\n");
+}
 
 map<string,haxpp_macro>         haxpp_macros;
 
@@ -253,6 +340,67 @@ int main(int argc,char **argv) {
                         cstrskipwhitespace(s);
                     }
 
+                    char *base = s;
+                    while (*s != 0) {
+                        char *pstart = s;
+                        bool stringify = false;
+
+                        if (*s == '\n')
+                            break;
+
+                        if (*s == '#') {
+                            stringify = true;
+                            s++;
+                        }
+
+                        if (iswordcharfirst(*s)) {
+                            char *wordbase = s;
+
+                            string word = cstrgetword(s);
+                            string lookup;
+
+                            if (word == "__VA_ARGS__" || word == "__VA_OPT__")
+                                lookup = "...";
+                            else
+                                lookup = word;
+
+                            /* TODO: __VA_OPT__(x)
+                             *
+                             *       resolves to (x) if variadic parameter has something,
+                             *       resolves to nothing otherwise.
+                             *
+                             *       That means this code needs to copy the contents within the (..) following __VA_OPT__
+                             *
+                             *       As far as GCC documentation suggests this is a way to do macro wrappers around sprintf */
+
+                            {
+                                auto pi = find(macro.parameters.begin(),macro.parameters.end(),lookup);
+                                if (pi != macro.parameters.end()) {
+                                    /* cut the string up to the first char of the word.
+                                     * if  */
+                                    if (stringify) /* do not include leading '#' */
+                                        macro.add_string_subst(base,pstart);
+                                    else
+                                        macro.add_string_subst(base,wordbase);
+
+                                    /* add a reference to this parameter */
+                                    if (stringify)
+                                        macro.add_parameter_subst_stringify(size_t(pi-macro.parameters.begin()));
+                                    else
+                                        macro.add_parameter_subst(size_t(pi-macro.parameters.begin()));
+
+                                    /* then resume string scanning after the word */
+                                    base = s;
+                                }
+                            }
+                        }
+                        else {
+                            s++;
+                        }
+                    }
+                    macro.add_string_subst(base,s);
+
+                    macro.dump();
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
