@@ -223,7 +223,6 @@ int main(int argc,char **argv) {
                                 cstrskipwhitespace(s);
 
                                 if (*s == ')') {
-                                    s++;
                                     break;
                                 }
                                 else if (*s == ',') {
