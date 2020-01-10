@@ -14,8 +14,10 @@
 #include "linesink.h"
 #include "linesrst.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <vector>
+#include <map>
 
 using namespace std;
 
@@ -27,6 +29,24 @@ static haxpp_linesink           out_ls;
 static vector<string>           include_search;
 
 static haxpp_linesourcestack    in_lstk;
+
+class haxpp_macro {
+public:
+    struct macro_subst {
+        enum class type_t {
+            STRING,
+            PARAMETER
+        };
+        type_t                  type = type_t::STRING;
+        string                  stringval;
+        size_t                  parameter = 0;
+    };
+public:
+    vector<string>              parameters;
+    vector<macro_subst>         substitution;
+};
+
+map<string,haxpp_macro>         haxpp_macros;
 
 static void help() {
     fprintf(stderr,"haxpp infile outfile\n");
@@ -151,7 +171,88 @@ int main(int argc,char **argv) {
 
                 const string what = cstrgetword(s); cstrskipwhitespace(s);
 
-                if (what == "include") {
+                if (what == "define") {
+                    string macroname;
+
+                    macroname = cstrgetword(s);
+                    if (macroname.empty()) {
+                        fprintf(stderr,"#define without macro name\n");
+                        return 1;
+                    }
+
+                    /* NTS: The scheme, at least as GCC behaves, is
+                     *      that a macro can have parameters IF the
+                     *      parenthesis are right up against the
+                     *      macro name. If they're spaced apart,
+                     *      then the macro has no parameters and the
+                     *      parenthesis become part of the string
+                     *      the macro expands to.
+                     *
+                     *      #define MACRO (x)              ->       MACRO       (x)
+                     *      #define MACRO(x)               ->       MACRO(y)    (y) */
+                    haxpp_macro macro;
+
+                    if (*s == '(') {
+                        s++;
+                        cstrskipwhitespace(s);
+                        if (*s != ')') { /* make sure it's not just () */
+                            /* yes, it has parameters */
+                            while (*s != 0) {
+                                string param;
+
+                                cstrskipwhitespace(s);
+                                if (cstrparsedotdotdot(s))
+                                    param = "...";
+                                else
+                                    param = cstrgetword(s);
+
+                                if (param.empty()) {
+                                    fprintf(stderr,"macro param parsing error at '%s'\n",s);
+                                    return 1;
+                                }
+
+                                {
+                                    auto it = find(macro.parameters.begin(),macro.parameters.end(),param);
+                                    if (it != macro.parameters.end()) {
+                                        fprintf(stderr,"Macro param '%s' defined twice\n",param.c_str());
+                                        return 1;
+                                    }
+                                }
+
+                                macro.parameters.push_back(param);
+                                cstrskipwhitespace(s);
+
+                                if (*s == ')') {
+                                    s++;
+                                    break;
+                                }
+                                else if (*s == ',') {
+                                    if (param == "...") {
+                                        /* must be last param! */
+                                        fprintf(stderr,"Variadic macro param ... must come last\n");
+                                        return 1;
+                                    }
+
+                                    s++; /* more to do */
+                                }
+                                else {
+                                    fprintf(stderr,"Junk while parsing macro params\n");
+                                    return 1;
+                                }
+                            }
+                        }
+                    }
+                    if (*s != 0 && *s != ')') {
+                        if (!isspace(*s)) {
+                            fprintf(stderr,"Macro must have a space between name and string. '%s'\n",s);
+                            return 1;
+                        }
+                        cstrskipwhitespace(s);
+                    }
+
+                    continue; /* do not send to output */
+                }
+                else if (what == "include") {
                     string path;
 
                     /* TODO: Apparently it's legal to write #include SOME_MACRO where SOME_MACRO has the file to include.

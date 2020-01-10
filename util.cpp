@@ -54,6 +54,23 @@ void cstrskipwhitespace(char* &s) {
     while (*s == ' ' || *s == '\t') s++;
 }
 
+bool cstrparsedotdotdot(char* &s) {
+    char *scan = s;
+    int dots = 0;
+
+    while (*scan == '.' && dots < 3) {
+        scan++;
+        dots++;
+    }
+
+    if (dots == 3 && *scan != '.') {
+        s = scan;
+        return true;
+    }
+
+    return false;
+}
+
 string cstrgetword(char* &s) {
     char *base = s;
 

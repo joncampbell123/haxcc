@@ -12,5 +12,6 @@ bool is_out_file(const std::string &path);
 bool iswordchar(char c);
 std::string cstrgetword(char* &s);
 void cstrskipwhitespace(char* &s);
+bool cstrparsedotdotdot(char* &s);
 std::string cstrgetstringenclosed(char* &s,char delim,char delimend);
 
