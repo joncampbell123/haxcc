@@ -334,6 +334,49 @@ static int parse_argv(int argc,char **argv) {
                 if (*a == 0) return 1;
                 include_search.push_back(a);
             }
+            else if (*a == 'D') { /* GCC style -DNAME=value */
+                a++;
+                if (*a == 0) return 1;
+
+                bool to_be_continued = false;
+                haxpp_macro macro;
+                string macroname;
+
+                if (!macro.parse_identifier(macroname,a))
+                    return 1;
+
+                if (*a != 0) {
+                    if (*a != '=') {
+                        fprintf(stderr,"Macro must have an equals sign between name and string. '%s'\n",a);
+                        return 1;
+                    }
+                    a++;
+                }
+
+                to_be_continued = false;
+                if (!macro.parse_token_string(to_be_continued,a))
+                    return 1;
+
+                if (to_be_continued) {
+                    fprintf(stderr,"-D cannot define multi-line macros\n");
+                    return 1;
+                }
+
+                /* TODO: Compare if different and then emit warning?
+                 *       Should this be an error? */
+                {
+                    auto mi = haxpp_macros.find(macroname);
+                    if (mi != haxpp_macros.end())
+                        fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+                }
+
+#if 0
+                fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
+                macro.dump();
+#endif
+
+                haxpp_macros[macroname] = macro;
+            }
             else {
                 fprintf(stderr,"Unknown switch %s\n",a);
                 return 1;
