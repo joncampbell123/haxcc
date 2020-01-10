@@ -597,6 +597,7 @@ int main(int argc,char **argv) {
                             fprintf(stderr,"WARNING: Macro %s not defined at #undef\n",macroname.c_str());
                     }
 
+                    send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
@@ -634,6 +635,7 @@ int main(int argc,char **argv) {
                     if (!add_macro(macroname,macro))
                         return 1;
 
+                    send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
@@ -669,8 +671,8 @@ int main(int argc,char **argv) {
                         fprintf(stderr,"Unable to open infile '%s', %s\n",respath.c_str(),strerror(errno));
                         return 1;
                     }
-                    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
+                    send_line(out_ls,in_lstk.top().getsourcename(),1);
                     continue; /* do not send to output */
                 }
             }
