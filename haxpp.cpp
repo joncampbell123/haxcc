@@ -539,7 +539,7 @@ int main(int argc,char **argv) {
 
     struct cond_tracking_t {
         bool        cond = true;
-        bool        allow_else = true;
+        bool        allow_else = false;
 
         cond_tracking_t() { }
         cond_tracking_t(const bool v) : cond(v) { }
