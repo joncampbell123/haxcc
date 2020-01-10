@@ -37,6 +37,7 @@ public:
             STRING,
             PARAMETER,
             STRINGIFY_PARAMETER,
+            NEWLINE,
             VA_ARGS,            /* __VA_ARGS__ */
             VA_OPT              /* __VA_OPT(x)__ */
         };
@@ -55,7 +56,15 @@ public:
     void                        add_string_subst(char* &base,char* const s);
     void                        add_parameter_subst(size_t pidx);
     void                        add_parameter_subst_stringify(size_t pidx);
+    void                        add_newline_subst();
 };
+
+void haxpp_macro::add_newline_subst() {
+        macro_subst ms;
+
+        ms.type = macro_subst::type_t::NEWLINE;
+        substitution.push_back(ms);
+}
 
 void haxpp_macro::add_parameter_subst_stringify(size_t pidx) {
     if (pidx < parameters.size()) {
@@ -93,6 +102,7 @@ const char* haxpp_macro::macro_subst::type_str() const {
     switch (type) {
         case type_t::STRING:                return "STRING";
         case type_t::PARAMETER:             return "PARAMETER";
+        case type_t::NEWLINE:               return "NEWLINE";
         case type_t::STRINGIFY_PARAMETER:   return "STRINGIFY_PARAMETER";
         case type_t::VA_ARGS:               return "VA_ARGS";
         case type_t::VA_OPT:                return "VA_OPT";
@@ -447,6 +457,7 @@ int main(int argc,char **argv) {
                                 return 1;
                             }
                             s = line;
+                            macro.add_newline_subst();
                         }
                     } while (to_be_continued);
 
