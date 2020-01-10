@@ -539,7 +539,6 @@ int main(int argc,char **argv) {
 
     struct cond_tracking_t {
         bool        cond = true;
-        bool        allow_elif = true;
         bool        allow_else = true;
 
         cond_tracking_t() { }
