@@ -413,7 +413,15 @@ int main(int argc,char **argv) {
                     }
                     macro.add_string_subst(base,s);
 
-                    macro.dump();
+                    /* TODO: Compare if different and then emit warning?
+                     *       Should this be an error? */
+                    {
+                        auto mi = haxpp_macros.find(macroname);
+                        if (mi != haxpp_macros.end())
+                            fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+                    }
+
+                    haxpp_macros[macroname] = macro;
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
