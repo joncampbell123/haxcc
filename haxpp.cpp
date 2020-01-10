@@ -280,6 +280,7 @@ int main(int argc,char **argv) {
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
+                    bool to_be_continued = false;
                     string macroname;
 
                     macroname = cstrgetword(s);
@@ -359,78 +360,95 @@ int main(int argc,char **argv) {
                         cstrskipwhitespace(s);
                     }
 
-                    char *base = s;
-                    while (*s != 0) {
-                        bool stringify = false;
+                    do {
+                        to_be_continued = false;
 
-                        if (*s == '\n')
-                            break;
+                        char *base = s;
+                        while (*s != 0) {
+                            bool stringify = false;
 
-                        /* # followed by identifier means to stringify it */
-                        if (s[0] == '#' && iswordcharfirst(s[1])) {
-                            stringify = true;
-                            s++;
-                        }
+                            if (s[0] == '\\' && (s[1] == '\n' || s[1] == 0)) {
+                                to_be_continued = true;
+                                break;
+                            }
+                            if (*s == '\n')
+                                break;
 
-                        if (iswordcharfirst(*s)) {
-                            char *wordbase = s;
-                            char *cutbase = s;
+                            /* # followed by identifier means to stringify it */
+                            if (s[0] == '#' && iswordcharfirst(s[1])) {
+                                stringify = true;
+                                s++;
+                            }
 
-                            /* unused? */
-                            (void)wordbase;
+                            if (iswordcharfirst(*s)) {
+                                char *wordbase = s;
+                                char *cutbase = s;
 
-                            /* if #ident then adjust pointer to cut off '#' */
-                            if (stringify) cutbase--;
+                                /* unused? */
+                                (void)wordbase;
 
-                            string word = cstrgetword(s);
-                            string lookup;
+                                /* if #ident then adjust pointer to cut off '#' */
+                                if (stringify) cutbase--;
 
-                            if (word == "__VA_ARGS__" || word == "__VA_OPT__")
-                                lookup = "...";
-                            else
-                                lookup = word;
+                                string word = cstrgetword(s);
+                                string lookup;
 
-                            /* TODO: __VA_OPT__(x)
-                             *
-                             *       resolves to (x) if variadic parameter has something,
-                             *       resolves to nothing otherwise.
-                             *
-                             *       That means this code needs to copy the contents within the (..) following __VA_OPT__
-                             *
-                             *       As far as GCC documentation suggests this is a way to do macro wrappers around sprintf */
+                                if (word == "__VA_ARGS__" || word == "__VA_OPT__")
+                                    lookup = "...";
+                                else
+                                    lookup = word;
 
-                            {
-                                auto pi = find(macro.parameters.begin(),macro.parameters.end(),lookup);
-                                if (pi != macro.parameters.end()) {
-                                    /* cut the string up to the first char of the word. */
-                                    macro.add_string_subst(base,cutbase);
+                                /* TODO: __VA_OPT__(x)
+                                 *
+                                 *       resolves to (x) if variadic parameter has something,
+                                 *       resolves to nothing otherwise.
+                                 *
+                                 *       That means this code needs to copy the contents within the (..) following __VA_OPT__
+                                 *
+                                 *       As far as GCC documentation suggests this is a way to do macro wrappers around sprintf */
 
-                                    /* add a reference to this parameter */
-                                    if (stringify)
-                                        macro.add_parameter_subst_stringify(size_t(pi-macro.parameters.begin()));
-                                    else
-                                        macro.add_parameter_subst(size_t(pi-macro.parameters.begin()));
+                                {
+                                    auto pi = find(macro.parameters.begin(),macro.parameters.end(),lookup);
+                                    if (pi != macro.parameters.end()) {
+                                        /* cut the string up to the first char of the word. */
+                                        macro.add_string_subst(base,cutbase);
 
-                                    /* then resume string scanning after the word */
-                                    base = s;
+                                        /* add a reference to this parameter */
+                                        if (stringify)
+                                            macro.add_parameter_subst_stringify(size_t(pi-macro.parameters.begin()));
+                                        else
+                                            macro.add_parameter_subst(size_t(pi-macro.parameters.begin()));
 
-                                    /* OK, but does '##' follow? If so, we're being asked to paste tokens together.
-                                     * we can accomodate that by eating the "##" and then looping back around to process again. */
-                                    /* NTS: It is expected that if we're at the end of the string for some reason, s[0] == 0 and
-                                     *      execution will skip s[1] == '#', etc. and avoid buffer overrun. */
-                                    if (s[0] == '#' && s[1] == '#' && iswordcharfirst(s[2])) {
-                                        s += 2;
-                                        base = s; /* do not include '##' in the string */
-                                        continue;
+                                        /* then resume string scanning after the word */
+                                        base = s;
+
+                                        /* OK, but does '##' follow? If so, we're being asked to paste tokens together.
+                                         * we can accomodate that by eating the "##" and then looping back around to process again. */
+                                        /* NTS: It is expected that if we're at the end of the string for some reason, s[0] == 0 and
+                                         *      execution will skip s[1] == '#', etc. and avoid buffer overrun. */
+                                        if (s[0] == '#' && s[1] == '#' && iswordcharfirst(s[2])) {
+                                            s += 2;
+                                            base = s; /* do not include '##' in the string */
+                                            continue;
+                                        }
                                     }
                                 }
                             }
+                            else {
+                                s++;
+                            }
                         }
-                        else {
-                            s++;
+                        macro.add_string_subst(base,s);
+
+                        if (to_be_continued) {
+                            line = in_lstk.top().readline();
+                            if (line == nullptr) {
+                                fprintf(stderr,"ERROR: Multiline macro cut off at EOF\n");
+                                return 1;
+                            }
+                            s = line;
                         }
-                    }
-                    macro.add_string_subst(base,s);
+                    } while (to_be_continued);
 
                     /* TODO: Compare if different and then emit warning?
                      *       Should this be an error? */

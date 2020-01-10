@@ -17,4 +17,7 @@ Aaaaa
 #define HELLO13 WORLD
 #undef  HELLO13
 #define HELLO13 WORLD HELLO
+#define HELLO14 MULTIPLE \
+    LINE SUPPORT \
+    HERE
 Aaaaaaa
