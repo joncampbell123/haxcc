@@ -22,6 +22,8 @@ Aaaaa
     HERE
 #define HELLO15(xx,yy,...) xx,yy __VA_OPT__(,xx)
 #define HELLO16(xx,yy,zzzz,...) (zzzz,yy,xx,__VA_ARGS__)
+#define STRINGY(a) #a
+#define CONCAT3(a,b,c) a##b##c
 #ifdef NOT
 Should not see, no such NOT
 #endif
@@ -94,4 +96,6 @@ HELLO16(a,b,c)
 HELLO16(a,b,c,d)
 HELLO16(a,b,c,d,e,f,g,h)
 Yeah!
+STRINGY(hello)
+CONCAT3(hello,world,123)
 
