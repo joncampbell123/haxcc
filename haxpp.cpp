@@ -520,7 +520,6 @@ int main(int argc,char **argv) {
         fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
         return 1;
     }
-    send_line(out_ls,in_lstk.top().getsourcename(),1);
 
     if (out_file == "-")
         out_ls.setsink(stdout);
@@ -532,6 +531,8 @@ int main(int argc,char **argv) {
         return 1;
     }
 
+    bool emit_line = true;
+
     while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
         if (line == nullptr) {
@@ -540,7 +541,7 @@ int main(int argc,char **argv) {
                 if (in_lstk.empty())
                     break;
 
-                send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
+                emit_line = true;
                 continue;
             }
             else {
@@ -548,6 +549,9 @@ int main(int argc,char **argv) {
                 return 1;
             }
         }
+
+        string linesource = in_lstk.top().getsourcename();
+        linecount_t lineno = in_lstk.top().currentline();
 
         /* look for preprocessor directives this code handles by itself */
         {
@@ -575,7 +579,7 @@ int main(int argc,char **argv) {
                             fprintf(stderr,"WARNING: Macro %s not defined at #undef\n",macroname.c_str());
                     }
 
-                    send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
+                    emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
@@ -613,7 +617,7 @@ int main(int argc,char **argv) {
                     if (!add_macro(macroname,macro))
                         return 1;
 
-                    send_line(out_ls,in_lstk.top().getsourcename(),in_lstk.top().currentline()+linecount_t(1));
+                    emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
@@ -650,10 +654,15 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    send_line(out_ls,in_lstk.top().getsourcename(),1);
+                    emit_line = true;
                     continue; /* do not send to output */
                 }
             }
+        }
+
+        if (emit_line) {
+            send_line(out_ls,linesource,lineno);
+            emit_line = false;
         }
 
         if (!out_ls.write(line)) {
