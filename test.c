@@ -44,6 +44,9 @@ Still should not see, no such NOT
 Should see, hello0 defined 1
 #ifdef NOT
 Should not see, no such NOT, though hello0 defined
+#ifdef HELLO13
+Should not see, hello13 defined but no such NOT
+#endif
 #endif
 Should see, hello0 defined 2
 #endif
