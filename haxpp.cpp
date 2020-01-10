@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <vector>
+#include <stack>
 #include <map>
 
 using namespace std;
@@ -493,6 +494,11 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     ls.write(msg.c_str());
 }
 
+bool eval_ifdef(const string &name) {
+    auto i = haxpp_macros.find(name);
+    return (i != haxpp_macros.end());
+}
+
 string lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
@@ -532,6 +538,8 @@ int main(int argc,char **argv) {
     }
 
     bool emit_line = true;
+    bool if_cond = true; /* set to false on #if... conditional that evaluates to false */
+    stack<bool> if_cond_stack;
 
     while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
@@ -562,7 +570,53 @@ int main(int argc,char **argv) {
 
                 const string what = cstrgetword(s); cstrskipwhitespace(s);
 
-                if (what == "undef") {
+                if (what == "endif") {
+                    if (if_cond_stack.empty()) {
+                        fprintf(stderr,"#endif with no #if... condition\n");
+                        return 1;
+                    }
+
+                    if_cond = if_cond_stack.top();
+                    if_cond_stack.pop();
+
+                    emit_line = true;
+                    continue; /* do not send to output */
+                }
+
+                if (!if_cond)
+                    continue;
+
+                if (what == "ifdef") {
+                    string macroname;
+
+                    macroname = cstrgetword(s);
+                    if (macroname.empty()) {
+                        fprintf(stderr,"#ifdef without macro name\n");
+                        return 1;
+                    }
+
+                    if_cond_stack.push(if_cond);
+                    if_cond = eval_ifdef(macroname);
+
+                    emit_line = true;
+                    continue; /* do not send to output */
+                }
+                else if (what == "ifndef") {
+                    string macroname;
+
+                    macroname = cstrgetword(s);
+                    if (macroname.empty()) {
+                        fprintf(stderr,"#ifdef without macro name\n");
+                        return 1;
+                    }
+
+                    if_cond_stack.push(if_cond);
+                    if_cond = !eval_ifdef(macroname);
+
+                    emit_line = true;
+                    continue; /* do not send to output */
+                }
+                else if (what == "undef") {
                     string macroname;
 
                     macroname = cstrgetword(s);
@@ -657,6 +711,10 @@ int main(int argc,char **argv) {
                     emit_line = true;
                     continue; /* do not send to output */
                 }
+            }
+            else {
+                if (!if_cond)
+                    continue;
             }
         }
 

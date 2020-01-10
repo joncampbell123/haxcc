@@ -21,4 +21,17 @@ Aaaaa
     LINE SUPPORT \
     HERE
 #define HELLO15(xx,yy,...) xx,yy __VA_OPT__(,xx)
+#ifdef NOT
+Should not see, no such NOT
+#endif
+#ifdef HELLO0
+Hello0 defined, should see
+#endif
+#ifndef NOT
+Should see, no such NOT
+#endif
+#ifndef HELLO0
+Hello0 defined, should not see
+#endif
+
 Aaaaaaa
