@@ -69,11 +69,11 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
     while (*s != 0) {
         bool stringify = false;
 
-        if (s[0] == '\\' && (s[1] == '\n' || s[1] == 0)) {
+        if (s[0] == '\\' && (s[1] == '\n' || s[1] == '\r' || s[1] == 0)) {
             to_be_continued = true;
             break;
         }
-        if (*s == '\n')
+        if (*s == '\n' || *s == '\r')
             break;
 
         /* # followed by identifier means to stringify it */
