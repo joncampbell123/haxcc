@@ -271,12 +271,10 @@ int main(int argc,char **argv) {
 
                     {
                         auto mi = haxpp_macros.find(macroname);
-                        if (mi != haxpp_macros.end()) {
+                        if (mi != haxpp_macros.end())
                             haxpp_macros.erase(mi);
-                        }
-                        else {
+                        else
                             fprintf(stderr,"WARNING: Macro %s not defined at #undef\n",macroname.c_str());
-                        }
                     }
 
                     continue; /* do not send to output */
