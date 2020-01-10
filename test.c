@@ -62,12 +62,17 @@ Should see, no such NOT #else condition
 #endif
 #ifdef NOT
 Should not see, no such NOT
-#ifdef HELLO0
+# ifdef HELLO0
 Should not see, no such NOT but hello0 defined
-#else
+# else
 Should not see, no such NOT and not defined hello0
-#endif
+# endif
 #else
 Should see, no such NOT
+# ifdef FOO
+Should not see, no such NOT and no such FOO
+# else
+Should see, no such NOT and no such FOO
+# endif
 #endif
 Aaaaaaa
