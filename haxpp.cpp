@@ -35,7 +35,9 @@ public:
     struct macro_subst {
         enum class type_t {
             STRING,
-            PARAMETER
+            PARAMETER,
+            VA_ARGS,            /* __VA_ARGS__ */
+            VA_OPT              /* __VA_OPT(x)__ */
         };
         type_t                  type = type_t::STRING;
         string                  stringval;
