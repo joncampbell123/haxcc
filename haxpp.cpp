@@ -21,6 +21,7 @@
 
 using namespace std;
 
+static bool                     dump_macros = false;
 static string                   in_file = "-";
 static string                   out_file = "-";
 
@@ -304,6 +305,13 @@ void haxpp_macro::dump(FILE *fp) const {
 
 map<string,haxpp_macro>         haxpp_macros;
 
+void dump_all_macros() {
+    for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
+        fprintf(stderr,"Macro dump for '%s':\n",mi->first.c_str());
+        mi->second.dump();
+    }
+}
+
 bool add_macro(const string &macroname,const haxpp_macro &macro) {
     /* TODO: Compare if different and then emit warning?
      *       Should this be an error? */
@@ -377,6 +385,9 @@ static int parse_argv(int argc,char **argv) {
                 if (a == NULL) return 1;
                 if (*a == 0) return 1;
                 include_search.push_back(a);
+            }
+            else if (!strcmp(a,"dumpmacros")) {
+                dump_macros = true;
             }
             else if (*a == 'I') { /* GCC style -I<path> */
                 a++;
@@ -596,6 +607,9 @@ int main(int argc,char **argv) {
         fprintf(stderr,"An error occurred while parsing %s\n",out_ls.getsinkname().c_str());
         return 1;
     }
+
+    if (dump_macros)
+        dump_all_macros();
 
     out_ls.close();
     in_lstk.clear();
