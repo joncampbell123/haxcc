@@ -3,7 +3,7 @@ BBBBB
 Aaaaa
 #define HELLO0
 #define HELLO1() HELLO!WORLD!
-#define HELLO2(x) (x)
+#define HELLO2(x) 123 x 456
 #define HELLO3(xx,yy) (xx) (yy)
 #define HELLO4(x,y,z) (x) (y) (z)
 #define HELLO5(xx,yy,zzzz,...) (xx) (yy) (zzzz)
@@ -21,6 +21,7 @@ Aaaaa
     LINE SUPPORT \
     HERE
 #define HELLO15(xx,yy,...) xx,yy __VA_OPT__(,xx)
+#define HELLO16(xx,yy,zzzz,...) (zzzz,yy,xx,__VA_ARGS__)
 #ifdef NOT
 Should not see, no such NOT
 #endif
@@ -83,5 +84,14 @@ I said "HELLO13" 123 for the HELLO13 win and then HELLO14
 MACRO1
 MACRO2
 Hello1 HELLO1 Hello1() HELLO1()
+HELLO2
+HELLO2(abc)
+HELLO7(a,b,c)
+HELLO7(a,(b),c)
+HELLO7(a,(b),((((c)))))
+HELLO7(a,b,c,d)
+HELLO16(a,b,c)
+HELLO16(a,b,c,d)
+HELLO16(a,b,c,d,e,f,g,h)
 Yeah!
 

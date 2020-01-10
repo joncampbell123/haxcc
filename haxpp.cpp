@@ -501,28 +501,35 @@ bool eval_ifdef(const string &name) {
     return (i != haxpp_macros.end());
 }
 
-string expand_macro_string(haxpp_macro &macro,bool &multiline/*TODO: ,params*/) {
+string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
     string r;
 
     for (auto i=macro.substitution.begin();i!=macro.substitution.end();i++) {
         const auto &sub = *i;
+        size_t pi;
 
         switch (sub.type) {
             case haxpp_macro::macro_subst::type_t::STRING:
                 r += sub.stringval;
                 break;
             case haxpp_macro::macro_subst::type_t::PARAMETER:
-                // TODO
+            case haxpp_macro::macro_subst::type_t::VA_ARGS:
+                pi = sub.parameter;
+                if (pi >= ivparam.size())
+                    throw runtime_error("param out of range");
+                r += ivparam[pi];
                 break;
             case haxpp_macro::macro_subst::type_t::STRINGIFY_PARAMETER:
-                // TODO
+                pi = sub.parameter;
+                if (pi >= ivparam.size())
+                    throw runtime_error("param out of range");
+                r += "\"";
+                r += ivparam[pi];
+                r += "\"";
                 break;
             case haxpp_macro::macro_subst::type_t::NEWLINE:
                 multiline = true;
                 r += "\n";
-                break;
-            case haxpp_macro::macro_subst::type_t::VA_ARGS:
-                // TODO
                 break;
             case haxpp_macro::macro_subst::type_t::VA_OPT:
                 // TODO
@@ -555,6 +562,116 @@ void macro_replace(char *fence,char *base,char *to,const string &after,const str
         throw runtime_error("macro_replace() buffer overrun detected");
 }
 
+/* *s == '(' scan until ')' and return with s just past it */
+void macro_param_scan_parenpair(char* &s) {
+    int paren = 0;
+
+    while (*s != 0) {
+        if (*s == '(')
+            paren++;
+        else if (*s == ')') {
+            if (--paren <= 0) {
+                s++;
+                break;
+            }
+        }
+
+        s++;
+    }
+
+    if (paren != 0)
+        throw runtime_error("mismatched parens in macro expansion");
+}
+
+void macro_param_scan_va_args(string &dst,char* &s) {
+    char *base = s;
+
+    while (*s != 0) {
+        if (*s == ')')
+            break;
+        else if (*s == '(')
+            macro_param_scan_parenpair(s);
+        else
+            s++;
+    }
+
+    dst = string(base,(size_t)(s-base));
+}
+
+void macro_param_scan(string &dst,char* &s) {
+     char *base = s;
+
+     while (*s != 0) {
+         if (*s == ')' || *s == ',')
+             break;
+         else if (*s == '(')
+             macro_param_scan_parenpair(s);
+         else
+             s++;
+    }
+
+    dst = string(base,(size_t)(s-base));
+}
+
+/* caller has already handled '(' */
+void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &macro) {
+    size_t param = 0;
+
+    ivparam.resize(macro.parameters.size());
+
+    cstrskipwhitespace(s);
+    while (*s != 0) {
+        if (*s == ')') break;
+
+        if (param >= macro.parameters.size())
+            throw overflow_error("Too many parameters in macro invocation "+to_string(param)+"/"+to_string(macro.parameters.size())+" at "+s);
+
+        if ((param+size_t(1)) == macro.parameters.size()) {
+            if (macro.parameters[param] == "...") {
+                /* ... param, the string parameter will be from here until closing parens
+                 * whether or not any commas are in the way, __VA_ARGS__ */
+                macro_param_scan_va_args(ivparam[param],s);
+                param++;
+            }
+            else {
+                /* last param, expected to end with closing parens */
+                macro_param_scan(ivparam[param],s);
+                param++;
+            }
+        }
+        else {
+            /* mid param, expected to end with comma */
+            macro_param_scan(ivparam[param],s);
+            param++;
+        }
+
+        if (*s == ',') {
+            if (param >= macro.parameters.size())
+                throw overflow_error("Too many parameters in macro invocation "+to_string(param)+"/"+to_string(macro.parameters.size())+" at "+s);
+
+            s++;
+        }
+
+        cstrskipwhitespace(s);
+    }
+
+    if (*s == ')')
+        s++;
+    else
+        throw runtime_error("macro() invocation end did not close in closing parens");
+
+    /* if one parameter short and last param is __VA_ARGS__ aka ..., then treat it as
+     * if "" had been given and accept it */
+    if ((param+size_t(1)) == macro.parameters.size()) {
+        if (macro.parameters[param] == "...") {
+            ivparam[param++] = "";
+        }
+    }
+
+    if (param != macro.parameters.size())
+        throw runtime_error("macro() invocation wrong number of parameters");
+}
+
 bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexist) {
     bool changed = false;
     char *scan = line;
@@ -565,12 +682,15 @@ bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexis
             char *wordbase = scan;
             string word = cstrgetword(scan);
 
+            vector<string> ivparam;
+
             auto i = haxpp_macros.find(word);
             if (i != haxpp_macros.end()) { /* macro() must be used as macro(), treat macro without parens as not a match */
                 if (i->second.needs_parens) {
                     cstrskipwhitespace(scan); /* GCC behavior suggests that you can invoke it as macro() or macro () */
                     if (*scan == '(') {
-                        /* TODO: Gather parameters */
+                        scan++;
+                        parse_macro_invoke_params(ivparam,scan,i->second);
                     }
                     else {
                         /* NOPE: Macro can only be invoked with () */
@@ -580,7 +700,7 @@ bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexis
             }
 
             if (i != haxpp_macros.end()) {
-                string newstring = expand_macro_string(i->second,multiline/*TODO: ,params*/);
+                string newstring = expand_macro_string(i->second,multiline,ivparam);
                 string remstr = scan;
 
                 macro_replace(line+linebufsize,line,wordbase,remstr,newstring);
