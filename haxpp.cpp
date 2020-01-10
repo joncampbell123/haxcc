@@ -291,6 +291,7 @@ int main(int argc,char **argv) {
                 }
                 else if (what == "define") {
                     bool to_be_continued = false;
+                    haxpp_macro macro;
                     string macroname;
 
                     macroname = cstrgetword(s);
@@ -309,7 +310,6 @@ int main(int argc,char **argv) {
                      *
                      *      #define MACRO (x)              ->       MACRO       (x)
                      *      #define MACRO(x)               ->       MACRO(y)    (y) */
-                    haxpp_macro macro;
 
                     if (*s == '(') {
                         s++;
