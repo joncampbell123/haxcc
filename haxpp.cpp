@@ -57,7 +57,82 @@ public:
     void                        add_parameter_subst(size_t pidx);
     void                        add_parameter_subst_stringify(size_t pidx);
     void                        add_newline_subst();
+    bool                        parse_identifier(string &macroname,char* &s);
 };
+
+bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
+    macroname = cstrgetword(s);
+    if (macroname.empty()) {
+        fprintf(stderr,"#define without macro name\n");
+        return false;
+    }
+
+    /* NTS: The scheme, at least as GCC behaves, is
+     *      that a macro can have parameters IF the
+     *      parenthesis are right up against the
+     *      macro name. If they're spaced apart,
+     *      then the macro has no parameters and the
+     *      parenthesis become part of the string
+     *      the macro expands to.
+     *
+     *      #define MACRO (x)              ->       MACRO       (x)
+     *      #define MACRO(x)               ->       MACRO(y)    (y) */
+
+    if (*s == '(') {
+        s++;
+        cstrskipwhitespace(s);
+        if (*s != ')') { /* make sure it's not just () */
+            /* yes, it has parameters */
+            while (*s != 0) {
+                string param;
+
+                cstrskipwhitespace(s);
+                if (cstrparsedotdotdot(s))
+                    param = "...";
+                else
+                    param = cstrgetword(s);
+
+                if (param.empty()) {
+                    fprintf(stderr,"macro param parsing error at '%s'\n",s);
+                    return false;
+                }
+
+                {
+                    auto it = find(parameters.begin(),parameters.end(),param);
+                    if (it != parameters.end()) {
+                        fprintf(stderr,"Macro param '%s' defined twice\n",param.c_str());
+                        return false;
+                    }
+                }
+
+                parameters.push_back(param);
+                cstrskipwhitespace(s);
+
+                if (*s == ')') {
+                    break;
+                }
+                else if (*s == ',') {
+                    if (param == "...") {
+                        /* must be last param! */
+                        fprintf(stderr,"Variadic macro param ... must come last\n");
+                        return false;
+                    }
+
+                    s++; /* more to do */
+                }
+                else {
+                    fprintf(stderr,"Junk while parsing macro params\n");
+                    return false;
+                }
+            }
+        }
+
+        if (*s == ')')
+            s++;
+    }
+
+    return true;
+}
 
 void haxpp_macro::add_newline_subst() {
         macro_subst ms;
@@ -294,74 +369,9 @@ int main(int argc,char **argv) {
                     haxpp_macro macro;
                     string macroname;
 
-                    macroname = cstrgetword(s);
-                    if (macroname.empty()) {
-                        fprintf(stderr,"#define without macro name\n");
+                    if (!macro.parse_identifier(macroname,s))
                         return 1;
-                    }
 
-                    /* NTS: The scheme, at least as GCC behaves, is
-                     *      that a macro can have parameters IF the
-                     *      parenthesis are right up against the
-                     *      macro name. If they're spaced apart,
-                     *      then the macro has no parameters and the
-                     *      parenthesis become part of the string
-                     *      the macro expands to.
-                     *
-                     *      #define MACRO (x)              ->       MACRO       (x)
-                     *      #define MACRO(x)               ->       MACRO(y)    (y) */
-
-                    if (*s == '(') {
-                        s++;
-                        cstrskipwhitespace(s);
-                        if (*s != ')') { /* make sure it's not just () */
-                            /* yes, it has parameters */
-                            while (*s != 0) {
-                                string param;
-
-                                cstrskipwhitespace(s);
-                                if (cstrparsedotdotdot(s))
-                                    param = "...";
-                                else
-                                    param = cstrgetword(s);
-
-                                if (param.empty()) {
-                                    fprintf(stderr,"macro param parsing error at '%s'\n",s);
-                                    return 1;
-                                }
-
-                                {
-                                    auto it = find(macro.parameters.begin(),macro.parameters.end(),param);
-                                    if (it != macro.parameters.end()) {
-                                        fprintf(stderr,"Macro param '%s' defined twice\n",param.c_str());
-                                        return 1;
-                                    }
-                                }
-
-                                macro.parameters.push_back(param);
-                                cstrskipwhitespace(s);
-
-                                if (*s == ')') {
-                                    break;
-                                }
-                                else if (*s == ',') {
-                                    if (param == "...") {
-                                        /* must be last param! */
-                                        fprintf(stderr,"Variadic macro param ... must come last\n");
-                                        return 1;
-                                    }
-
-                                    s++; /* more to do */
-                                }
-                                else {
-                                    fprintf(stderr,"Junk while parsing macro params\n");
-                                    return 1;
-                                }
-                            }
-                        }
-                        if (*s == ')')
-                            s++;
-                    }
                     if (*s != 0) {
                         if (!isspace(*s)) {
                             fprintf(stderr,"Macro must have a space between name and string. '%s'\n",s);
@@ -468,6 +478,11 @@ int main(int argc,char **argv) {
                         if (mi != haxpp_macros.end())
                             fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
                     }
+
+#if 0
+                    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
+                    macro.dump();
+#endif
 
                     haxpp_macros[macroname] = macro;
                     continue; /* do not send to output */
