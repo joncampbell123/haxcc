@@ -75,6 +75,9 @@ bool cstrparsedotdotdot(char* &s) {
     return false;
 }
 
+/* aka identifier.
+ * See ANSI C standard "identifer" which is a sequence of digit [0-9] or nondigit [a-zA-Z0-9_]
+ * and the first char is nondigit */
 string cstrgetword(char* &s) {
     char *base = s;
 
