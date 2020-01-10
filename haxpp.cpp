@@ -537,9 +537,22 @@ int main(int argc,char **argv) {
         return 1;
     }
 
+    struct cond_tracking_t {
+        bool        cond = true;
+        bool        allow_elif = true;
+        bool        allow_else = true;
+
+        cond_tracking_t() { }
+        cond_tracking_t(const bool v) : cond(v) { }
+
+        inline bool eval() const {
+            return cond;
+        }
+    };
+
     bool emit_line = true;
-    bool if_cond = true; /* set to false on #if... conditional that evaluates to false */
-    stack<bool> if_cond_stack;
+    cond_tracking_t if_cond;
+    stack<cond_tracking_t> if_cond_stack;
 
     while (!in_lstk.top().eof()) {
         char *line = in_lstk.top().readline();
@@ -592,9 +605,7 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-
-                    if (if_cond)
-                        if_cond = eval_ifdef(macroname);
+                    if_cond = if_cond.eval() && eval_ifdef(macroname);
 
                     emit_line = true;
                     continue; /* do not send to output */
@@ -609,15 +620,13 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-
-                    if (if_cond)
-                        if_cond = !eval_ifdef(macroname);
+                    if_cond = if_cond.eval() && !eval_ifdef(macroname);
 
                     emit_line = true;
                     continue; /* do not send to output */
                 }
 
-                if (!if_cond)
+                if (!if_cond.eval())
                     continue;
 
                 if (what == "undef") {
@@ -717,7 +726,7 @@ int main(int argc,char **argv) {
                 }
             }
             else {
-                if (!if_cond)
+                if (!if_cond.eval())
                     continue;
             }
         }
