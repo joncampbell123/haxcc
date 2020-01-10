@@ -320,7 +320,11 @@ void haxpp_macro::add_parameter_subst(size_t pidx) {
     if (pidx < parameters.size()) {
         macro_subst ms;
 
-        ms.type = macro_subst::type_t::PARAMETER;
+        if (parameters[pidx] == "...")
+            ms.type = macro_subst::type_t::VA_ARGS;
+        else
+            ms.type = macro_subst::type_t::PARAMETER;
+
         ms.parameter = pidx;
         substitution.push_back(ms);
     }
