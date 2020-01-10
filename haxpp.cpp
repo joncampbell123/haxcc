@@ -502,7 +502,18 @@ bool eval_ifdef(const string &name) {
 }
 
 string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
+    bool va_opt = false;
     string r;
+
+    if (macro.parameters.size() != 0) {
+        size_t idx = macro.parameters.size() - size_t(1);
+        if (macro.parameters[idx] == "...") {
+            if (ivparam.size() > idx) {
+                if (!ivparam[idx].empty())
+                    va_opt = true;
+            }
+        }
+    }
 
     for (auto i=macro.substitution.begin();i!=macro.substitution.end();i++) {
         const auto &sub = *i;
@@ -532,7 +543,7 @@ string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<strin
                 r += "\n";
                 break;
             case haxpp_macro::macro_subst::type_t::VA_OPT:
-                // TODO
+                if (va_opt) r += sub.stringval;
                 break;
             default:
                 break;
