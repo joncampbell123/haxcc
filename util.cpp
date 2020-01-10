@@ -104,3 +104,25 @@ string cstrgetstringenclosed(char* &s,char delim,char delimend) {
     return string();
 }
 
+void cstrskipsquote(char* &s) {
+    if (*s == '\'') {
+        s++;
+        while (*s && *s != '\'') {
+            if (*s == '\\') s++;
+            if (*s != 0) s++;
+        }
+        if (*s == '\'') s++;
+    }
+}
+
+void cstrskipstring(char* &s) {
+    if (*s == '\"') {
+        s++;
+        while (*s && *s != '\"') {
+            if (*s == '\\') s++;
+            if (*s != 0) s++;
+        }
+        if (*s == '\"') s++;
+    }
+}
+

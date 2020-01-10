@@ -11,6 +11,8 @@ bool is_out_file(const std::string &path);
 
 bool iswordchar(char c);
 bool iswordcharfirst(char c);
+void cstrskipsquote(char* &s);
+void cstrskipstring(char* &s);
 std::string cstrgetword(char* &s);
 void cstrskipwhitespace(char* &s);
 bool cstrparsedotdotdot(char* &s);

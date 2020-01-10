@@ -63,28 +63,6 @@ public:
     bool                        parse_token_string(bool &to_be_continued,char* &s);
 };
 
-void cstrskipsquote(char* &s) {
-    if (*s == '\'') {
-        s++;
-        while (*s && *s != '\'') {
-            if (*s == '\\') s++;
-            if (*s != 0) s++;
-        }
-        if (*s == '\'') s++;
-    }
-}
-
-void cstrskipstring(char* &s) {
-    if (*s == '\"') {
-        s++;
-        while (*s && *s != '\"') {
-            if (*s == '\\') s++;
-            if (*s != 0) s++;
-        }
-        if (*s == '\"') s++;
-    }
-}
-
 bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
     char *base = s;
     while (*s != 0) {
