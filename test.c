@@ -2,7 +2,7 @@ BBBBB
 #include "test.h"
 Aaaaa
 #define HELLO0
-#define HELLO1()
+#define HELLO1() HELLO!WORLD!
 #define HELLO2(x) (x)
 #define HELLO3(xx,yy) (xx) (yy)
 #define HELLO4(x,y,z) (x) (y) (z)
@@ -82,5 +82,6 @@ I said "HELLO13" 123 for the HELLO13 win and then HELLO14
 #define MACRO2 123 MACRO1 12345
 MACRO1
 MACRO2
+Hello1 HELLO1 Hello1() HELLO1()
 Yeah!
 

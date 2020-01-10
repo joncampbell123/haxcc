@@ -566,6 +566,19 @@ bool macro_expand(char *line,size_t linebufsize,bool &multiline,bool nullnonexis
             string word = cstrgetword(scan);
 
             auto i = haxpp_macros.find(word);
+            if (i != haxpp_macros.end()) { /* macro() must be used as macro(), treat macro without parens as not a match */
+                if (i->second.needs_parens) {
+                    cstrskipwhitespace(scan); /* GCC behavior suggests that you can invoke it as macro() or macro () */
+                    if (*scan == '(') {
+                        /* TODO: Gather parameters */
+                    }
+                    else {
+                        /* NOPE: Macro can only be invoked with () */
+                        i = haxpp_macros.end();
+                    }
+                }
+            }
+
             if (i != haxpp_macros.end()) {
                 string newstring = expand_macro_string(i->second,multiline/*TODO: ,params*/);
                 string remstr = scan;
