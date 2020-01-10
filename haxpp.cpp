@@ -241,8 +241,10 @@ int main(int argc,char **argv) {
                                 }
                             }
                         }
+                        if (*s == ')')
+                            s++;
                     }
-                    if (*s != 0 && *s != ')') {
+                    if (*s != 0) {
                         if (!isspace(*s)) {
                             fprintf(stderr,"Macro must have a space between name and string. '%s'\n",s);
                             return 1;
