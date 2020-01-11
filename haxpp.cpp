@@ -98,7 +98,7 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
             string lookup;
 
             if (word == "__VA_ARGS__" || word == "__VA_OPT__")
-                lookup = "...";
+                lookup = "__VA_ARGS__";
             else
                 lookup = word;
 
@@ -225,7 +225,7 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
 
                 cstrskipwhitespace(s);
                 if (cstrparsedotdotdot(s))
-                    param = "...";
+                    param = "__VA_ARGS__";
                 else
                     param = cstrgetword(s);
 
@@ -249,7 +249,7 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
                     break;
                 }
                 else if (*s == ',') {
-                    if (param == "...") {
+                    if (param == "__VA_ARGS__") {
                         /* must be last param! */
                         fprintf(stderr,"Variadic macro param ... must come last\n");
                         return false;
@@ -314,7 +314,7 @@ void haxpp_macro::add_parameter_subst(size_t pidx) {
     if (pidx < parameters.size()) {
         macro_subst ms;
 
-        if (parameters[pidx] == "...")
+        if (parameters[pidx] == "__VA_ARGS__")
             ms.type = macro_subst::type_t::VA_ARGS;
         else
             ms.type = macro_subst::type_t::PARAMETER;
@@ -520,7 +520,7 @@ string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<strin
 
     if (macro.parameters.size() != 0) {
         size_t idx = macro.parameters.size() - size_t(1);
-        if (macro.parameters[idx] == "...") {
+        if (macro.parameters[idx] == "__VA_ARGS__") {
             if (ivparam.size() > idx) {
                 if (!ivparam[idx].empty())
                     va_opt = true;
@@ -651,7 +651,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
             throw overflow_error("Too many parameters in macro invocation "+to_string(param)+"/"+to_string(macro.parameters.size())+" at "+s);
 
         if ((param+size_t(1)) == macro.parameters.size()) {
-            if (macro.parameters[param] == "..." || macro.last_param_variadic) {
+            if (macro.parameters[param] == "__VA_ARGS__" || macro.last_param_variadic) {
                 /* ... param, the string parameter will be from here until closing parens
                  * whether or not any commas are in the way, __VA_ARGS__ */
                 macro_param_scan_va_args(ivparam[param],s);
@@ -687,7 +687,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
     /* if one parameter short and last param is __VA_ARGS__ aka ..., then treat it as
      * if "" had been given and accept it */
     if ((param+size_t(1)) == macro.parameters.size()) {
-        if (macro.parameters[param] == "...") {
+        if (macro.parameters[param] == "__VA_ARGS__") {
             ivparam[param++] = "";
         }
     }
