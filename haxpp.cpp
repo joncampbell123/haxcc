@@ -224,10 +224,13 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
                 string param;
 
                 cstrskipwhitespace(s);
-                if (cstrparsedotdotdot(s))
+                if (cstrparsedotdotdot(s)) {
+                    last_param_variadic = true;
                     param = "__VA_ARGS__";
-                else
+                }
+                else {
                     param = cstrgetword(s);
+                }
 
                 if (param.empty()) {
                     fprintf(stderr,"macro param parsing error at '%s'\n",s);
