@@ -124,6 +124,9 @@ HELLO22(a,b,c)
 HELLO22(a,b,c,d)
 HELLO22(a,b,c,d,e)
 HELLO22(a,b,c,d,e,f)
+HELLO22(a,"b",("c"))
+HELLO22(a,"(((b",("c"))
+HELLO22(a,"(b",("c))"))
 #if 0
 Should not see, 0
 #endif
@@ -161,4 +164,3 @@ Should not see, NOTEXIST
 #if MACRO1
 Should see, MACRO1
 #endif
-

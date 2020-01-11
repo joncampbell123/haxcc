@@ -605,16 +605,22 @@ void macro_param_scan_parenpair(char* &s) {
     int paren = 0;
 
     while (*s != 0) {
-        if (*s == '(')
-            paren++;
-        else if (*s == ')') {
-            if (--paren <= 0) {
-                s++;
-                break;
+        if (*s == '\'')
+            cstrskipsquote(s);
+        else if (*s == '\"')
+            cstrskipstring(s);
+        else {
+            if (*s == '(')
+                paren++;
+            else if (*s == ')') {
+                if (--paren <= 0) {
+                    s++;
+                    break;
+                }
             }
-        }
 
-        s++;
+            s++;
+        }
     }
 
     if (paren != 0)
@@ -629,6 +635,10 @@ void macro_param_scan_va_args(string &dst,char* &s) {
             break;
         else if (*s == '(')
             macro_param_scan_parenpair(s);
+        else if (*s == '\'')
+            cstrskipsquote(s);
+        else if (*s == '\"')
+            cstrskipstring(s);
         else
             s++;
     }
@@ -644,6 +654,10 @@ void macro_param_scan(string &dst,char* &s) {
              break;
          else if (*s == '(')
              macro_param_scan_parenpair(s);
+         else if (*s == '\'')
+             cstrskipsquote(s);
+         else if (*s == '\"')
+             cstrskipstring(s);
          else
              s++;
     }
