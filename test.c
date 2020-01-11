@@ -29,6 +29,7 @@ Aaaaa
 #define HELLO19(...) Hello __VA_ARGS__
 #define HELLO20(a...) Hello a there
 #define HELLO21(a,b,c...) Hello c there b a
+#define HELLO22(x,y,z,...) (z,y,x##__VA_OPT__(,)##__VA_ARGS__)
 #ifdef NOT
 Should not see, no such NOT
 #endif
@@ -119,3 +120,8 @@ HELLO20(a,b,c,d)
 HELLO21(a,b,c)
 HELLO21(a,b,c,d)
 HELLO21(a,b,c,d,e,f,g)
+HELLO22(a,b,c)
+HELLO22(a,b,c,d)
+HELLO22(a,b,c,d,e)
+HELLO22(a,b,c,d,e,f)
+
