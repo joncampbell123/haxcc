@@ -142,21 +142,19 @@ char *haxpp_linesource::readline() {
         }
 
         if (!ferror(fp) && !feof(fp)) {
-            /* write a NUL to the last two bytes of the buffer.
-             * if those bytes are no longer NUL it means fgets() read a line that's too long.
-             * This is faster than using strlen() on the returned string. */
-            line[s-2] = line[s-1] = 0;
-
-            /* fgets() will read up to s-1 bytes, and store a NUL where it stops (which is why we test line[s-2] instead).
+            /* fgets() will read up to s-1 bytes, and store a NUL where it stops.
              * the returned string will contain the entire line including the '\n' newline. */
             if (fgets(line,s,fp) == nullptr)
                 return nullptr;
 
-            /* check for line too long */
-            if (line[s-2] != 0) {
+            /* eat the newline, which requires scanning to the end of the string.
+             * while we're there, throw an error if the line is too long */
+            size_t l = strlen(line);
+            if ((l+size_t(1)) >= s) {
                 errno = E2BIG;
                 return nullptr;
             }
+            while (l > 0 && (line[l-1] == '\n' || line[l-1] == '\r')) line[--l] = 0;
 
             lineno++;
             return line;

@@ -22,5 +22,6 @@ public:
     bool error() const;
     bool open();
     bool write(const char * const s);
+    bool writeline(const char * const s);
 };
 

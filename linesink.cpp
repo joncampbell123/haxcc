@@ -94,3 +94,16 @@ bool haxpp_linesink::write(const char * const s) {
     return false;
 }
 
+bool haxpp_linesink::writeline(const char * const s) {
+    if (is_open()) {
+        if (fputs(s,fp) <= 0)
+            return false;
+        if (fputs("\n",fp) <= 0)
+            return false;
+
+        return true;
+    }
+
+    return false;
+}
+

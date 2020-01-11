@@ -71,11 +71,11 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
     while (*s != 0) {
         bool stringify = false;
 
-        if (s[0] == '\\' && (s[1] == '\n' || s[1] == '\r' || s[1] == 0)) {
+        if (s[0] == '\\' && s[1] == 0) {
             to_be_continued = true;
             break;
         }
-        if (*s == '\n' || *s == '\r')
+        if (*s == 0)
             break;
 
         /* # followed by identifier means to stringify it */
@@ -1080,7 +1080,7 @@ int main(int argc,char **argv) {
             emit_line = false;
         }
 
-        if (!out_ls.write(line)) {
+        if (!out_ls.writeline(line)) {
             fprintf(stderr,"Error writing output\n");
             return 1;
         }
