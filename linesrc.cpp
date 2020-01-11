@@ -142,19 +142,27 @@ char *haxpp_linesource::readline() {
         }
 
         if (!ferror(fp) && !feof(fp)) {
-            /* fgets() will read up to s-1 bytes, and store a NUL where it stops.
-             * the returned string will contain the entire line including the '\n' newline. */
-            if (fgets(line,s,fp) == nullptr)
-                return nullptr;
+            size_t l = 0;
+            int c;
 
-            /* eat the newline, which requires scanning to the end of the string.
-             * while we're there, throw an error if the line is too long */
-            size_t l = strlen(line);
-            if ((l+size_t(1)) >= s) {
-                errno = E2BIG;
-                return nullptr;
-            }
-            while (l > 0 && (line[l-1] == '\n' || line[l-1] == '\r')) line[--l] = 0;
+            do {
+                if (l >= (s - size_t(1))) {
+                    /* line is too long! */
+                    errno = E2BIG;
+                    return nullptr;
+                }
+
+                c = fgetc(fp);
+                if (c == EOF)
+                    break;
+                else if (c == '\r')
+                    continue; /* ignore (MS-DOS CR LF line endings) */
+                else if (c == '\n')
+                    break; /* stop, do not store */
+
+                line[l++] = (char)c;
+            } while (1);
+            line[l] = 0;
 
             lineno++;
             return line;

@@ -837,7 +837,7 @@ int main(int argc,char **argv) {
     cond_tracking_t if_cond;
     stack<cond_tracking_t> if_cond_stack;
 
-    while (!in_lstk.top().eof()) {
+    while (!in_lstk.empty()) {
         char *line = in_lstk.top().readline();
         if (line == nullptr) {
             if (!in_lstk.top().error() && in_lstk.top().eof()) {
