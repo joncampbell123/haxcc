@@ -87,8 +87,10 @@ I said HELLO13 for the win
 I said "HELLO13" 123 for the HELLO13 win and then HELLO14
 #define MACRO1 1234
 #define MACRO2 123 MACRO1 12345
+#define MACRO3 abc MACRO1 def MACRO2 ghi
 MACRO1
 MACRO2
+MACRO3
 Hello1 HELLO1 Hello1() HELLO1()
 HELLO2
 HELLO2(abc)
