@@ -256,6 +256,29 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
 
                     s++; /* more to do */
                 }
+                else if (cstrparsedotdotdot(s)) {
+                    /* According to GCC you're allowed to say #define macro(a...) which is the same as #define macro(a,...) */
+                    param = "...";
+
+                    {
+                        auto it = find(parameters.begin(),parameters.end(),param);
+                        if (it != parameters.end()) {
+                            fprintf(stderr,"Macro param '%s' defined twice\n",param.c_str());
+                            return false;
+                        }
+                    }
+
+                    parameters.push_back(param);
+                    cstrskipwhitespace(s);
+
+                    if (*s == ')') {
+                        break;
+                    }
+                    else {
+                        fprintf(stderr,"Junk while parsing macro params. Expected close parens after \"...\"\n");
+                        return false;
+                    }
+                }
                 else {
                     fprintf(stderr,"Junk while parsing macro params\n");
                     return false;
