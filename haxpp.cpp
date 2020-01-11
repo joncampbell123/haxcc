@@ -798,11 +798,12 @@ int main(int argc,char **argv) {
 
     struct cond_tracking_t {
         bool        cond = true;
+        bool        done = false;
         bool        allow_elif = false;
         bool        allow_else = false;
 
         cond_tracking_t() { }
-        cond_tracking_t(const bool v) : cond(v) { }
+        cond_tracking_t(const bool v) : cond(v), done(v) { }
 
         inline bool eval() const {
             return cond;
@@ -900,9 +901,10 @@ int main(int argc,char **argv) {
                     if (!if_cond_stack.empty())
                         parent_cond = if_cond_stack.top().eval();
 
-                    if_cond.cond = parent_cond && !if_cond.cond;
+                    if_cond.cond = parent_cond && !if_cond.done;
                     if_cond.allow_elif = false;
                     if_cond.allow_else = false;
+                    if_cond.done = true;
                     continue; /* do not send to output */
                 }
 
