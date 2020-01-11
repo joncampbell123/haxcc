@@ -888,7 +888,15 @@ int main(int argc,char **argv) {
                     emit_line = true;
                     continue; /* do not send to output */
                 }
-                else if (what == "else") {
+
+                bool parent_cond = true;
+                if (!if_cond_stack.empty())
+                    parent_cond = if_cond_stack.top().eval();
+
+                if (!parent_cond)
+                    continue;
+
+                if (what == "else") {
                     if (!if_cond.allow_else) {
                         fprintf(stderr,"#else is invalid here\n");
                         return 1;
@@ -897,11 +905,7 @@ int main(int argc,char **argv) {
                     /* #else was used, no longer allowed at this level.
                      * invert conditional and continue. #else also
                      * disables #elif. */
-                    bool parent_cond = true;
-                    if (!if_cond_stack.empty())
-                        parent_cond = if_cond_stack.top().eval();
-
-                    if_cond.cond = parent_cond && !if_cond.done;
+                    if_cond.cond = !if_cond.done;
                     if_cond.allow_elif = false;
                     if_cond.allow_else = false;
                     if_cond.done = true;
