@@ -59,7 +59,7 @@ public:
     void                        dump(FILE *fp=NULL) const;
     void                        add_string_subst(char* &base,char* const s);
     void                        add_parameter_subst(size_t pidx);
-    void                        add_parameter_subst_va_opt(size_t pidx,const string &va_opt_sub);
+    void                        add_parameter_subst_va_opt(const string &va_opt_sub);
     void                        add_parameter_subst_stringify(size_t pidx);
     void                        add_newline_subst();
     bool                        parse_identifier(string &macroname,char* &s);
@@ -148,7 +148,7 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
                     add_string_subst(base,wordbase);
 
                     /* add a reference to this parameter */
-                    add_parameter_subst_va_opt(size_t(pi-parameters.begin()),va_opt_sub);
+                    add_parameter_subst_va_opt(va_opt_sub);
 
                     /* then resume string scanning after the word */
                     base = s;
@@ -297,14 +297,12 @@ void haxpp_macro::add_parameter_subst_stringify(size_t pidx) {
     }
 }
 
-void haxpp_macro::add_parameter_subst_va_opt(size_t pidx,const string &va_opt_sub) {
-    if (pidx < parameters.size()) {
-        macro_subst ms;
+void haxpp_macro::add_parameter_subst_va_opt(const string &va_opt_sub) {
+    macro_subst ms;
 
-        ms.type = macro_subst::type_t::VA_OPT;
-        ms.stringval = va_opt_sub;
-        substitution.push_back(ms);
-    }
+    ms.type = macro_subst::type_t::VA_OPT;
+    ms.stringval = va_opt_sub;
+    substitution.push_back(ms);
 }
 
 void haxpp_macro::add_parameter_subst(size_t pidx) {
