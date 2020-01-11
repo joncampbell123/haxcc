@@ -127,6 +127,9 @@ HELLO22(a,b,c,d,e,f)
 HELLO22(a,"b",("c"))
 HELLO22(a,"(((b",("c"))
 HELLO22(a,"(b",("c))"))
+HELLO22(a,'b','c','d')
+HELLO22(a,'(','c','d')
+HELLO22(a,'(',')',')')
 #if 0
 Should not see, 0
 #endif
