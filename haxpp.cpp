@@ -97,7 +97,7 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
             string word = cstrgetword(s);
             string lookup;
 
-            if (word == "__VA_ARGS__" || word == "__VA_OPT__")
+            if (word == "__VA_OPT__")
                 lookup = "__VA_ARGS__";
             else
                 lookup = word;
