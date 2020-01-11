@@ -155,4 +155,10 @@ Should not see, 0 #elif 0 #elif 1 #elif 1 #elif 0
 #else
 Should not see, 0 #elif 0 #elif 1 #elif 1 #elif 0 #else
 #endif
+#if NOTEXIST
+Should not see, NOTEXIST
+#endif
+#if MACRO1
+Should see, MACRO1
+#endif
 

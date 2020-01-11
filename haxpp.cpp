@@ -900,7 +900,7 @@ int main(int argc,char **argv) {
                 else if (what == "if") {
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,true/*whether to replace non-existing macros with nothing*/);
+                    macro_expand(s,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && eval_exmif(s);
@@ -943,7 +943,7 @@ int main(int argc,char **argv) {
 
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,true/*whether to replace non-existing macros with nothing*/);
+                    macro_expand(s,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
 
                     if_cond.cond = !if_cond.done && eval_exmif(s);
                     if (if_cond.cond) if_cond.done = true;
