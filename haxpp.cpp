@@ -654,7 +654,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
             throw overflow_error("Too many parameters in macro invocation "+to_string(param)+"/"+to_string(macro.parameters.size())+" at "+s);
 
         if ((param+size_t(1)) == macro.parameters.size()) {
-            if (macro.parameters[param] == "__VA_ARGS__" || macro.last_param_variadic) {
+            if (macro.last_param_variadic) {
                 /* ... param, the string parameter will be from here until closing parens
                  * whether or not any commas are in the way, __VA_ARGS__ */
                 macro_param_scan_va_args(ivparam[param],s);
@@ -690,7 +690,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
     /* if one parameter short and last param is __VA_ARGS__ aka ..., then treat it as
      * if "" had been given and accept it */
     if ((param+size_t(1)) == macro.parameters.size()) {
-        if (macro.parameters[param] == "__VA_ARGS__") {
+        if (macro.last_param_variadic) {
             ivparam[param++] = "";
         }
     }
