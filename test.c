@@ -124,4 +124,35 @@ HELLO22(a,b,c)
 HELLO22(a,b,c,d)
 HELLO22(a,b,c,d,e)
 HELLO22(a,b,c,d,e,f)
+#if 0
+Should not see, 0
+#endif
+#if 1
+Should see, 1
+#endif
+#if 0
+Should not see, 0
+#else
+Should see, 0 #else case
+#endif
+#if 0
+Should not see ,0
+#elif 1
+Should see, 0 #elif 1
+#else
+Should not see, 0 #elif 1 #else
+#endif
+#if 0
+Should not see ,0
+#elif 0
+Should see, 0 #elif 0
+#elif 1
+Should see, 0 #elif 0 #elif 1
+#elif 1
+Should not see, 0 #elif 0 #elif 1 #elif 1
+#elif 0
+Should not see, 0 #elif 0 #elif 1 #elif 1 #elif 0
+#else
+Should not see, 0 #elif 0 #elif 1 #elif 1 #elif 0 #else
+#endif
 

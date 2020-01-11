@@ -519,6 +519,15 @@ bool eval_ifdef(const string &name) {
     return (i != haxpp_macros.end());
 }
 
+bool eval_exmif(const char *s) {
+    // TODO: More complete evaluation
+    if (isdigit(*s)) {
+        return atoi(s) > 0;
+    }
+
+    return false;
+}
+
 string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
     bool va_opt = false;
     string r;
@@ -888,6 +897,19 @@ int main(int argc,char **argv) {
                     emit_line = true;
                     continue; /* do not send to output */
                 }
+                else if (what == "if") {
+                    /* expand macros in the expression */
+                    bool expand_multiline = false;
+                    macro_expand(s,line+linebufsize,expand_multiline,true/*whether to replace non-existing macros with nothing*/);
+
+                    if_cond_stack.push(if_cond);
+                    if_cond = if_cond.eval() && eval_exmif(s);
+                    if_cond.allow_else = true; /* #if enables #else */
+                    if_cond.allow_elif = true; /* #if enables #elif */
+
+                    emit_line = true;
+                    continue; /* do not send to output */
+                }
 
                 bool parent_cond = true;
                 if (!if_cond_stack.empty())
@@ -909,6 +931,24 @@ int main(int argc,char **argv) {
                     if_cond.allow_elif = false;
                     if_cond.allow_else = false;
                     if_cond.done = true;
+
+                    emit_line = true;
+                    continue; /* do not send to output */
+                }
+                else if (what == "elif") {
+                    if (!if_cond.allow_elif) {
+                        fprintf(stderr,"#elif is invalid here\n");
+                        return 1;
+                    }
+
+                    /* expand macros in the expression */
+                    bool expand_multiline = false;
+                    macro_expand(s,line+linebufsize,expand_multiline,true/*whether to replace non-existing macros with nothing*/);
+
+                    if_cond.cond = !if_cond.done && eval_exmif(s);
+                    if (if_cond.cond) if_cond.done = true;
+
+                    emit_line = true;
                     continue; /* do not send to output */
                 }
 
