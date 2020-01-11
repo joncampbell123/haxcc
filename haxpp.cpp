@@ -798,6 +798,7 @@ int main(int argc,char **argv) {
 
     struct cond_tracking_t {
         bool        cond = true;
+        bool        allow_elif = false;
         bool        allow_else = false;
 
         cond_tracking_t() { }
@@ -865,7 +866,7 @@ int main(int argc,char **argv) {
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && eval_ifdef(macroname);
-                    if_cond.allow_else = true; /* #if enables #else */
+                    if_cond.allow_else = true; /* #ifdef enables #else */
 
                     emit_line = true;
                     continue; /* do not send to output */
@@ -881,7 +882,7 @@ int main(int argc,char **argv) {
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && !eval_ifdef(macroname);
-                    if_cond.allow_else = true; /* #if enables #else */
+                    if_cond.allow_else = true; /* #ifndef enables #else */
 
                     emit_line = true;
                     continue; /* do not send to output */
@@ -893,12 +894,14 @@ int main(int argc,char **argv) {
                     }
 
                     /* #else was used, no longer allowed at this level.
-                     * invert conditional and continue. */
+                     * invert conditional and continue. #else also
+                     * disables #elif. */
                     bool parent_cond = true;
                     if (!if_cond_stack.empty())
                         parent_cond = if_cond_stack.top().eval();
 
                     if_cond.cond = parent_cond && !if_cond.cond;
+                    if_cond.allow_elif = false;
                     if_cond.allow_else = false;
                     continue; /* do not send to output */
                 }
