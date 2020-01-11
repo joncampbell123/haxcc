@@ -95,12 +95,6 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
             if (stringify) cutbase--;
 
             string word = cstrgetword(s);
-            string lookup;
-
-            if (word == "__VA_OPT__")
-                lookup = "__VA_ARGS__";
-            else
-                lookup = word;
 
             /* TODO: __VA_OPT__(x)
              *
@@ -149,7 +143,7 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
                     }
                 }
 
-                auto pi = find(parameters.begin(),parameters.end(),lookup);
+                auto pi = find(parameters.begin(),parameters.end(),"__VA_ARGS__");
                 if (pi != parameters.end()) {
                     add_string_subst(base,wordbase);
 
@@ -161,7 +155,7 @@ bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
                 }
             }
             else {
-                auto pi = find(parameters.begin(),parameters.end(),lookup);
+                auto pi = find(parameters.begin(),parameters.end(),word);
                 if (pi != parameters.end()) {
                     /* cut the string up to the first char of the word. */
                     add_string_subst(base,cutbase);
