@@ -153,8 +153,12 @@ char *haxpp_linesource::readline() {
                 }
 
                 c = fgetc(fp);
-                if (c == EOF)
-                    break;
+                if (c == EOF) {
+                    if (l != 0)
+                        break;
+                    else
+                        return nullptr;
+                }
                 else if (c == '\r')
                     continue; /* ignore (MS-DOS CR LF line endings) */
                 else if (c == '\n')
