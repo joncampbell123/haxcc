@@ -54,6 +54,7 @@ public:
     vector<string>              parameters;
     vector<macro_subst>         substitution;
     bool                        needs_parens = false;
+    bool                        last_param_variadic = false;
 public:
     void                        dump(FILE *fp=NULL) const;
     void                        add_string_subst(char* &base,char* const s);
@@ -257,20 +258,9 @@ bool haxpp_macro::parse_identifier(string &macroname,char* &s) {
                     s++; /* more to do */
                 }
                 else if (cstrparsedotdotdot(s)) {
-                    /* According to GCC you're allowed to say #define macro(a...) which is the same as #define macro(a,...) */
-                    param = "...";
-
-                    {
-                        auto it = find(parameters.begin(),parameters.end(),param);
-                        if (it != parameters.end()) {
-                            fprintf(stderr,"Macro param '%s' defined twice\n",param.c_str());
-                            return false;
-                        }
-                    }
-
-                    parameters.push_back(param);
+                    /* According to GCC you're allowed to say #define macro(b,a...) b a which is the same as #define macro(b,...) b __VA_ARGS__ */
+                    last_param_variadic = true;
                     cstrskipwhitespace(s);
-
                     if (*s == ')') {
                         break;
                     }
@@ -661,7 +651,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
             throw overflow_error("Too many parameters in macro invocation "+to_string(param)+"/"+to_string(macro.parameters.size())+" at "+s);
 
         if ((param+size_t(1)) == macro.parameters.size()) {
-            if (macro.parameters[param] == "...") {
+            if (macro.parameters[param] == "..." || macro.last_param_variadic) {
                 /* ... param, the string parameter will be from here until closing parens
                  * whether or not any commas are in the way, __VA_ARGS__ */
                 macro_param_scan_va_args(ivparam[param],s);
