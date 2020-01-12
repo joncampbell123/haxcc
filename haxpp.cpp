@@ -519,10 +519,13 @@ bool eval_ifdef(const string &name) {
     return (i != haxpp_macros.end());
 }
 
-bool eval_exmif(const char *s) {
-    // TODO: More complete evaluation
-    if (isdigit(*s)) {
-        return atoi(s) > 0;
+bool eval_exmif(char* &s) {
+    cstrskipwhitespace(s);
+    if (*s != 0) {
+        // TODO: More complete evaluation
+        if (isdigit(*s)) {
+            return atoi(s) > 0;
+        }
     }
 
     return false;
