@@ -179,3 +179,18 @@ Should not see, defined("NOTEXIST")
 #if defined MACRO1
 Should see, defined("MACRO1")
 #endif
+#if defined(NOTEXIST)
+Should not see, defined("NOTEXIST")
+#elif defined(MACRO1)
+Should see, defined("MACRO1") elif
+#endif
+#if defined(NOTEXIST)
+Should not see, defined("NOTEXIST")
+#elif defined(ALSONOTEXIST)
+Should not see, defined("ALSONOTEXIST") elif
+#elif defined(MACRO1)
+Should see, defined("MACRO1") elif elif
+#else
+Should not see, else
+#endif
+
