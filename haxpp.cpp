@@ -519,13 +519,150 @@ bool eval_ifdef(const string &name) {
     return (i != haxpp_macros.end());
 }
 
+/* NTS: By C standard, floating point and string not allowed.
+ *      Only numbers and operators. */
+struct haxpp_token {
+    enum class token_t {
+        // enum ordered by order of operations, chosen according to what GCC seems to allow.
+        NUMBER,
+        OPEN_PARENS,
+        COMMA,
+        QUESTION_MARK,      /* might be ternary operator ? */
+        COLON,              /* might be ternary operator : */
+        LOGICAL_OR,
+        LOGICAL_AND,
+        BITWISE_OR,
+        BITWISE_XOR,
+        BITWISE_AND,
+        NOT_EQUALS,
+        EQUALS,
+        GREATER_THAN_OR_EQUAL,
+        GREATER_THAN,
+        LESS_THAN_OR_EQUAL,
+        LESS_THAN,
+        SHIFT_RIGHT,
+        SHIFT_LEFT,
+        MODULUS,
+        DIVIDE,
+        MULTIPLY,
+        UNARY_PLUS,
+        UNARY_MINUS,
+        UNARY_COMPLEMENT,
+        UNARY_NOT,
+        CLOSE_PARENS,
+        NOTHING,
+
+        MAX_TOKEN
+    };
+
+    haxpp_token(const token_t t) : token(t) { }
+    haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
+
+    token_t             token = token_t::NOTHING;
+    signed long long    number = 0;
+};
+
+haxpp_token eval_pptoken(char* &s) {
+    cstrskipwhitespace(s);
+
+    if (*s == 0)
+        return haxpp_token::token_t::NOTHING;
+    else if (*s == '\"')
+        throw invalid_argument("No strings allowed in preprocessor #if evaluation");
+    else if (isdigit(*s)) {
+        haxpp_token t = strtoll(s,&s,0); /* let strtoll handle 0xhhhh vs 0oooo vs decimal */
+        if (*s == '.') /* if a dot follows, it's a float and therefore invalid here */
+            throw invalid_argument("No floating point allowed in preprocessor #if evaluation");
+        return t;
+    }
+    else if (*s == '(') {
+        s++; return haxpp_token::token_t::OPEN_PARENS;
+    }
+    else if (*s == ')') {
+        s++; return haxpp_token::token_t::CLOSE_PARENS;
+    }
+    else if (*s == '!') {
+        s++; return haxpp_token::token_t::UNARY_NOT;
+    }
+    else if (*s == '~') {
+        s++; return haxpp_token::token_t::UNARY_COMPLEMENT;
+    }
+    else if (*s == '-') {
+        s++; return haxpp_token::token_t::UNARY_MINUS;
+    }
+    else if (*s == '+') {
+        s++; return haxpp_token::token_t::UNARY_PLUS;
+    }
+    else if (*s == '*') {
+        s++; return haxpp_token::token_t::MULTIPLY;
+    }
+    else if (*s == '/') {
+        s++; return haxpp_token::token_t::DIVIDE;
+    }
+    else if (*s == '%') {
+        s++; return haxpp_token::token_t::MODULUS;
+    }
+    else if (s[0] == '<' && s[1] == '<') {
+        s += 2; return haxpp_token::token_t::SHIFT_LEFT;
+    }
+    else if (s[0] == '>' && s[1] == '>') {
+        s += 2; return haxpp_token::token_t::SHIFT_RIGHT;
+    }
+    else if (s[0] == '<' && s[1] == '=') {
+        s += 2; return haxpp_token::token_t::LESS_THAN_OR_EQUAL;
+    }
+    else if (s[0] == '>' && s[1] == '=') {
+        s += 2; return haxpp_token::token_t::GREATER_THAN_OR_EQUAL;
+    }
+    else if (*s == '<') {
+        s++; return haxpp_token::token_t::LESS_THAN;
+    }
+    else if (*s == '>') {
+        s++; return haxpp_token::token_t::GREATER_THAN;
+    }
+    else if (s[0] == '=' && s[1] == '=') {
+        s += 2; return haxpp_token::token_t::EQUALS;
+    }
+    else if (s[0] == '!' && s[1] == '=') {
+        s += 2; return haxpp_token::token_t::NOT_EQUALS;
+    }
+    else if (s[0] == '&' && s[1] == '&') {
+        s += 2; return haxpp_token::token_t::LOGICAL_AND;
+    }
+    else if (s[0] == '|' && s[1] == '|') {
+        s += 2; return haxpp_token::token_t::LOGICAL_OR;
+    }
+    else if (*s == '&') {
+        s++; return haxpp_token::token_t::BITWISE_AND;
+    }
+    else if (*s == '|') {
+        s++; return haxpp_token::token_t::BITWISE_OR;
+    }
+    else if (*s == '^') {
+        s++; return haxpp_token::token_t::BITWISE_XOR;
+    }
+    else if (*s == ',') {
+        s++; return haxpp_token::token_t::COMMA;
+    }
+    else if (*s == '?') {
+        s++; return haxpp_token::token_t::QUESTION_MARK;
+    }
+    else if (*s == ':') {
+        s++; return haxpp_token::token_t::COLON;
+    }
+    // TODO: GCC allows char constants like 'a' in #if expressions
+
+    throw invalid_argument("Unexpected char in #if evaluation");
+}
+
 bool eval_exmif(char* &s) {
     cstrskipwhitespace(s);
     if (*s != 0) {
-        // TODO: More complete evaluation
-        if (isdigit(*s)) {
-            return atoi(s) > 0;
-        }
+        haxpp_token tok = eval_pptoken(s);
+        if (tok.token == haxpp_token::token_t::NUMBER)
+            return (tok.number != 0ll);
+        else
+            throw invalid_argument("Token not implemented");
     }
 
     return false;
