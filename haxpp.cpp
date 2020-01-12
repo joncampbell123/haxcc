@@ -545,8 +545,8 @@ struct haxpp_token {
         MODULUS,
         DIVIDE,
         MULTIPLY,
-        UNARY_PLUS,
-        UNARY_MINUS,
+        PLUS,
+        MINUS,
         UNARY_COMPLEMENT,
         UNARY_NOT,
         CLOSE_PARENS,
@@ -588,10 +588,10 @@ haxpp_token eval_pptoken(char* &s) {
         s++; return haxpp_token::token_t::UNARY_COMPLEMENT;
     }
     else if (*s == '-') {
-        s++; return haxpp_token::token_t::UNARY_MINUS;
+        s++; return haxpp_token::token_t::MINUS;
     }
     else if (*s == '+') {
-        s++; return haxpp_token::token_t::UNARY_PLUS;
+        s++; return haxpp_token::token_t::PLUS;
     }
     else if (*s == '*') {
         s++; return haxpp_token::token_t::MULTIPLY;
