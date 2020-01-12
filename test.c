@@ -167,3 +167,15 @@ Should not see, NOTEXIST
 #if MACRO1
 Should see, MACRO1
 #endif
+#if defined(NOTEXIST)
+Should not see, defined("NOTEXIST")
+#endif
+#if defined(MACRO1)
+Should see, defined("MACRO1")
+#endif
+#if defined NOTEXIST
+Should not see, defined("NOTEXIST")
+#endif
+#if defined MACRO1
+Should see, defined("MACRO1")
+#endif

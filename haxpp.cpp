@@ -724,7 +724,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
         throw runtime_error("macro() invocation wrong number of parameters");
 }
 
-bool macro_expand(char *line,char *linefence,bool &multiline,bool nullnonexist) {
+bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
     bool changed = false;
     char *scan = line;
 
@@ -733,6 +733,37 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool nullnonexist) 
         if (iswordcharfirst(*scan)) {
             char *wordbase = scan;
             string word = cstrgetword(scan);
+
+            if (ifexpr) { /* #if expression */
+                if (word == "defined") {
+                    string macro;
+
+                    cstrskipwhitespace(scan);
+                    if (*scan == '(') {
+                        scan++;
+                        cstrskipwhitespace(scan);
+                        macro = cstrgetword(scan);
+                        cstrskipwhitespace(scan);
+                        if (*scan != ')')
+                            throw invalid_argument("defined() evaluation requires closing parens when open parens used");
+                        /* *scan == ')' */
+                        scan++;
+                    }
+                    else {
+                        macro = cstrgetword(scan);
+                    }
+                    cstrskipwhitespace(scan);
+
+                    if (macro.empty())
+                        throw invalid_argument("defined() with no name");
+
+                    string remstr = scan;
+                    string val = (haxpp_macros.find(macro) != haxpp_macros.end()) ? "1" : "0";
+
+                    macro_replace(linefence,line,wordbase,remstr,val);
+                    continue;
+                }
+            }
 
             vector<string> ivparam;
 
@@ -759,7 +790,7 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool nullnonexist) 
                 scan = wordbase;
                 changed = true;
             }
-            else if (nullnonexist) {
+            else if (ifexpr) {
                 string remstr = scan;
 
                 macro_replace(linefence,line,wordbase,remstr,"");
@@ -914,7 +945,7 @@ int main(int argc,char **argv) {
                 else if (what == "if") {
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
+                    macro_expand(s,line+linebufsize,expand_multiline,true);
 
                     if_cond_stack.push(if_cond);
                     if_cond = if_cond.eval() && eval_exmif(s);
@@ -957,7 +988,7 @@ int main(int argc,char **argv) {
 
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
+                    macro_expand(s,line+linebufsize,expand_multiline,true);
 
                     if_cond.cond = !if_cond.done && eval_exmif(s);
                     if (if_cond.cond) if_cond.done = true;
@@ -1073,7 +1104,7 @@ int main(int argc,char **argv) {
 
         bool expand_multiline = false;
 
-        macro_expand(line,line+linebufsize,expand_multiline,false/*whether to replace non-existing macros with nothing*/);
+        macro_expand(line,line+linebufsize,expand_multiline,false);
 
         if (emit_line) {
             send_line(out_ls,linesource,lineno);
