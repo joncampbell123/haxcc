@@ -687,7 +687,11 @@ haxpp_token eval_pptoken(char* &s) {
 
 bool eval_exmif(char* &s) {
     vector<haxpp_token> tokens;
-    while (*s != 0) tokens.push_back(eval_pptoken(s));
+    cstrskipwhitespace(s);
+    while (*s != 0) {
+        tokens.push_back(eval_pptoken(s));
+        cstrskipwhitespace(s);
+    }
     if (!tokens.empty()) {
         haxpp_token &tok = tokens[0];
         if (tok.token == token_t::NUMBER)
