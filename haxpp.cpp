@@ -520,33 +520,32 @@ bool eval_ifdef(const string &name) {
 }
 
 enum class token_t {
-    // enum ordered by order of operations, chosen according to what GCC seems to allow.
-    NUMBER,
+    NUMBER=0,                   /* 0 */
     OPEN_PARENS,
     COMMA,
     QUESTION_MARK,      /* might be ternary operator ? */
     COLON,              /* might be ternary operator : */
-    LOGICAL_OR,
+    LOGICAL_OR,                 /* 5 */
     LOGICAL_AND,
     BITWISE_OR,
     BITWISE_XOR,
     BITWISE_AND,
-    NOT_EQUALS,
+    NOT_EQUALS,                 /* 10 */
     EQUALS,
     GREATER_THAN_OR_EQUAL,
     GREATER_THAN,
     LESS_THAN_OR_EQUAL,
-    LESS_THAN,
+    LESS_THAN,                  /* 15 */
     SHIFT_RIGHT,
     SHIFT_LEFT,
     MODULUS,
     DIVIDE,
-    MULTIPLY,
+    MULTIPLY,                   /* 20 */
     PLUS,
     MINUS,
     UNARY_COMPLEMENT,
     UNARY_NOT,
-    CLOSE_PARENS,
+    CLOSE_PARENS,               /* 25 */
     NOTHING,
 
     MAX_TOKEN
