@@ -793,7 +793,7 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
             else if (ifexpr) {
                 string remstr = scan;
 
-                macro_replace(linefence,line,wordbase,remstr,"");
+                macro_replace(linefence,line,wordbase,remstr,"0");
                 scan = wordbase;
                 changed = true;
             }
