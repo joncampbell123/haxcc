@@ -551,37 +551,6 @@ enum class token_t {
     MAX_TOKEN
 };
 
-/* [https://en.cppreference.com/w/c/language/operator_precedence] */
-const uint8_t token_priority[size_t(token_t::MAX_TOKEN)] = {
-    16,                         /* 0 */
-    16,
-    15,
-    13,
-    13,
-    12,                         /* 5 */
-    11,
-    10,
-    9,
-    8,
-    7,                          /* 10 */
-    7,
-    6,
-    6,
-    6,
-    6,                          /* 15 */
-    5,
-    5,
-    4,
-    4,
-    3,                          /* 20 */
-    3,
-    3,
-    2,
-    2,
-    1,                          /* 25 */
-    0
-};
-
 /* NTS: By C standard, floating point and string not allowed.
  *      Only numbers and operators. */
 struct haxpp_token {
@@ -685,6 +654,79 @@ haxpp_token eval_pptoken(char* &s) {
     throw invalid_argument("Unexpected char in #if evaluation");
 }
 
+haxpp_token eval_exmif_p12(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    if (si != stop)
+        return *(si++);
+
+    return token_t::NOTHING;
+}
+
+haxpp_token eval_exmif_p13(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* precedence 13: ternary
+     *
+     * expression
+     * expression ? expression : expression */
+    if (si != stop) {
+        haxpp_token r1 = eval_exmif_p12(si,stop);
+        if (si != stop && (*si).token == token_t::QUESTION_MARK) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("Ternary condition result is not number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Ternary, missing first expression");
+
+            haxpp_token tc = eval_exmif_p13(si,stop); /* use recursion to support nested ternary */
+            if (si == stop)
+                throw invalid_argument("Ternary, missing : for second expression");
+            si++;
+            if (si == stop)
+                throw invalid_argument("Ternary, missing second expression");
+
+            haxpp_token fc = eval_exmif_p13(si,stop); /* use recursion to support nested ternary */
+
+            if (r1.number != 0ll)
+                return tc;
+            else
+                return fc;
+        }
+
+        return r1;
+    }
+
+    return token_t::NOTHING;
+}
+
+haxpp_token eval_exmif_p15(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* precedence 15: comma operator */
+    /* expression
+     * expression , expression
+     *
+     * input 'a'  output 'a'
+     * input 'a,b' output 'b' */
+    if (si != stop) {
+        haxpp_token r1 = eval_exmif_p13(si,stop);
+        while (si != stop && (*si).token == token_t::COMMA) {
+            si++;
+            if (si != stop)
+                r1 = eval_exmif_p13(si,stop);
+            else
+                throw invalid_argument("Comma operator, missing rvalue");
+        }
+
+        return r1;
+    }
+
+    return token_t::NOTHING;
+}
+
+haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    if (si != stop)
+        return eval_exmif_p15(si,stop);
+
+    return token_t::NOTHING;
+}
+
 bool eval_exmif(char* &s) {
     vector<haxpp_token> tokens;
     cstrskipwhitespace(s);
@@ -693,11 +735,18 @@ bool eval_exmif(char* &s) {
         cstrskipwhitespace(s);
     }
     if (!tokens.empty()) {
-        haxpp_token &tok = tokens[0];
-        if (tok.token == token_t::NUMBER)
-            return (tok.number != 0ll);
+        auto toki = tokens.begin();
+        haxpp_token r = eval_exmif(toki,tokens.end());
+
+        if (toki != tokens.end())
+            throw invalid_argument("Expression not fully evaluated, " + to_string((size_t)(tokens.end() - toki)) + " left to go");
+
+        if (r.token == token_t::NUMBER)
+            return (r.number != 0ll);
+        else if (r.token == token_t::NOTHING)
+            return false;
         else
-            throw invalid_argument("Token not implemented");
+            throw invalid_argument(string("Token not implemented ") + to_string((unsigned int)(r.token)));
     }
 
     return false;

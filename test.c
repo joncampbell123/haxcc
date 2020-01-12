@@ -193,4 +193,3 @@ Should see, defined("MACRO1") elif elif
 #else
 Should not see, else
 #endif
-
