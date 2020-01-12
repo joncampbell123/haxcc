@@ -523,8 +523,8 @@ enum class token_t {
     NUMBER=0,                   /* 0 */
     OPEN_PARENS,
     COMMA,
-    QUESTION_MARK,      /* might be ternary operator ? */
-    COLON,              /* might be ternary operator : */
+    QUESTION_MARK,                      /* might be ternary operator ? */
+    COLON,                              /* might be ternary operator : */
     LOGICAL_OR,                 /* 5 */
     LOGICAL_AND,
     BITWISE_OR,
@@ -538,17 +538,48 @@ enum class token_t {
     LESS_THAN,                  /* 15 */
     SHIFT_RIGHT,
     SHIFT_LEFT,
-    MODULUS,
-    DIVIDE,
-    MULTIPLY,                   /* 20 */
     PLUS,
     MINUS,
+    MODULUS,                    /* 20 */
+    DIVIDE,
+    MULTIPLY,
     UNARY_COMPLEMENT,
     UNARY_NOT,
     CLOSE_PARENS,               /* 25 */
     NOTHING,
 
     MAX_TOKEN
+};
+
+/* [https://en.cppreference.com/w/c/language/operator_precedence] */
+const uint8_t token_priority[size_t(token_t::MAX_TOKEN)] = {
+    16,                         /* 0 */
+    16,
+    15,
+    13,
+    13,
+    12,                         /* 5 */
+    11,
+    10,
+    9,
+    8,
+    7,                          /* 10 */
+    7,
+    6,
+    6,
+    6,
+    6,                          /* 15 */
+    5,
+    5,
+    4,
+    4,
+    3,                          /* 20 */
+    3,
+    3,
+    2,
+    2,
+    1,                          /* 25 */
+    0
 };
 
 /* NTS: By C standard, floating point and string not allowed.
