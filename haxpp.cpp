@@ -654,11 +654,43 @@ haxpp_token eval_pptoken(char* &s) {
     throw invalid_argument("Unexpected char in #if evaluation");
 }
 
+haxpp_token eval_exmif_p11(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+#define evcur eval_exmif_p11
+#define evnex eval_exmif_p10
+    if (si != stop)
+        return *(si++);
+
+    return token_t::NOTHING;
+#undef evcur
+#undef evnex
+}
+
 haxpp_token eval_exmif_p12(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
 #define evcur eval_exmif_p12
 #define evnex eval_exmif_p11
-    if (si != stop)
-        return *(si++);
+    /* precedence 12: logical OR
+     *
+     * expression
+     * expression || expression */
+    if (si != stop) {
+        haxpp_token r1 = evnex(si,stop);
+        while (si != stop && (*si).token == token_t::LOGICAL_OR) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = evcur(si,stop); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = ((r2.number != 0ll) || (r1.number != 0ll)) ? 1ll : 0ll;
+        }
+
+        return r1;
+    }
 
     return token_t::NOTHING;
 #undef evcur
