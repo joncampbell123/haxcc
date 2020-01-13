@@ -63,10 +63,10 @@ public:
     void                        add_parameter_subst_stringify(size_t pidx);
     void                        add_newline_subst();
     bool                        parse_identifier(string &macroname,char* &s);
-    bool                        parse_token_string(bool &__deleteme__,char* &s);
+    bool                        parse_token_string(char* &s);
 };
 
-bool haxpp_macro::parse_token_string(bool &__deleteme__,char* &s) {
+bool haxpp_macro::parse_token_string(char* &s) {
     char *base = s;
     while (*s != 0) {
         bool stringify = false;
@@ -412,7 +412,6 @@ bool add_macro(const string &macroname,const haxpp_macro &macro) {
 }
 
 bool parse_cmdline_macrodef(char* &a) {
-    bool __deleteme__ = false;
     haxpp_macro macro;
     string macroname;
 
@@ -427,14 +426,8 @@ bool parse_cmdline_macrodef(char* &a) {
         a++;
     }
 
-    __deleteme__ = false;
-    if (!macro.parse_token_string(__deleteme__,a))
+    if (!macro.parse_token_string(a))
         return false;
-
-    if (__deleteme__) {
-        fprintf(stderr,"-D cannot define multi-line macros\n");
-        return false;
-    }
 
     if (!add_macro(macroname,macro))
         return false;
@@ -1757,7 +1750,6 @@ int main(int argc,char **argv) {
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
-                    bool __deleteme__ = false;
                     haxpp_macro macro;
                     string macroname;
 
@@ -1772,21 +1764,8 @@ int main(int argc,char **argv) {
                         cstrskipwhitespace(s);
                     }
 
-                    do {
-                        __deleteme__ = false;
-                        if (!macro.parse_token_string(__deleteme__,s))
-                            return 1;
-
-                        if (__deleteme__) {
-                            line = in_lstk.top().readline();
-                            if (line == nullptr) {
-                                fprintf(stderr,"ERROR: Multiline macro cut off at EOF\n");
-                                return 1;
-                            }
-                            s = line;
-                            macro.add_newline_subst();
-                        }
-                    } while (__deleteme__);
+                    if (!macro.parse_token_string(s))
+                        return 1;
 
                     if (!add_macro(macroname,macro))
                         return 1;
