@@ -1509,6 +1509,10 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
                 changed = true;
             }
         }
+        else if (isdigit(*scan)) {
+            /* skip over anything that starts with a digit because that is not a valid identifier */
+            while (iswordchar(*scan)) scan++;
+        }
         else if (*scan == '\'') {
             cstrskipsquote(scan);
         }
