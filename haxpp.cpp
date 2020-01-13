@@ -661,6 +661,62 @@ haxpp_token eval_pptoken(char* &s) {
 
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec=token_t::NUMBER);
 
+bool eval_exmif_unary2(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* highest enum value is UNARY_NOT */
+    if (si != stop) {
+        if ((*si).token == token_t::UNARY_NOT) {
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            r1 = eval_exmif(si,stop,token_t::UNARY_NOT); /* allow !value, !!value, etc.. */
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = (r1.number == 0ll) ? 1ll : 0ll;
+            return true;
+        }
+        else if ((*si).token == token_t::UNARY_COMPLEMENT) {
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            r1 = eval_exmif(si,stop,token_t::UNARY_COMPLEMENT); /* allow ~value, ~~value, etc. */
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = ~r1.number;
+            return true;
+        }
+        else if ((*si).token == token_t::PLUS) {
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            r1 = eval_exmif(si,stop,token_next(token_t::UNARY_NOT)); /* don't allow ++value, because that's a different operator not applicable to preprocessor */
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            /* no modification */
+            return true;
+        }
+        else if ((*si).token == token_t::MINUS) {
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            r1 = eval_exmif(si,stop,token_next(token_t::UNARY_NOT)); /* don't allow --value or even - - value, because that's a different operator not applicable to preprocessor */
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = -r1.number;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool eval_exmif_muldiv(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is MULTIPLY */
     if (si != stop) {
@@ -903,7 +959,15 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec) {
     haxpp_token r1;
 
-    if (si != stop) {
+    /* expression
+     * !expression
+     * ~expression
+     * +expression
+     * -expression */
+    if (si != stop && (*si).token >= min_prec && eval_exmif_unary2(r1,si,stop)) {
+        /* continue without reading another number, r1 contains result */
+    }
+    else if (si != stop) {
         r1 = (*si++);
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("Unexpected token " + to_string((unsigned int)r1.token));
