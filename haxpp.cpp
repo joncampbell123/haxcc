@@ -1399,7 +1399,6 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
                     else {
                         macro = cstrgetword(scan);
                     }
-                    cstrskipwhitespace(scan);
 
                     if (macro.empty())
                         throw invalid_argument("defined() with no name");
@@ -1408,6 +1407,8 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
                     string val = (haxpp_macros.find(macro) != haxpp_macros.end()) ? "1" : "0";
 
                     macro_replace(linefence,line,wordbase,remstr,val);
+                    scan = wordbase;
+                    changed = true;
                     continue;
                 }
             }

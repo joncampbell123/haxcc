@@ -213,3 +213,6 @@ for comments /* in side comments */ blah */ end it.
 Testing /* multiple line /* nested
 stuff /* level3 /* blah
 blah */ wwww */ wwww */ aaaa */ end.
+/* Test case seen in Linux headers */
+#if defined __GNUC__ && defined __GNUC_MINOR__
+#endif
