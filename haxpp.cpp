@@ -780,6 +780,14 @@ haxpp_token eval_pptoken(char* &s) {
     else if (*s == '\'') {
         return eval_exmif_char(s);
     }
+    else if (s[0] == 'u' && s[1] == '8' && s[2] == '\'') {
+        s += 2;
+        return eval_exmif_char(s); /* meh, treat the same at this time */
+    }
+    else if ((s[0] == 'u' || s[0] == 'U' || s[0] == 'L') && s[1] == '\'') {
+        s++;
+        return eval_exmif_char(s); /* meh, treat the same at this time */
+    }
 
     throw invalid_argument(string("Unexpected char in #if evaluation ") + s);
 }
