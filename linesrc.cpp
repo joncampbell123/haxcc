@@ -188,9 +188,9 @@ char *haxpp_linesource::readline() {
                         if (c == EOF)
                             throw runtime_error("C comment did not close at EOF");
 
-                        if (pc == '/' && c == '*')
+                        if (pc == '/' && c == '*') /* open */
                             c_comment++;
-                        else if (pc == '*' && c == '/')
+                        else if (pc == '*' && c == '/') /* close */
                             c_comment--;
 
                         pc = c;
