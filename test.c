@@ -249,4 +249,8 @@ Duh
 #if '\377' == 0xff
 Duh
 #endif
+#if '\u1000' == 0x1000
+Duh
+#endif
 #pragma echovalif L'u'
+#pragma echovalif L'\u1000'

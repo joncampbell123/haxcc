@@ -609,6 +609,16 @@ int eval_exmif_escchar_xx(char* &s) {
     throw invalid_argument("\\xhh invalid sequence");
 }
 
+int eval_exmif_escchar_u(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3])) {
+        const int c = (int)((hex2digit(s[0]) << 12) + (hex2digit(s[1]) << 8) + (hex2digit(s[2]) << 4) + hex2digit(s[3]));
+        s += 4;
+        return c;
+    }
+
+    throw invalid_argument("\\uhhhh invalid sequence");
+}
+
 int eval_exmif_escchar(char* &s) {
     if (*s == '\\') {
         s++;
@@ -626,6 +636,7 @@ int eval_exmif_escchar(char* &s) {
             case '\"':  s++; return '\"';
             case '?':   s++; return '?';
             case 'x':   s++; return eval_exmif_escchar_xx(s);
+            case 'u':   s++; return eval_exmif_escchar_u(s);
             /* octal \nnn */
             case '0':
             case '1':
