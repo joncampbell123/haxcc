@@ -218,3 +218,7 @@ blah */ wwww */ wwww */ aaaa */ end.
 #elif 1 + 1 == 2
 Duh
 #endif
+#if 1 == 1 && \
+    3 <= 4
+Multiline #if works
+#endif
