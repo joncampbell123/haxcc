@@ -231,6 +231,6 @@ Duh
 #if 50L > 25L
 Duh
 #endif
-#if 400ull > 200ull
+#if 200ull == 200
 Duh
 #endif
