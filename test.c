@@ -201,3 +201,10 @@ Should see this /* but not this */but this also
 /* another comment*/This/*comment blah*/
 /* comment /* nesting */ blah */See this
 More nesting/* here /* and here /* and and here */ end */ end */ here
+Here follows a multi-line comment/* this is a multiple line comment.
+This comment explains things.
+End of comment*/ and this is the end.
+Here is another one/* that has multiple lines
+and preprocessor macros in the comment like
+#endif
+that might otherwise confuse the preprocessor*/ with #endif in it.
