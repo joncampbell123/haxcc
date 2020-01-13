@@ -167,6 +167,7 @@ char *haxpp_linesource::readline() {
                     continue; /* ignore (MS-DOS CR LF line endings) */
                 else if (c == '\n') {
                     if (l != size_t(0) && line[l-1] == '\\') {
+                        lineno++;
                         line[--l] = ' '; /* erase \ char */
                         col = 0;
                         continue;
@@ -192,6 +193,8 @@ char *haxpp_linesource::readline() {
                             c_comment++;
                         else if (pc == '*' && c == '/') /* close */
                             c_comment--;
+                        else if (c == '\n')
+                            lineno++;
 
                         pc = c;
                     } while (c_comment > 0);
