@@ -1511,10 +1511,11 @@ int main(int argc,char **argv) {
         }
     };
 
-    int c_comment = 0; /* C-style comment level */
     bool emit_line = true;
+
     cond_tracking_t if_cond;
     stack<cond_tracking_t> if_cond_stack;
+    int c_comment = 0; /* C-style comment level */
 
     while (!in_lstk.empty()) {
         char *line = in_lstk.top().readline();
