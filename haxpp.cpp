@@ -665,6 +665,57 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
     }
 
     /* expression
+     * expression & expression */
+    while (si != stop && (*si).token == token_t::BITWISE_AND) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("lvalue result not a number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Expected expression");
+
+        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        if (r2.token != token_t::NUMBER)
+            throw invalid_argument("rvalue result not a number");
+
+        r1 = r1.number & r2.number;
+    }
+
+    /* expression
+     * expression ^ expression */
+    while (si != stop && (*si).token == token_t::BITWISE_XOR) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("lvalue result not a number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Expected expression");
+
+        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        if (r2.token != token_t::NUMBER)
+            throw invalid_argument("rvalue result not a number");
+
+        r1 = r1.number ^ r2.number;
+    }
+
+    /* expression
+     * expression | expression */
+    while (si != stop && (*si).token == token_t::BITWISE_OR) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("lvalue result not a number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Expected expression");
+
+        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        if (r2.token != token_t::NUMBER)
+            throw invalid_argument("rvalue result not a number");
+
+        r1 = r1.number | r2.number;
+    }
+
+    /* expression
      * expression && expression */
     while (si != stop && (*si).token == token_t::LOGICAL_AND) {
         if (r1.token != token_t::NUMBER)
