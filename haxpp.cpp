@@ -599,9 +599,11 @@ int hex2digit(char c) {
     return 0;
 }
 
-int eval_exmif_escchar_xx(char* &s) {
+signed long long eval_exmif_escchar_xx(char* &s) {
     if (isxdigit(s[0]) && isxdigit(s[1])) {
-        const int c = (int)((hex2digit(s[0]) << 4) + hex2digit(s[1]));
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 4ll) +
+             (signed long long)hex2digit(s[1]);
         s += 2;
         return c;
     }
@@ -609,9 +611,13 @@ int eval_exmif_escchar_xx(char* &s) {
     throw invalid_argument("\\xhh invalid sequence");
 }
 
-int eval_exmif_escchar_u(char* &s) {
+signed long long eval_exmif_escchar_u(char* &s) {
     if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3])) {
-        const int c = (int)((hex2digit(s[0]) << 12) + (hex2digit(s[1]) << 8) + (hex2digit(s[2]) << 4) + hex2digit(s[3]));
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 12ll) +
+            ((signed long long)hex2digit(s[1]) << 8ll) +
+            ((signed long long)hex2digit(s[2]) << 4ll) +
+             (signed long long)hex2digit(s[3]);
         s += 4;
         return c;
     }
@@ -619,7 +625,7 @@ int eval_exmif_escchar_u(char* &s) {
     throw invalid_argument("\\uhhhh invalid sequence");
 }
 
-int eval_exmif_escchar(char* &s) {
+signed long long eval_exmif_escchar(char* &s) {
     if (*s == '\\') {
         s++;
         switch (*s) {
@@ -673,7 +679,7 @@ int eval_exmif_escchar(char* &s) {
 }
 
 /* *s is == '\'' */
-int eval_exmif_char(char* &s) {
+signed long long eval_exmif_char(char* &s) {
     if (*s == '\'') {
         int c;
 
