@@ -959,12 +959,23 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec) {
     haxpp_token r1;
 
+    /* (expression) */
+    if (si != stop && (*si).token == token_t::OPEN_PARENS) {
+        si++;
+        r1 = eval_exmif(si,stop);
+        if (si == stop)
+            throw invalid_argument("Expression ends before closing parens");
+        if ((*si).token == token_t::CLOSE_PARENS)
+            si++;
+        else
+            throw invalid_argument("Expression did not end in closing parens");
+    }
     /* expression
      * !expression
      * ~expression
      * +expression
      * -expression */
-    if (si != stop && (*si).token >= min_prec && eval_exmif_unary2(r1,si,stop)) {
+    else if (si != stop && (*si).token >= min_prec && eval_exmif_unary2(r1,si,stop)) {
         /* continue without reading another number, r1 contains result */
     }
     else if (si != stop) {
