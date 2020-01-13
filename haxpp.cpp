@@ -626,7 +626,32 @@ int eval_exmif_escchar(char* &s) {
             case '\"':  s++; return '\"';
             case '?':   s++; return '?';
             case 'x':   s++; return eval_exmif_escchar_xx(s);
-            default:    break;
+            /* octal \nnn */
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7': {
+                int c = 0;
+
+                for (unsigned int i=0;i < 3;i++) {
+                    if (*s >= '0' && *s <= '7') {
+                        c <<= 3;
+                        c += *s - '0';
+                        s++;
+                    }
+                }
+
+                return c;
+            };
+            /* I don't know */
+            default:
+                fprintf(stderr,"WARNING: Unknown char escape %c\n",*s);
+                s++;
+                break;
         };
     }
 

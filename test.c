@@ -240,3 +240,12 @@ Duh
 #if '\x30' == 0x30
 Duh
 #endif
+#if '\a' == 0x07
+Duh
+#endif
+#if '\0' == 0
+Duh
+#endif
+#if '\377' == 0xff
+Duh
+#endif
