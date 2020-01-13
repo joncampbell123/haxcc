@@ -588,6 +588,45 @@ struct haxpp_token {
     signed long long    number = 0;
 };
 
+int eval_exmif_escchar(char* &s) {
+    if (*s == '\\') {
+        s++;
+        switch (*s) {
+            case 't':   s++; return '\t';
+            case 'n':   s++; return '\n';
+            case 'r':   s++; return '\r';
+            case '\\':  s++; return '\\';
+            case '\'':  s++; return '\'';
+            case '\"':  s++; return '\"';
+            default:    break;
+        };
+    }
+
+    return 0;
+}
+
+/* *s is == '\'' */
+int eval_exmif_char(char* &s) {
+    if (*s == '\'') {
+        int c;
+
+        s++;
+        if (*s == '\\')
+            c = eval_exmif_escchar(s);
+        else
+            c = *s++;
+
+        if (*s == '\'') {
+            s++;
+            return c;
+        }
+
+        throw invalid_argument(string("Unexpected char in char constant ") + s);
+    }
+
+    return 0;
+}
+
 haxpp_token eval_pptoken(char* &s) {
     cstrskipwhitespace(s);
 
@@ -676,7 +715,9 @@ haxpp_token eval_pptoken(char* &s) {
     else if (*s == ':') {
         s++; return token_t::COLON;
     }
-    // TODO: GCC allows char constants like 'a' in #if expressions
+    else if (*s == '\'') {
+        return eval_exmif_char(s);
+    }
 
     throw invalid_argument(string("Unexpected char in #if evaluation ") + s);
 }
