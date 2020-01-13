@@ -193,3 +193,6 @@ Should see, defined("MACRO1") elif elif
 #else
 Should not see, else
 #endif
+Should not see // C++ comments
+// or this comment
+But "this // should be visible"

@@ -1536,6 +1536,27 @@ int main(int argc,char **argv) {
         linecount_t lineno = in_lstk.top().currentline();
         size_t linebufsize = in_lstk.top().linesize();
 
+        /* filter out comments */
+        {
+            char *s = line;
+
+            while (*s != 0) {
+                if (s[0] == '/' && s[1] == '/') {
+                    *s = 0; /* cut here */
+                    break;
+                }
+                else if (*s == '\'') {
+                    cstrskipsquote(s);
+                }
+                else if (*s == '\"') {
+                    cstrskipstring(s);
+                }
+                else {
+                    s++;
+                }
+            }
+        }
+
         /* look for preprocessor directives this code handles by itself */
         {
             char *s = line; cstrskipwhitespace(s);
