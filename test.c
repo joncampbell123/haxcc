@@ -225,3 +225,12 @@ Multiline #if works
 #define REDEFINE 123
 #define REDEFINE 123
 #define REDEFINE 123
+#if 4u > 3u
+Duh
+#endif
+#if 50L > 25L
+Duh
+#endif
+#if 400ull > 200ull
+Duh
+#endif

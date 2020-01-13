@@ -638,6 +638,12 @@ haxpp_token eval_pptoken(char* &s) {
         haxpp_token t = strtoll(s,&s,0); /* let strtoll handle 0xhhhh vs 0oooo vs decimal */
         if (*s == '.') /* if a dot follows, it's a float and therefore invalid here */
             throw invalid_argument("No floating point allowed in preprocessor #if evaluation");
+
+        /* GCC allows numeric constants in the preprocessor stage to have the 'u', 'l', etc. suffixes */
+        if (*s == 'u' || *s == 'U') s++;
+        if (*s == 'l' || *s == 'L') s++;
+        if (*s == 'l' || *s == 'L') s++;
+
         return t;
     }
     else if (*s == '(') {
