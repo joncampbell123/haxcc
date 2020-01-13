@@ -1147,29 +1147,32 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
     return r1;
 }
 
-bool eval_exmif(char* &s) {
+haxpp_token eval_exmif_token(char* &s) {
     vector<haxpp_token> tokens;
     cstrskipwhitespace(s);
     while (*s != 0) {
         tokens.push_back(eval_pptoken(s));
         cstrskipwhitespace(s);
     }
-    if (!tokens.empty()) {
-        auto toki = tokens.begin();
-        haxpp_token r = eval_exmif(toki,tokens.end());
 
-        if (toki != tokens.end())
-            throw invalid_argument("Expression not fully evaluated, " + to_string((size_t)(tokens.end() - toki)) + " left to go");
+    auto toki = tokens.begin();
+    haxpp_token r = eval_exmif(toki,tokens.end());
 
-        if (r.token == token_t::NUMBER)
-            return (r.number != 0ll);
-        else if (r.token == token_t::NOTHING)
-            return false;
-        else
-            throw invalid_argument(string("Token not implemented ") + to_string((unsigned int)(r.token)));
-    }
+    if (toki != tokens.end())
+        throw invalid_argument("Expression not fully evaluated, " + to_string((size_t)(tokens.end() - toki)) + " left to go");
 
-    return false;
+    return r;
+}
+
+bool eval_exmif(char* &s) {
+    haxpp_token r = eval_exmif_token(s);
+
+    if (r.token == token_t::NUMBER)
+        return (r.number != 0ll);
+    else if (r.token == token_t::NOTHING)
+        return false;
+    else
+        throw invalid_argument(string("Token not implemented ") + to_string((unsigned int)(r.token)));
 }
 
 string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
@@ -1631,23 +1634,14 @@ int main(int argc,char **argv) {
 
                         fprintf(stderr,"#if expanded to: '%s'\n",s);
 
-                        vector<haxpp_token> tokens;
-                        cstrskipwhitespace(s);
-                        while (*s != 0) {
-                            tokens.push_back(eval_pptoken(s));
-                            cstrskipwhitespace(s);
-                        }
-                        if (!tokens.empty()) {
-                            auto toki = tokens.begin();
-                            haxpp_token r = eval_exmif(toki,tokens.end());
+                        haxpp_token r = eval_exmif_token(s);
 
-                            if (r.token == token_t::NUMBER)
-                                fprintf(stderr,"         number: %lld\n",r.number);
-                            else if (r.token == token_t::NOTHING)
-                                fprintf(stderr,"        nothing:\n");
-                            else
-                                fprintf(stderr,"          token: %d\n",(int)r.token);
-                        }
+                        if (r.token == token_t::NUMBER)
+                            fprintf(stderr,"         number: %lld\n",r.number);
+                        else if (r.token == token_t::NOTHING)
+                            fprintf(stderr,"        nothing:\n");
+                        else
+                            fprintf(stderr,"          token: %d\n",(int)r.token);
 
                         emit_line = true;
                         continue; /* do not send to output */
