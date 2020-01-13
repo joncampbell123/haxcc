@@ -554,6 +554,7 @@ enum class token_t {
 /* NTS: By C standard, floating point and string not allowed.
  *      Only numbers and operators. */
 struct haxpp_token {
+    haxpp_token() { }
     haxpp_token(const token_t t) : token(t) { }
     haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
 
@@ -654,157 +655,85 @@ haxpp_token eval_pptoken(char* &s) {
     throw invalid_argument("Unexpected char in #if evaluation");
 }
 
-haxpp_token eval_exmif_p10(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif_p10
-#define evnex eval_exmif_p9
-    if (si != stop)
-        return *(si++);
-
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
-}
-
-haxpp_token eval_exmif_p11(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif_p11
-#define evnex eval_exmif_p10
-    /* precedence 11: logical AND
-     *
-     * expression
-     * expression && expression */
-    if (si != stop) {
-        haxpp_token r1 = evnex(si,stop);
-        while (si != stop && (*si).token == token_t::LOGICAL_AND) {
-            if (r1.token != token_t::NUMBER)
-                throw invalid_argument("lvalue result not a number");
-
-            si++;
-            if (si == stop)
-                throw invalid_argument("Expected expression");
-
-            haxpp_token r2 = evcur(si,stop); /* use recursion to support nested */
-            if (r2.token != token_t::NUMBER)
-                throw invalid_argument("rvalue result not a number");
-
-            r1 = ((r2.number != 0ll) && (r1.number != 0ll)) ? 1ll : 0ll;
-        }
-
-        return r1;
-    }
-
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
-}
-
-haxpp_token eval_exmif_p12(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif_p12
-#define evnex eval_exmif_p11
-    /* precedence 12: logical OR
-     *
-     * expression
-     * expression || expression */
-    if (si != stop) {
-        haxpp_token r1 = evnex(si,stop);
-        while (si != stop && (*si).token == token_t::LOGICAL_OR) {
-            if (r1.token != token_t::NUMBER)
-                throw invalid_argument("lvalue result not a number");
-
-            si++;
-            if (si == stop)
-                throw invalid_argument("Expected expression");
-
-            haxpp_token r2 = evcur(si,stop); /* use recursion to support nested */
-            if (r2.token != token_t::NUMBER)
-                throw invalid_argument("rvalue result not a number");
-
-            r1 = ((r2.number != 0ll) || (r1.number != 0ll)) ? 1ll : 0ll;
-        }
-
-        return r1;
-    }
-
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
-}
-
-haxpp_token eval_exmif_p13(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif_p13
-#define evnex eval_exmif_p12
-    /* precedence 13: ternary
-     *
-     * expression
-     * expression ? expression : expression */
-    if (si != stop) {
-        haxpp_token r1 = evnex(si,stop);
-        if (si != stop && (*si).token == token_t::QUESTION_MARK) {
-            if (r1.token != token_t::NUMBER)
-                throw invalid_argument("Ternary condition result is not number");
-
-            si++;
-            if (si == stop)
-                throw invalid_argument("Ternary, missing first expression");
-
-            haxpp_token tc = evcur(si,stop); /* use recursion to support nested ternary */
-            if (si == stop)
-                throw invalid_argument("Ternary, missing : for second expression");
-            si++;
-            if (si == stop)
-                throw invalid_argument("Ternary, missing second expression");
-
-            haxpp_token fc = evcur(si,stop); /* use recursion to support nested ternary */
-
-            if (r1.number != 0ll)
-                return tc;
-            else
-                return fc;
-        }
-
-        return r1;
-    }
-
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
-}
-
-haxpp_token eval_exmif_p15(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif_p15
-#define evnex eval_exmif_p13
-    /* precedence 15: comma operator */
-    /* expression
-     * expression , expression
-     *
-     * input 'a'  output 'a'
-     * input 'a,b' output 'b' */
-    if (si != stop) {
-        haxpp_token r1 = evnex(si,stop);
-        while (si != stop && (*si).token == token_t::COMMA) {
-            si++;
-            if (si != stop)
-                r1 = evnex(si,stop);
-            else
-                throw invalid_argument("Comma operator, missing rvalue");
-        }
-
-        return r1;
-    }
-
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
-}
-
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
-#define evcur eval_exmif
-#define evnex eval_exmif_p15
-    if (si != stop)
-        return evnex(si,stop);
+    haxpp_token r1;
 
-    return token_t::NOTHING;
-#undef evcur
-#undef evnex
+    if (si != stop) {
+        r1 = (*si++);
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("Unexpected token " + to_string((unsigned int)r1.token));
+    }
+
+    /* expression
+     * expression && expression */
+    while (si != stop && (*si).token == token_t::LOGICAL_AND) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("lvalue result not a number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Expected expression");
+
+        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        if (r2.token != token_t::NUMBER)
+            throw invalid_argument("rvalue result not a number");
+
+        r1 = ((r2.number != 0ll) && (r1.number != 0ll)) ? 1ll : 0ll;
+    }
+
+    /* expression
+     * expression || expression */
+    while (si != stop && (*si).token == token_t::LOGICAL_OR) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("lvalue result not a number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Expected expression");
+
+        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        if (r2.token != token_t::NUMBER)
+            throw invalid_argument("rvalue result not a number");
+
+        r1 = ((r2.number != 0ll) || (r1.number != 0ll)) ? 1ll : 0ll;
+    }
+
+    /* expression
+     * expression ? t-expression : f-expression */
+    if (si != stop && (*si).token == token_t::QUESTION_MARK) {
+        if (r1.token != token_t::NUMBER)
+            throw invalid_argument("Ternary condition result is not number");
+
+        si++;
+        if (si == stop)
+            throw invalid_argument("Ternary, missing first expression");
+
+        haxpp_token tc = eval_exmif(si,stop); /* use recursion to support nested ternary */
+        if (si == stop)
+            throw invalid_argument("Ternary, missing : for second expression");
+        si++;
+        if (si == stop)
+            throw invalid_argument("Ternary, missing second expression");
+
+        haxpp_token fc = eval_exmif(si,stop); /* use recursion to support nested ternary */
+
+        if (r1.number != 0ll)
+            r1 = tc;
+        else
+            r1 = fc;
+    }
+
+    /* expression
+     * expression , expression */
+    while (si != stop && (*si).token == token_t::COMMA) {
+        si++;
+        if (si != stop)
+            r1 = eval_exmif(si,stop);
+        else
+            throw invalid_argument("Comma operator, missing rvalue");
+    }
+
+    return r1;
 }
 
 bool eval_exmif(char* &s) {
