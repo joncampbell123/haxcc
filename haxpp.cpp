@@ -1591,7 +1591,7 @@ int main(int argc,char **argv) {
         {
             char *s = line; cstrskipwhitespace(s);
 
-            if (*s == 0 && c_comment > 0) {
+            if (*s == 0) {
                 emit_line = true;
                 continue;
             }
