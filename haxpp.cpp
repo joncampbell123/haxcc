@@ -63,18 +63,14 @@ public:
     void                        add_parameter_subst_stringify(size_t pidx);
     void                        add_newline_subst();
     bool                        parse_identifier(string &macroname,char* &s);
-    bool                        parse_token_string(bool &to_be_continued,char* &s);
+    bool                        parse_token_string(bool &__deleteme__,char* &s);
 };
 
-bool haxpp_macro::parse_token_string(bool &to_be_continued,char* &s) {
+bool haxpp_macro::parse_token_string(bool &__deleteme__,char* &s) {
     char *base = s;
     while (*s != 0) {
         bool stringify = false;
 
-        if (s[0] == '\\' && s[1] == 0) {
-            to_be_continued = true;
-            break;
-        }
         if (*s == 0)
             break;
 
@@ -416,7 +412,7 @@ bool add_macro(const string &macroname,const haxpp_macro &macro) {
 }
 
 bool parse_cmdline_macrodef(char* &a) {
-    bool to_be_continued = false;
+    bool __deleteme__ = false;
     haxpp_macro macro;
     string macroname;
 
@@ -431,11 +427,11 @@ bool parse_cmdline_macrodef(char* &a) {
         a++;
     }
 
-    to_be_continued = false;
-    if (!macro.parse_token_string(to_be_continued,a))
+    __deleteme__ = false;
+    if (!macro.parse_token_string(__deleteme__,a))
         return false;
 
-    if (to_be_continued) {
+    if (__deleteme__) {
         fprintf(stderr,"-D cannot define multi-line macros\n");
         return false;
     }
@@ -1761,7 +1757,7 @@ int main(int argc,char **argv) {
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
-                    bool to_be_continued = false;
+                    bool __deleteme__ = false;
                     haxpp_macro macro;
                     string macroname;
 
@@ -1777,11 +1773,11 @@ int main(int argc,char **argv) {
                     }
 
                     do {
-                        to_be_continued = false;
-                        if (!macro.parse_token_string(to_be_continued,s))
+                        __deleteme__ = false;
+                        if (!macro.parse_token_string(__deleteme__,s))
                             return 1;
 
-                        if (to_be_continued) {
+                        if (__deleteme__) {
                             line = in_lstk.top().readline();
                             if (line == nullptr) {
                                 fprintf(stderr,"ERROR: Multiline macro cut off at EOF\n");
@@ -1790,7 +1786,7 @@ int main(int argc,char **argv) {
                             s = line;
                             macro.add_newline_subst();
                         }
-                    } while (to_be_continued);
+                    } while (__deleteme__);
 
                     if (!add_macro(macroname,macro))
                         return 1;
