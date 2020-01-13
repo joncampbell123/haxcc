@@ -208,3 +208,5 @@ Here is another one/* that has multiple lines
 and preprocessor macros in the comment like
 #endif
 that might otherwise confuse the preprocessor*/ with #endif in it.
+Multiple line nested/* comment in comment
+for comments /* in side comments */ blah */ end it.
