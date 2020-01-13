@@ -142,6 +142,7 @@ char *haxpp_linesource::readline() {
         }
 
         if (!ferror(fp) && !feof(fp)) {
+            size_t col = 0;
             size_t l = 0;
             int c;
 
@@ -161,10 +162,22 @@ char *haxpp_linesource::readline() {
                 }
                 else if (c == '\r')
                     continue; /* ignore (MS-DOS CR LF line endings) */
-                else if (c == '\n')
-                    break; /* stop, do not store */
+                else if (c == '\n') {
+                    if (l != size_t(0) && line[l-1] == '\\') {
+                        line[--l] = ' '; /* erase \ char */
+                        col = 0;
+                        continue;
+                    }
+                    else {
+                        break; /* stop, do not store */
+                    }
+                }
+                else if (c == '\t' || c == ' ') {
+                    if (col == 0) continue;
+                }
 
                 line[l++] = (char)c;
+                col++;
             } while (1);
             line[l] = 0;
 
