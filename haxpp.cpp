@@ -551,6 +551,10 @@ enum class token_t {
     MAX_TOKEN
 };
 
+token_t token_next(const token_t t) {
+    return token_t((unsigned int)t + 1u);
+}
+
 /* NTS: By C standard, floating point and string not allowed.
  *      Only numbers and operators. */
 struct haxpp_token {
@@ -655,9 +659,10 @@ haxpp_token eval_pptoken(char* &s) {
     throw invalid_argument(string("Unexpected char in #if evaluation ") + s);
 }
 
-haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec=token_t::NUMBER);
 
 bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* highest enum value is LESS_THAN */
     if (si != stop) {
         if ((*si).token == token_t::LESS_THAN) {
             if (r1.token != token_t::NUMBER)
@@ -667,7 +672,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::LESS_THAN)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -682,7 +687,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::LESS_THAN)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -697,7 +702,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::LESS_THAN)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -712,7 +717,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::LESS_THAN)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -725,6 +730,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
 }
 
 bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* highest enum value is EQUALS */
     if (si != stop) {
         if ((*si).token == token_t::EQUALS) {
             if (r1.token != token_t::NUMBER)
@@ -734,7 +740,7 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::EQUALS)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -749,7 +755,7 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
             if (si == stop)
                 throw invalid_argument("Expected expression");
 
-            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::EQUALS)); /* use recursion to support nested */
             if (r2.token != token_t::NUMBER)
                 throw invalid_argument("rvalue result not a number");
 
@@ -761,7 +767,7 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
     return false;
 }
 
-haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec) {
     haxpp_token r1;
 
     if (si != stop) {
@@ -775,16 +781,18 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
      * expression > expression
      * expression <= expression
      * expression >= expression */
-    while (si != stop && eval_exmif_relational(r1,si,stop));
+    while (si != stop && (*si).token >= min_prec && eval_exmif_relational(r1,si,stop));
 
     /* expression
      * expression == expression
      * expression != expression */
-    while (si != stop && eval_exmif_equ_nequ(r1,si,stop));
+    while (si != stop && (*si).token >= min_prec && eval_exmif_equ_nequ(r1,si,stop));
 
     /* expression
      * expression & expression */
-    while (si != stop && (*si).token == token_t::BITWISE_AND) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::BITWISE_AND) {
+        const token_t tnmin = token_next((*si).token);
+
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("lvalue result not a number");
 
@@ -792,7 +800,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (si == stop)
             throw invalid_argument("Expected expression");
 
-        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        haxpp_token r2 = eval_exmif(si,stop,tnmin); /* use recursion to support nested */
         if (r2.token != token_t::NUMBER)
             throw invalid_argument("rvalue result not a number");
 
@@ -801,7 +809,9 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression ^ expression */
-    while (si != stop && (*si).token == token_t::BITWISE_XOR) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::BITWISE_XOR) {
+        const token_t tnmin = token_next((*si).token);
+
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("lvalue result not a number");
 
@@ -809,7 +819,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (si == stop)
             throw invalid_argument("Expected expression");
 
-        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        haxpp_token r2 = eval_exmif(si,stop,tnmin); /* use recursion to support nested */
         if (r2.token != token_t::NUMBER)
             throw invalid_argument("rvalue result not a number");
 
@@ -818,7 +828,9 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression | expression */
-    while (si != stop && (*si).token == token_t::BITWISE_OR) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::BITWISE_OR) {
+        const token_t tnmin = token_next((*si).token);
+
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("lvalue result not a number");
 
@@ -826,7 +838,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (si == stop)
             throw invalid_argument("Expected expression");
 
-        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        haxpp_token r2 = eval_exmif(si,stop,tnmin); /* use recursion to support nested */
         if (r2.token != token_t::NUMBER)
             throw invalid_argument("rvalue result not a number");
 
@@ -835,7 +847,9 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression && expression */
-    while (si != stop && (*si).token == token_t::LOGICAL_AND) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::LOGICAL_AND) {
+        const token_t tnmin = token_next((*si).token);
+
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("lvalue result not a number");
 
@@ -843,7 +857,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (si == stop)
             throw invalid_argument("Expected expression");
 
-        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        haxpp_token r2 = eval_exmif(si,stop,tnmin); /* use recursion to support nested */
         if (r2.token != token_t::NUMBER)
             throw invalid_argument("rvalue result not a number");
 
@@ -852,7 +866,9 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression || expression */
-    while (si != stop && (*si).token == token_t::LOGICAL_OR) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::LOGICAL_OR) {
+        const token_t tnmin = token_next((*si).token);
+
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("lvalue result not a number");
 
@@ -860,7 +876,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (si == stop)
             throw invalid_argument("Expected expression");
 
-        haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+        haxpp_token r2 = eval_exmif(si,stop,tnmin); /* use recursion to support nested */
         if (r2.token != token_t::NUMBER)
             throw invalid_argument("rvalue result not a number");
 
@@ -869,7 +885,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression ? t-expression : f-expression */
-    if (si != stop && (*si).token == token_t::QUESTION_MARK) {
+    if (si != stop && (*si).token >= min_prec && (*si).token == token_t::QUESTION_MARK) {
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("Ternary condition result is not number");
 
@@ -894,10 +910,12 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
 
     /* expression
      * expression , expression */
-    while (si != stop && (*si).token == token_t::COMMA) {
+    while (si != stop && (*si).token >= min_prec && (*si).token == token_t::COMMA) {
+        const token_t tnmin = token_next((*si).token);
+
         si++;
         if (si != stop)
-            r1 = eval_exmif(si,stop);
+            r1 = eval_exmif(si,stop,tnmin);
         else
             throw invalid_argument("Comma operator, missing rvalue");
     }
