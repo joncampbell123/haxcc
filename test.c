@@ -254,3 +254,5 @@ Duh
 #endif
 #pragma echovalif L'u'
 #pragma echovalif L'\u1000'
+#pragma echovalif L'\U10001000'
+#pragma echovalif L'\U10001001'

@@ -625,6 +625,25 @@ signed long long eval_exmif_escchar_u(char* &s) {
     throw invalid_argument("\\uhhhh invalid sequence");
 }
 
+signed long long eval_exmif_escchar_bigu(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3]) &&
+        isxdigit(s[4]) && isxdigit(s[5]) && isxdigit(s[6]) && isxdigit(s[7])) {
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 28ll) +
+            ((signed long long)hex2digit(s[1]) << 24ll) +
+            ((signed long long)hex2digit(s[2]) << 20ll) +
+            ((signed long long)hex2digit(s[3]) << 16ll) +
+            ((signed long long)hex2digit(s[4]) << 12ll) +
+            ((signed long long)hex2digit(s[5]) << 8ll) +
+            ((signed long long)hex2digit(s[6]) << 4ll) +
+             (signed long long)hex2digit(s[7]);
+        s += 8;
+        return c;
+    }
+
+    throw invalid_argument("\\Uhhhhhhhh invalid sequence");
+}
+
 signed long long eval_exmif_escchar(char* &s) {
     if (*s == '\\') {
         s++;
@@ -643,6 +662,7 @@ signed long long eval_exmif_escchar(char* &s) {
             case '?':   s++; return '?';
             case 'x':   s++; return eval_exmif_escchar_xx(s);
             case 'u':   s++; return eval_exmif_escchar_u(s);
+            case 'U':   s++; return eval_exmif_escchar_bigu(s);
             /* octal \nnn */
             case '0':
             case '1':
