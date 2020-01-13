@@ -661,6 +661,44 @@ haxpp_token eval_pptoken(char* &s) {
 
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec=token_t::NUMBER);
 
+bool eval_exmif_addsub(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    /* highest enum value is MINUS */
+    if (si != stop) {
+        if ((*si).token == token_t::PLUS) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::MINUS)); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = r1.number + r2.number;
+            return true;
+        }
+        else if ((*si).token == token_t::MINUS) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop,token_next(token_t::MINUS)); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = r1.number - r2.number;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool eval_exmif_shift(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is SHIFT_LEFT */
     if (si != stop) {
@@ -813,6 +851,11 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("Unexpected token " + to_string((unsigned int)r1.token));
     }
+
+    /* expression
+     * expression + expression
+     * expression - expression */
+    while (si != stop && (*si).token >= min_prec && eval_exmif_addsub(r1,si,stop));
 
     /* expression
      * expression << expression
