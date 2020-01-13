@@ -1511,6 +1511,7 @@ int main(int argc,char **argv) {
         }
     };
 
+    int c_comment = 0; /* C-style comment level */
     bool emit_line = true;
     cond_tracking_t if_cond;
     stack<cond_tracking_t> if_cond_stack;
@@ -1539,21 +1540,48 @@ int main(int argc,char **argv) {
         /* filter out comments */
         {
             char *s = line;
+            char *cbase = s;
 
             while (*s != 0) {
-                if (s[0] == '/' && s[1] == '/') {
-                    *s = 0; /* cut here */
-                    break;
+                if (s[0] == '/' && s[1] == '*') {
+                    if (c_comment++ == 0)
+                        cbase = s;
+
+                    s += 2;
                 }
-                else if (*s == '\'') {
-                    cstrskipsquote(s);
+                else if (c_comment > 0) {
+                    if (s[0] == '*' && s[1] == '/') {
+                        s += 2;
+                        if (--c_comment == 0) {
+                            string remstr = s;
+                            macro_replace(line+linebufsize,line,cbase,remstr,"");
+                            s = cbase;
+                        }
+                    }
+                    else {
+                        s++;
+                    }
                 }
-                else if (*s == '\"') {
-                    cstrskipstring(s);
+                else if (c_comment == 0) {
+                    if (s[0] == '/' && s[1] == '/') {
+                        *s = 0; /* cut here */
+                        break;
+                    }
+                    else if (*s == '\'') {
+                        cstrskipsquote(s);
+                    }
+                    else if (*s == '\"') {
+                        cstrskipstring(s);
+                    }
+                    else {
+                        s++;
+                    }
                 }
-                else {
-                    s++;
-                }
+            }
+
+            if (c_comment != 0) {
+                string remstr = s;
+                macro_replace(line+linebufsize,line,cbase,remstr,"");
             }
         }
 

@@ -196,3 +196,8 @@ Should not see, else
 Should not see // C++ comments
 // or this comment
 But "this // should be visible"
+Should see this /* but not this */but this also
+/* this comment */Should see this /*comment*/blah
+/* another comment*/This/*comment blah*/
+/* comment /* nesting */ blah */See this
+More nesting/* here /* and here /* and and here */ end */ end */ here
