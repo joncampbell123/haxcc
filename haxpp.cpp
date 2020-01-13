@@ -49,6 +49,20 @@ public:
 
         void                    dump(FILE *fp=NULL) const;
         const char*             type_str() const;
+
+        bool operator==(const macro_subst &m) const {
+            if (type != m.type)
+                return false;
+            if (stringval != m.stringval)
+                return false;
+            if (parameter != m.parameter)
+                return false;
+
+            return true;
+        }
+        bool operator!=(const macro_subst &m) const {
+            return !(*this == m);
+        }
     };
 public:
     vector<string>              parameters;
@@ -64,6 +78,22 @@ public:
     void                        add_newline_subst();
     bool                        parse_identifier(string &macroname,char* &s);
     bool                        parse_token_string(char* &s);
+public:
+    bool operator!=(const haxpp_macro &m) const {
+        return !(*this == m);
+    }
+    bool operator==(const haxpp_macro &m) const {
+        if (substitution != m.substitution)
+            return false;
+        if (last_param_variadic != m.last_param_variadic)
+            return false;
+        if (needs_parens != m.needs_parens)
+            return false;
+        if (parameters != m.parameters)
+            return false;
+
+        return true;
+    }
 };
 
 bool haxpp_macro::parse_token_string(char* &s) {
@@ -398,8 +428,11 @@ bool add_macro(const string &macroname,const haxpp_macro &macro) {
      *       Should this be an error? */
     {
         auto mi = haxpp_macros.find(macroname);
-        if (mi != haxpp_macros.end())
-            fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+        if (mi != haxpp_macros.end()) {
+            /* warn only if a new definition is given */
+            if (mi->second != macro)
+                fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+        }
     }
 
 #if 0
