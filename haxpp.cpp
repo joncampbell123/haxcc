@@ -643,6 +643,9 @@ int eval_exmif_escchar(char* &s) {
                         c += *s - '0';
                         s++;
                     }
+                    else {
+                        break;
+                    }
                 }
 
                 return c;
