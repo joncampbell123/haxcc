@@ -1587,6 +1587,7 @@ int main(int argc,char **argv) {
 
     bool emit_line = true;
 
+    linecount_t lineno_next = 0;
     cond_tracking_t if_cond;
     stack<cond_tracking_t> if_cond_stack;
 
@@ -1610,6 +1611,11 @@ int main(int argc,char **argv) {
         string linesource = in_lstk.top().getsourcename();
         linecount_t lineno = in_lstk.top().currentline();
         size_t linebufsize = in_lstk.top().linesize();
+
+        if (lineno != lineno_next)
+            emit_line = true;
+
+        lineno_next = lineno + 1;
 
         /* filter out comments */
         {
