@@ -657,6 +657,73 @@ haxpp_token eval_pptoken(char* &s) {
 
 haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
 
+bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+    if (si != stop) {
+        if ((*si).token == token_t::LESS_THAN) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = (r1.number < r2.number) ? 1ll : 0ll;
+            return true;
+        }
+        else if ((*si).token == token_t::LESS_THAN_OR_EQUAL) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = (r1.number <= r2.number) ? 1ll : 0ll;
+            return true;
+        }
+        else if ((*si).token == token_t::GREATER_THAN) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = (r1.number > r2.number) ? 1ll : 0ll;
+            return true;
+        }
+        else if ((*si).token == token_t::GREATER_THAN_OR_EQUAL) {
+            if (r1.token != token_t::NUMBER)
+                throw invalid_argument("lvalue result not a number");
+
+            si++;
+            if (si == stop)
+                throw invalid_argument("Expected expression");
+
+            haxpp_token r2 = eval_exmif(si,stop); /* use recursion to support nested */
+            if (r2.token != token_t::NUMBER)
+                throw invalid_argument("rvalue result not a number");
+
+            r1 = (r1.number >= r2.number) ? 1ll : 0ll;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     if (si != stop) {
         if ((*si).token == token_t::EQUALS) {
@@ -702,6 +769,13 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
         if (r1.token != token_t::NUMBER)
             throw invalid_argument("Unexpected token " + to_string((unsigned int)r1.token));
     }
+
+    /* expression
+     * expression < expression
+     * expression > expression
+     * expression <= expression
+     * expression >= expression */
+    while (si != stop && eval_exmif_relational(r1,si,stop));
 
     /* expression
      * expression == expression
