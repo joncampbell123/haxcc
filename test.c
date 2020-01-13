@@ -222,3 +222,6 @@ Duh
     3 <= 4
 Multiline #if works
 #endif
+#define REDEFINE 123
+#define REDEFINE 123
+#define REDEFINE 123
