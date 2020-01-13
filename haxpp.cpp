@@ -613,12 +613,18 @@ int eval_exmif_escchar(char* &s) {
     if (*s == '\\') {
         s++;
         switch (*s) {
-            case 't':   s++; return '\t';
-            case 'n':   s++; return '\n';
-            case 'r':   s++; return '\r';
+            case 'a':   s++; return 0x07;
+            case 'b':   s++; return 0x08;
+            case 'e':   s++; return 0x1B; /* nonstandard but common apparently */
+            case 'f':   s++; return 0x0C;
+            case 'n':   s++; return 0x0A;
+            case 'r':   s++; return 0x0D;
+            case 't':   s++; return 0x09;
+            case 'v':   s++; return 0x0B;
             case '\\':  s++; return '\\';
             case '\'':  s++; return '\'';
             case '\"':  s++; return '\"';
+            case '?':   s++; return '?';
             case 'x':   s++; return eval_exmif_escchar_xx(s);
             default:    break;
         };
