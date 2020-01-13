@@ -27,7 +27,7 @@ public:
         return line_alloc;
     }
     inline linecount_t currentline() const {
-        return lineno;
+        return lineno_start;
     }
 public:
     haxpp_linesource();
