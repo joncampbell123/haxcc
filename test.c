@@ -215,4 +215,6 @@ stuff /* level3 /* blah
 blah */ wwww */ wwww */ aaaa */ end.
 /* Test case seen in Linux headers */
 #if defined __GNUC__ && defined __GNUC_MINOR__
+#elif 1 + 1 == 2
+Duh
 #endif
