@@ -12,6 +12,8 @@
 #include "util.h"
 #include "linesrc.h"
 
+#include <stdexcept>
+
 using namespace std;
 
 bool haxpp_linesource::lineresize(const size_t newsz) {
@@ -142,6 +144,7 @@ char *haxpp_linesource::readline() {
         }
 
         if (!ferror(fp) && !feof(fp)) {
+            int c_comment = 0;
             size_t col = 0;
             size_t l = 0;
             int c;
@@ -174,6 +177,25 @@ char *haxpp_linesource::readline() {
                 }
                 else if (c == '\t' || c == ' ') {
                     if (col == 0) continue;
+                }
+                else if (c == '*' && l != size_t(0) && line[l-1] == '/') { /* open C comment */
+                    int pc = c;
+
+                    line[--l] = ' '; /* erase \ char */
+                    c_comment = 1;
+                    do {
+                        c = fgetc(fp);
+                        if (c == EOF)
+                            throw runtime_error("C comment did not close at EOF");
+
+                        if (pc == '/' && c == '*')
+                            c_comment++;
+                        else if (pc == '*' && c == '/')
+                            c_comment--;
+
+                        pc = c;
+                    } while (c_comment > 0);
+                    continue;
                 }
 
                 line[l++] = (char)c;
