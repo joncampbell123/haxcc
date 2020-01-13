@@ -588,6 +588,27 @@ struct haxpp_token {
     signed long long    number = 0;
 };
 
+int hex2digit(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'a' && c <= 'f')
+        return c + 10 - 'a';
+    else if (c >= 'A' && c <= 'F')
+        return c + 10 - 'A';
+
+    return 0;
+}
+
+int eval_exmif_escchar_xx(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1])) {
+        const int c = (int)((hex2digit(s[0]) << 4) + hex2digit(s[1]));
+        s += 2;
+        return c;
+    }
+
+    throw invalid_argument("\\xhh invalid sequence");
+}
+
 int eval_exmif_escchar(char* &s) {
     if (*s == '\\') {
         s++;
@@ -598,6 +619,7 @@ int eval_exmif_escchar(char* &s) {
             case '\\':  s++; return '\\';
             case '\'':  s++; return '\'';
             case '\"':  s++; return '\"';
+            case 'x':   s++; return eval_exmif_escchar_xx(s);
             default:    break;
         };
     }

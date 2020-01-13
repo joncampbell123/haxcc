@@ -234,3 +234,9 @@ Duh
 #if 200ull == 200
 Duh
 #endif
+#if '\x30' == '0'
+Duh
+#endif
+#if '\x30' == 0x30
+Duh
+#endif
