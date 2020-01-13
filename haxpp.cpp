@@ -1607,7 +1607,53 @@ int main(int argc,char **argv) {
                 if (!parent_cond)
                     continue;
 
-                if (what == "else") {
+                if (what == "pragma") {
+                    const string pwhat = cstrgetword(s); cstrskipwhitespace(s);
+
+                    if (pwhat == "echoif") { /* debug function */
+                        /* expand macros in the expression */
+                        bool expand_multiline = false;
+                        macro_expand(s,line+linebufsize,expand_multiline,true);
+
+                        char *base = s;
+                        auto res = eval_exmif(s);
+
+                        fprintf(stderr,"#if expanded to: '%s'\n",base);
+                        fprintf(stderr,"           bool: %u\n",res?1:0);
+
+                        emit_line = true;
+                        continue; /* do not send to output */
+                    }
+                    else if (pwhat == "echovalif") { /* debug function */
+                        /* expand macros in the expression */
+                        bool expand_multiline = false;
+                        macro_expand(s,line+linebufsize,expand_multiline,true);
+
+                        fprintf(stderr,"#if expanded to: '%s'\n",s);
+
+                        vector<haxpp_token> tokens;
+                        cstrskipwhitespace(s);
+                        while (*s != 0) {
+                            tokens.push_back(eval_pptoken(s));
+                            cstrskipwhitespace(s);
+                        }
+                        if (!tokens.empty()) {
+                            auto toki = tokens.begin();
+                            haxpp_token r = eval_exmif(toki,tokens.end());
+
+                            if (r.token == token_t::NUMBER)
+                                fprintf(stderr,"         number: %lld\n",r.number);
+                            else if (r.token == token_t::NOTHING)
+                                fprintf(stderr,"        nothing:\n");
+                            else
+                                fprintf(stderr,"          token: %d\n",(int)r.token);
+                        }
+
+                        emit_line = true;
+                        continue; /* do not send to output */
+                    }
+                }
+                else if (what == "else") {
                     if (!if_cond.allow_else) {
                         fprintf(stderr,"#else is invalid here\n");
                         return 1;
