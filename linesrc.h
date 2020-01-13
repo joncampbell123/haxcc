@@ -8,6 +8,7 @@
 
 class haxpp_linesource {
 private:
+    linecount_t         lineno_start = 0;
     linecount_t         lineno = 0;
     std::string         sourcepath;
     FILE*               fp = nullptr;

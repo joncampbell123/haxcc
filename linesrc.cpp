@@ -120,7 +120,7 @@ bool haxpp_linesource::open() {
         }
 
         fp_owner = true;
-        lineno = 0;
+        lineno = lineno_start = 1;
     }
 
     return true;
@@ -148,6 +148,8 @@ char *haxpp_linesource::readline() {
             size_t col = 0;
             size_t l = 0;
             int c;
+
+            lineno_start = lineno;
 
             do {
                 if (l >= (s - size_t(1))) {
