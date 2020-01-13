@@ -249,3 +249,4 @@ Duh
 #if '\377' == 0xff
 Duh
 #endif
+#pragma echovalif L'u'

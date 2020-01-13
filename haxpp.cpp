@@ -1496,12 +1496,38 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
         throw runtime_error("macro() invocation wrong number of parameters");
 }
 
+bool cstriswidestrprefix(char* &s) {
+    if (s[0] == 'u' && s[1] == '8' && (s[2] == '\'' || s[2] == '\"')) {
+        s += 2; /* return pointing at quotation mark */
+        return true;
+    }
+    else if ((s[0] == 'L' || s[0] == 'u' || s[0] == 'U') && (s[1] == '\'' || s[1] == '\"')) {
+        s += 1; /* return pointing at quotation mark */
+        return true;
+    }
+
+    return false;
+}
+
 bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
     bool changed = false;
     char *scan = line;
 
     multiline = false;
     while (*scan != 0) {
+        if (cstriswidestrprefix(scan)) {
+            if (*scan == '\"') {
+                /* processs ahead of macro substitution to avoid corrupting L"widechar string" */
+                cstrskipstring(scan);
+                continue;
+            }
+            else if (*scan == '\'') {
+                /* processs ahead of macro substitution to avoid corrupting L'c' */
+                cstrskipsquote(scan);
+                continue;
+            }
+        }
+
         if (iswordcharfirst(*scan)) {
             char *wordbase = scan;
             string word = cstrgetword(scan);
