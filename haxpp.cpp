@@ -424,58 +424,62 @@ public:
     vector<string>              include_search;
     haxpp_linesourcestack       in_lstk;
 
-    void dump_all_macros() {
-        for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
-            fprintf(stderr,"Macro dump for '%s':\n",mi->first.c_str());
-            mi->second.dump();
+    void                        dump_all_macros();
+    bool                        add_macro(const string &macroname,const haxpp_macro &macro);
+    bool                        parse_cmdline_macrodef(char* &a);
+};
+
+void haxpp::dump_all_macros() {
+    for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
+        fprintf(stderr,"Macro dump for '%s':\n",mi->first.c_str());
+        mi->second.dump();
+    }
+}
+
+bool haxpp::add_macro(const string &macroname,const haxpp_macro &macro) {
+    /* TODO: Compare if different and then emit warning?
+     *       Should this be an error? */
+    {
+        auto mi = haxpp_macros.find(macroname);
+        if (mi != haxpp_macros.end()) {
+            /* warn only if a new definition is given */
+            if (mi->second != macro)
+                fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
         }
     }
-
-    bool add_macro(const string &macroname,const haxpp_macro &macro) {
-        /* TODO: Compare if different and then emit warning?
-         *       Should this be an error? */
-        {
-            auto mi = haxpp_macros.find(macroname);
-            if (mi != haxpp_macros.end()) {
-                /* warn only if a new definition is given */
-                if (mi->second != macro)
-                    fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
-            }
-        }
 
 #if 0
-        fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
-        macro.dump();
+    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
+    macro.dump();
 #endif
 
-        haxpp_macros[macroname] = macro;
-        return true;
-    }
+    haxpp_macros[macroname] = macro;
+    return true;
+}
 
-    bool parse_cmdline_macrodef(char* &a) {
-        haxpp_macro macro;
-        string macroname;
+bool haxpp::parse_cmdline_macrodef(char* &a) {
+    haxpp_macro macro;
+    string macroname;
 
-        if (!macro.parse_identifier(macroname,a))
+    if (!macro.parse_identifier(macroname,a))
+        return false;
+
+    if (*a != 0) {
+        if (*a != '=') {
+            fprintf(stderr,"Macro must have an equals sign between name and string. '%s'\n",a);
             return false;
-
-        if (*a != 0) {
-            if (*a != '=') {
-                fprintf(stderr,"Macro must have an equals sign between name and string. '%s'\n",a);
-                return false;
-            }
-            a++;
         }
-
-        if (!macro.parse_token_string(a))
-            return false;
-
-        if (!add_macro(macroname,macro))
-            return false;
-
-        return true;
+        a++;
     }
-};
+
+    if (!macro.parse_token_string(a))
+        return false;
+
+    if (!add_macro(macroname,macro))
+        return false;
+
+    return true;
+}
 
 static haxpp                preproc;
 
