@@ -25,6 +25,14 @@ public:
     bool                        eof() const;
     const string&               get_path() const;
     int                         getc();
+    void                        reset_counters();
+public:
+    inline int current_line() const {
+        return line;
+    }
+    inline int current_column() const {
+        return column;
+    }
 private:
     FILE*                       fp;
     bool                        ownership;
@@ -52,15 +60,23 @@ private:
     string                      path;
 };
 
+void FileSource::reset_counters() {
+    line = 1;
+    pchar = 0;
+    column = 0;
+}
+
 void FileSource::set(FILE *_fp) {
     close();
     fp = _fp;
     path.clear();
+    reset_counters();
 }
 
 void FileSource::set(const string &_path) {
     close();
     path = _path;
+    reset_counters();
 }
 
 void FileSource::close() {
@@ -73,9 +89,6 @@ void FileSource::close() {
 
 void FileSource::open() {
     if (fp == NULL) {
-        line = 1;
-        pchar = 0;
-        column = 0;
         fp = fopen(path.c_str(),"rb");
         if (fp != NULL)
             ownership = true;
