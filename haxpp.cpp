@@ -60,6 +60,21 @@ enum class token_t {
     MAX_TOKEN
 };
 
+static inline token_t token_next(const token_t t) {
+    return token_t((unsigned int)t + 1u);
+}
+
+/* NTS: By C standard, floating point and string not allowed.
+ *      Only numbers and operators. */
+struct haxpp_token {
+    haxpp_token() { }
+    haxpp_token(const token_t t) : token(t) { }
+    haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
+
+    token_t             token = token_t::NOTHING;
+    signed long long    number = 0;
+};
+
 class haxpp_macro {
 public:
     struct macro_subst {
@@ -98,21 +113,6 @@ public:
 public:
     bool                        operator!=(const haxpp_macro &m) const;
     bool                        operator==(const haxpp_macro &m) const;
-};
-
-static inline token_t token_next(const token_t t) {
-    return token_t((unsigned int)t + 1u);
-}
-
-/* NTS: By C standard, floating point and string not allowed.
- *      Only numbers and operators. */
-struct haxpp_token {
-    haxpp_token() { }
-    haxpp_token(const token_t t) : token(t) { }
-    haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
-
-    token_t             token = token_t::NOTHING;
-    signed long long    number = 0;
 };
 
 bool haxpp_macro::operator!=(const haxpp_macro &m) const {
