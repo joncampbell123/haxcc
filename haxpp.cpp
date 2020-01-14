@@ -12,8 +12,8 @@ using namespace std;
 
 class FileSource {
 public:
-    FileSource() : fp(NULL), ownership(false) { }
-    ~FileSource() { close(); }
+                                FileSource() : fp(NULL), ownership(false) { }
+                                ~FileSource() { close(); }
 public:
     void                        set(FILE *_fp);
     void                        set(const string &_path);
@@ -31,8 +31,8 @@ private:
 
 class FileDest {
 public:
-    FileDest() : fp(NULL), ownership(false) { }
-    ~FileDest() { close(); }
+                                FileDest() : fp(NULL), ownership(false) { }
+                                ~FileDest() { close(); }
 public:
     void                        set(FILE *_fp);
     void                        set(const string &_path);
