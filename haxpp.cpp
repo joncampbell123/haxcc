@@ -272,13 +272,12 @@ int main(int argc,char **argv) {
     }
 
     while (!in_src_stk.empty()) {
-        if (in_src_stk.top().eof()) {
+        c = in_src_stk.top().getc();
+        if (c == EOF) {
             in_src_stk.pop();
             continue;
         }
 
-        c = in_src_stk.top().getc();
-        if (c == EOF) break;
         out_dst.putc(c);
     }
 
