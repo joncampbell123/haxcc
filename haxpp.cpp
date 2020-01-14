@@ -27,7 +27,7 @@ public:
     int                         getc();
     void                        reset_counters();
 public:
-    inline int current_line() const {
+    inline int32_t current_line() const {
         return line;
     }
     inline int current_column() const {
@@ -37,7 +37,7 @@ private:
     FILE*                       fp;
     bool                        ownership;
     string                      path;
-    int                         line;
+    int32_t                     line;
     int                         column;
     int                         pchar;
 };
