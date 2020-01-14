@@ -117,9 +117,28 @@ public:
 
 class haxpp {
 public:
+    struct cond_tracking_t {
+        bool                    cond = true;
+        bool                    done = false;
+        bool                    allow_elif = false;
+        bool                    allow_else = false;
+
+        cond_tracking_t() { }
+        cond_tracking_t(const bool v) : cond(v), done(v) { }
+
+        inline bool eval() const {
+            return cond;
+        }
+    };
+public:
     map<string,haxpp_macro>     haxpp_macros;
     vector<string>              include_search;
     haxpp_linesourcestack       in_lstk;
+
+    bool                        emit_line = true;
+    linecount_t                 lineno_next = 0;
+    stack<cond_tracking_t>      if_cond_stack;
+    cond_tracking_t             if_cond;
 
     void                        dump_all_macros();
     bool                        add_macro(const string &macroname,const haxpp_macro &macro);
@@ -1726,26 +1745,6 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    struct cond_tracking_t {
-        bool        cond = true;
-        bool        done = false;
-        bool        allow_elif = false;
-        bool        allow_else = false;
-
-        cond_tracking_t() { }
-        cond_tracking_t(const bool v) : cond(v), done(v) { }
-
-        inline bool eval() const {
-            return cond;
-        }
-    };
-
-    bool emit_line = true;
-
-    linecount_t lineno_next = 0;
-    cond_tracking_t if_cond;
-    stack<cond_tracking_t> if_cond_stack;
-
     while (!preproc.in_lstk.empty()) {
         char *line = preproc.in_lstk.top().readline();
         if (line == nullptr) {
@@ -1754,7 +1753,7 @@ int main(int argc,char **argv) {
                 if (preproc.in_lstk.empty())
                     break;
 
-                emit_line = true;
+                preproc.emit_line = true;
                 continue;
             }
             else {
@@ -1767,10 +1766,10 @@ int main(int argc,char **argv) {
         linecount_t lineno = preproc.in_lstk.top().currentline();
         size_t linebufsize = preproc.in_lstk.top().linesize();
 
-        if (lineno != lineno_next)
-            emit_line = true;
+        if (lineno != preproc.lineno_next)
+            preproc.emit_line = true;
 
-        lineno_next = lineno + 1;
+        preproc.lineno_next = lineno + 1;
 
         /* filter out comments */
         {
@@ -1803,15 +1802,15 @@ int main(int argc,char **argv) {
                 const string what = cstrgetword(s); cstrskipwhitespace(s);
 
                 if (what == "endif") {
-                    if (if_cond_stack.empty()) {
+                    if (preproc.if_cond_stack.empty()) {
                         fprintf(stderr,"#endif with no #if... condition\n");
                         return 1;
                     }
 
-                    if_cond = if_cond_stack.top();
-                    if_cond_stack.pop();
+                    preproc.if_cond = preproc.if_cond_stack.top();
+                    preproc.if_cond_stack.pop();
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "ifdef") {
@@ -1823,11 +1822,11 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && preproc.eval_ifdef(macroname);
-                    if_cond.allow_else = true; /* #ifdef enables #else */
+                    preproc.if_cond_stack.push(preproc.if_cond);
+                    preproc.if_cond = preproc.if_cond.eval() && preproc.eval_ifdef(macroname);
+                    preproc.if_cond.allow_else = true; /* #ifdef enables #else */
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "ifndef") {
@@ -1839,11 +1838,11 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && !preproc.eval_ifdef(macroname);
-                    if_cond.allow_else = true; /* #ifndef enables #else */
+                    preproc.if_cond_stack.push(preproc.if_cond);
+                    preproc.if_cond = preproc.if_cond.eval() && !preproc.eval_ifdef(macroname);
+                    preproc.if_cond.allow_else = true; /* #ifndef enables #else */
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "if") {
@@ -1851,18 +1850,18 @@ int main(int argc,char **argv) {
                     bool expand_multiline = false;
                     preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
-                    if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && preproc.eval_exmif(s);
-                    if_cond.allow_else = true; /* #if enables #else */
-                    if_cond.allow_elif = true; /* #if enables #elif */
+                    preproc.if_cond_stack.push(preproc.if_cond);
+                    preproc.if_cond = preproc.if_cond.eval() && preproc.eval_exmif(s);
+                    preproc.if_cond.allow_else = true; /* #if enables #else */
+                    preproc.if_cond.allow_elif = true; /* #if enables #elif */
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
 
                 bool parent_cond = true;
-                if (!if_cond_stack.empty())
-                    parent_cond = if_cond_stack.top().eval();
+                if (!preproc.if_cond_stack.empty())
+                    parent_cond = preproc.if_cond_stack.top().eval();
 
                 if (!parent_cond)
                     continue;
@@ -1881,7 +1880,7 @@ int main(int argc,char **argv) {
                         fprintf(stderr,"#if expanded to: '%s'\n",base);
                         fprintf(stderr,"           bool: %u\n",res?1:0);
 
-                        emit_line = true;
+                        preproc.emit_line = true;
                         continue; /* do not send to output */
                     }
                     else if (pwhat == "echovalif") { /* debug function */
@@ -1900,12 +1899,12 @@ int main(int argc,char **argv) {
                         else
                             fprintf(stderr,"          token: %d\n",(int)r.token);
 
-                        emit_line = true;
+                        preproc.emit_line = true;
                         continue; /* do not send to output */
                     }
                 }
                 else if (what == "else") {
-                    if (!if_cond.allow_else) {
+                    if (!preproc.if_cond.allow_else) {
                         fprintf(stderr,"#else is invalid here\n");
                         return 1;
                     }
@@ -1913,16 +1912,16 @@ int main(int argc,char **argv) {
                     /* #else was used, no longer allowed at this level.
                      * invert conditional and continue. #else also
                      * disables #elif. */
-                    if_cond.cond = !if_cond.done;
-                    if_cond.allow_elif = false;
-                    if_cond.allow_else = false;
-                    if_cond.done = true;
+                    preproc.if_cond.cond = !preproc.if_cond.done;
+                    preproc.if_cond.allow_elif = false;
+                    preproc.if_cond.allow_else = false;
+                    preproc.if_cond.done = true;
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "elif") {
-                    if (!if_cond.allow_elif) {
+                    if (!preproc.if_cond.allow_elif) {
                         fprintf(stderr,"#elif is invalid here\n");
                         return 1;
                     }
@@ -1931,14 +1930,14 @@ int main(int argc,char **argv) {
                     bool expand_multiline = false;
                     preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
-                    if_cond.cond = !if_cond.done && preproc.eval_exmif(s);
-                    if (if_cond.cond) if_cond.done = true;
+                    preproc.if_cond.cond = !preproc.if_cond.done && preproc.eval_exmif(s);
+                    if (preproc.if_cond.cond) preproc.if_cond.done = true;
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
 
-                if (!if_cond.eval())
+                if (!preproc.if_cond.eval())
                     continue;
 
                 if (what == "undef") {
@@ -1956,7 +1955,7 @@ int main(int argc,char **argv) {
                             preproc.haxpp_macros.erase(mi);
                     }
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "define") {
@@ -1980,7 +1979,7 @@ int main(int argc,char **argv) {
                     if (!preproc.add_macro(macroname,macro))
                         return 1;
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
                 else if (what == "include") {
@@ -2017,12 +2016,12 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    emit_line = true;
+                    preproc.emit_line = true;
                     continue; /* do not send to output */
                 }
             }
             else {
-                if (!if_cond.eval())
+                if (!preproc.if_cond.eval())
                     continue;
             }
         }
@@ -2031,9 +2030,9 @@ int main(int argc,char **argv) {
 
         preproc.macro_expand(line,line+linebufsize,expand_multiline,false);
 
-        if (emit_line) {
+        if (preproc.emit_line) {
             send_line(out_ls,linesource,lineno);
-            emit_line = false;
+            preproc.emit_line = false;
         }
 
         if (!out_ls.writeline(line)) {
@@ -2042,10 +2041,10 @@ int main(int argc,char **argv) {
         }
 
         if (expand_multiline)
-            emit_line = true;
+            preproc.emit_line = true;
     }
 
-    if (!if_cond_stack.empty()) {
+    if (!preproc.if_cond_stack.empty()) {
         fprintf(stderr,"#if...#endif block mismatch after parsing\n");
         return 1;
     }
