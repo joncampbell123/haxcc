@@ -28,10 +28,6 @@ static string                   out_file = "-";
 
 static haxpp_linesink           out_ls;
 
-static vector<string>           include_search;
-
-static haxpp_linesourcestack    in_lstk;
-
 class haxpp_macro {
 public:
     struct macro_subst {
@@ -414,59 +410,66 @@ void haxpp_macro::dump(FILE *fp) const {
     fprintf(stderr,"\n");
 }
 
-map<string,haxpp_macro>         haxpp_macros;
+class haxpp {
+public:
+    map<string,haxpp_macro>     haxpp_macros;
+    vector<string>              include_search;
+    haxpp_linesourcestack       in_lstk;
 
-void dump_all_macros() {
-    for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
-        fprintf(stderr,"Macro dump for '%s':\n",mi->first.c_str());
-        mi->second.dump();
-    }
-}
-
-bool add_macro(const string &macroname,const haxpp_macro &macro) {
-    /* TODO: Compare if different and then emit warning?
-     *       Should this be an error? */
-    {
-        auto mi = haxpp_macros.find(macroname);
-        if (mi != haxpp_macros.end()) {
-            /* warn only if a new definition is given */
-            if (mi->second != macro)
-                fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+    void dump_all_macros() {
+        for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
+            fprintf(stderr,"Macro dump for '%s':\n",mi->first.c_str());
+            mi->second.dump();
         }
     }
+
+    bool add_macro(const string &macroname,const haxpp_macro &macro) {
+        /* TODO: Compare if different and then emit warning?
+         *       Should this be an error? */
+        {
+            auto mi = haxpp_macros.find(macroname);
+            if (mi != haxpp_macros.end()) {
+                /* warn only if a new definition is given */
+                if (mi->second != macro)
+                    fprintf(stderr,"WARNING: Macro %s already exists\n",macroname.c_str());
+            }
+        }
 
 #if 0
-    fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
-    macro.dump();
+        fprintf(stderr,"Macro: '%s'\n",macroname.c_str());
+        macro.dump();
 #endif
 
-    haxpp_macros[macroname] = macro;
-    return true;
-}
-
-bool parse_cmdline_macrodef(char* &a) {
-    haxpp_macro macro;
-    string macroname;
-
-    if (!macro.parse_identifier(macroname,a))
-        return false;
-
-    if (*a != 0) {
-        if (*a != '=') {
-            fprintf(stderr,"Macro must have an equals sign between name and string. '%s'\n",a);
-            return false;
-        }
-        a++;
+        haxpp_macros[macroname] = macro;
+        return true;
     }
 
-    if (!macro.parse_token_string(a))
-        return false;
+    bool parse_cmdline_macrodef(char* &a) {
+        haxpp_macro macro;
+        string macroname;
 
-    if (!add_macro(macroname,macro))
-        return false;
+        if (!macro.parse_identifier(macroname,a))
+            return false;
 
-    return true;
-}
+        if (*a != 0) {
+            if (*a != '=') {
+                fprintf(stderr,"Macro must have an equals sign between name and string. '%s'\n",a);
+                return false;
+            }
+            a++;
+        }
+
+        if (!macro.parse_token_string(a))
+            return false;
+
+        if (!add_macro(macroname,macro))
+            return false;
+
+        return true;
+    }
+};
+
+static haxpp                preproc;
 
 static void help() {
     fprintf(stderr,"haxpp infile outfile\n");
@@ -491,7 +494,7 @@ static int parse_argv(int argc,char **argv) {
                 a = argv[i++];
                 if (a == NULL) return 1;
                 if (*a == 0) return 1;
-                include_search.push_back(a);
+                preproc.include_search.push_back(a);
             }
             else if (!strcmp(a,"dumpmacros")) {
                 dump_macros = true;
@@ -499,13 +502,13 @@ static int parse_argv(int argc,char **argv) {
             else if (*a == 'I') { /* GCC style -I<path> */
                 a++;
                 if (*a == 0) return 1;
-                include_search.push_back(a);
+                preproc.include_search.push_back(a);
             }
             else if (*a == 'D') { /* GCC style -DNAME=value */
                 a++;
                 if (*a == 0) return 1;
 
-                if (!parse_cmdline_macrodef(a))
+                if (!preproc.parse_cmdline_macrodef(a))
                     return 1;
             }
             else {
@@ -537,8 +540,8 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
 }
 
 bool eval_ifdef(const string &name) {
-    auto i = haxpp_macros.find(name);
-    return (i != haxpp_macros.end());
+    auto i = preproc.haxpp_macros.find(name);
+    return (i != preproc.haxpp_macros.end());
 }
 
 enum class token_t {
@@ -1600,7 +1603,7 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
                         throw invalid_argument("defined() with no name");
 
                     string remstr = scan;
-                    string val = (haxpp_macros.find(macro) != haxpp_macros.end()) ? "1" : "0";
+                    string val = (preproc.haxpp_macros.find(macro) != preproc.haxpp_macros.end()) ? "1" : "0";
 
                     macro_replace(linefence,line,wordbase,remstr,val);
                     scan = wordbase;
@@ -1611,8 +1614,8 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
 
             vector<string> ivparam;
 
-            auto i = haxpp_macros.find(word);
-            if (i != haxpp_macros.end()) { /* macro() must be used as macro(), treat macro without parens as not a match */
+            auto i = preproc.haxpp_macros.find(word);
+            if (i != preproc.haxpp_macros.end()) { /* macro() must be used as macro(), treat macro without parens as not a match */
                 if (i->second.needs_parens) {
                     cstrskipwhitespace(scan); /* GCC behavior suggests that you can invoke it as macro() or macro () */
                     if (*scan == '(') {
@@ -1621,12 +1624,12 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
                     }
                     else {
                         /* NOPE: Macro can only be invoked with () */
-                        i = haxpp_macros.end();
+                        i = preproc.haxpp_macros.end();
                     }
                 }
             }
 
-            if (i != haxpp_macros.end()) {
+            if (i != preproc.haxpp_macros.end()) {
                 string newstring = expand_macro_string(i->second,multiline,ivparam);
                 string remstr = scan;
 
@@ -1664,7 +1667,7 @@ string lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
 
-    for (const auto &spath : include_search) {
+    for (const auto &spath : preproc.include_search) {
         string fpath = spath + "/" + rpath;
         if (is_file(fpath))
             return fpath;
@@ -1677,13 +1680,13 @@ int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
-    in_lstk.push();
+    preproc.in_lstk.push();
     if (in_file == "-")
-        in_lstk.top().setsource(stdin);
+        preproc.in_lstk.top().setsource(stdin);
     else
-        in_lstk.top().setsource(in_file);
+        preproc.in_lstk.top().setsource(in_file);
 
-    if (!in_lstk.top().open()) {
+    if (!preproc.in_lstk.top().open()) {
         fprintf(stderr,"Unable to open infile, %s\n",strerror(errno));
         return 1;
     }
@@ -1718,26 +1721,26 @@ int main(int argc,char **argv) {
     cond_tracking_t if_cond;
     stack<cond_tracking_t> if_cond_stack;
 
-    while (!in_lstk.empty()) {
-        char *line = in_lstk.top().readline();
+    while (!preproc.in_lstk.empty()) {
+        char *line = preproc.in_lstk.top().readline();
         if (line == nullptr) {
-            if (!in_lstk.top().error() && in_lstk.top().eof()) {
-                in_lstk.pop();
-                if (in_lstk.empty())
+            if (!preproc.in_lstk.top().error() && preproc.in_lstk.top().eof()) {
+                preproc.in_lstk.pop();
+                if (preproc.in_lstk.empty())
                     break;
 
                 emit_line = true;
                 continue;
             }
             else {
-                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",in_lstk.top().error(),in_lstk.top().eof(),strerror(errno));
+                fprintf(stderr,"Problem reading. error=%u eof=%u errno=%s\n",preproc.in_lstk.top().error(),preproc.in_lstk.top().eof(),strerror(errno));
                 return 1;
             }
         }
 
-        string linesource = in_lstk.top().getsourcename();
-        linecount_t lineno = in_lstk.top().currentline();
-        size_t linebufsize = in_lstk.top().linesize();
+        string linesource = preproc.in_lstk.top().getsourcename();
+        linecount_t lineno = preproc.in_lstk.top().currentline();
+        size_t linebufsize = preproc.in_lstk.top().linesize();
 
         if (lineno != lineno_next)
             emit_line = true;
@@ -1923,9 +1926,9 @@ int main(int argc,char **argv) {
                     }
 
                     {
-                        auto mi = haxpp_macros.find(macroname);
-                        if (mi != haxpp_macros.end())
-                            haxpp_macros.erase(mi);
+                        auto mi = preproc.haxpp_macros.find(macroname);
+                        if (mi != preproc.haxpp_macros.end())
+                            preproc.haxpp_macros.erase(mi);
                     }
 
                     emit_line = true;
@@ -1949,7 +1952,7 @@ int main(int argc,char **argv) {
                     if (!macro.parse_token_string(s))
                         return 1;
 
-                    if (!add_macro(macroname,macro))
+                    if (!preproc.add_macro(macroname,macro))
                         return 1;
 
                     emit_line = true;
@@ -1982,9 +1985,9 @@ int main(int argc,char **argv) {
                     }
 
                     /* NTS: Do not permit - to mean stdin */
-                    in_lstk.push();
-                    in_lstk.top().setsource(respath);
-                    if (!in_lstk.top().open()) {
+                    preproc.in_lstk.push();
+                    preproc.in_lstk.top().setsource(respath);
+                    if (!preproc.in_lstk.top().open()) {
                         fprintf(stderr,"Unable to open infile '%s', %s\n",respath.c_str(),strerror(errno));
                         return 1;
                     }
@@ -2022,9 +2025,9 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    if (!in_lstk.empty()) {
-        if (in_lstk.top().error()) {
-            fprintf(stderr,"An error occurred while parsing %s\n",in_lstk.top().getsourcename().c_str());
+    if (!preproc.in_lstk.empty()) {
+        if (preproc.in_lstk.top().error()) {
+            fprintf(stderr,"An error occurred while parsing %s\n",preproc.in_lstk.top().getsourcename().c_str());
             return 1;
         }
     }
@@ -2035,10 +2038,10 @@ int main(int argc,char **argv) {
     }
 
     if (dump_macros)
-        dump_all_macros();
+        preproc.dump_all_macros();
 
     out_ls.close();
-    in_lstk.clear();
+    preproc.in_lstk.clear();
     return 0;
 }
 
