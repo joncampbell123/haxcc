@@ -28,6 +28,38 @@ static string                   out_file = "-";
 
 static haxpp_linesink           out_ls;
 
+enum class token_t {
+    NUMBER=0,                   /* 0 */
+    OPEN_PARENS,
+    COMMA,
+    QUESTION_MARK,                      /* might be ternary operator ? */
+    COLON,                              /* might be ternary operator : */
+    LOGICAL_OR,                 /* 5 */
+    LOGICAL_AND,
+    BITWISE_OR,
+    BITWISE_XOR,
+    BITWISE_AND,
+    NOT_EQUALS,                 /* 10 */
+    EQUALS,
+    GREATER_THAN_OR_EQUAL,
+    GREATER_THAN,
+    LESS_THAN_OR_EQUAL,
+    LESS_THAN,                  /* 15 */
+    SHIFT_RIGHT,
+    SHIFT_LEFT,
+    PLUS,
+    MINUS,
+    MODULUS,                    /* 20 */
+    DIVIDE,
+    MULTIPLY,
+    UNARY_COMPLEMENT,
+    UNARY_NOT,
+    CLOSE_PARENS,               /* 25 */
+    NOTHING,
+
+    MAX_TOKEN
+};
+
 class haxpp_macro {
 public:
     struct macro_subst {
@@ -66,6 +98,21 @@ public:
 public:
     bool                        operator!=(const haxpp_macro &m) const;
     bool                        operator==(const haxpp_macro &m) const;
+};
+
+static inline token_t token_next(const token_t t) {
+    return token_t((unsigned int)t + 1u);
+}
+
+/* NTS: By C standard, floating point and string not allowed.
+ *      Only numbers and operators. */
+struct haxpp_token {
+    haxpp_token() { }
+    haxpp_token(const token_t t) : token(t) { }
+    haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
+
+    token_t             token = token_t::NOTHING;
+    signed long long    number = 0;
 };
 
 bool haxpp_macro::operator!=(const haxpp_macro &m) const {
@@ -556,53 +603,6 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     string msg = string("#line ") + to_string(line) + " \"" + name + "\"\n";
     ls.write(msg.c_str());
 }
-
-enum class token_t {
-    NUMBER=0,                   /* 0 */
-    OPEN_PARENS,
-    COMMA,
-    QUESTION_MARK,                      /* might be ternary operator ? */
-    COLON,                              /* might be ternary operator : */
-    LOGICAL_OR,                 /* 5 */
-    LOGICAL_AND,
-    BITWISE_OR,
-    BITWISE_XOR,
-    BITWISE_AND,
-    NOT_EQUALS,                 /* 10 */
-    EQUALS,
-    GREATER_THAN_OR_EQUAL,
-    GREATER_THAN,
-    LESS_THAN_OR_EQUAL,
-    LESS_THAN,                  /* 15 */
-    SHIFT_RIGHT,
-    SHIFT_LEFT,
-    PLUS,
-    MINUS,
-    MODULUS,                    /* 20 */
-    DIVIDE,
-    MULTIPLY,
-    UNARY_COMPLEMENT,
-    UNARY_NOT,
-    CLOSE_PARENS,               /* 25 */
-    NOTHING,
-
-    MAX_TOKEN
-};
-
-token_t token_next(const token_t t) {
-    return token_t((unsigned int)t + 1u);
-}
-
-/* NTS: By C standard, floating point and string not allowed.
- *      Only numbers and operators. */
-struct haxpp_token {
-    haxpp_token() { }
-    haxpp_token(const token_t t) : token(t) { }
-    haxpp_token(const signed long long v) : token(token_t::NUMBER), number(v) { }
-
-    token_t             token = token_t::NOTHING;
-    signed long long    number = 0;
-};
 
 signed long long eval_exmif_escchar_xx(char* &s) {
     if (isxdigit(s[0]) && isxdigit(s[1])) {
