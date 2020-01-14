@@ -115,6 +115,18 @@ public:
     bool                        operator==(const haxpp_macro &m) const;
 };
 
+class haxpp {
+public:
+    map<string,haxpp_macro>     haxpp_macros;
+    vector<string>              include_search;
+    haxpp_linesourcestack       in_lstk;
+
+    void                        dump_all_macros();
+    bool                        add_macro(const string &macroname,const haxpp_macro &macro);
+    bool                        parse_cmdline_macrodef(char* &a);
+    bool                        eval_ifdef(const string &name);
+};
+
 bool haxpp_macro::operator!=(const haxpp_macro &m) const {
     return !(*this == m);
 }
@@ -464,18 +476,6 @@ void haxpp_macro::dump(FILE *fp) const {
     for (const auto &x : substitution) x.dump(fp);
     fprintf(stderr,"\n");
 }
-
-class haxpp {
-public:
-    map<string,haxpp_macro>     haxpp_macros;
-    vector<string>              include_search;
-    haxpp_linesourcestack       in_lstk;
-
-    void                        dump_all_macros();
-    bool                        add_macro(const string &macroname,const haxpp_macro &macro);
-    bool                        parse_cmdline_macrodef(char* &a);
-    bool                        eval_ifdef(const string &name);
-};
 
 bool haxpp::eval_ifdef(const string &name) {
     auto i = haxpp_macros.find(name);
