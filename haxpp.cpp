@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <stack>
 
 using namespace std;
@@ -145,7 +146,54 @@ void FileDest::putc(char c) {
     }
 }
 
-static stack<FileSource>        in_src_stk;
+class FileSourceStack {
+public:
+    static constexpr size_t     default_size = 64;
+public:
+    vector<FileSource>          src;
+    ssize_t                     stkpos = -1;
+public:
+    void alloc() {
+        alloc(default_size);
+    }
+    void alloc(const size_t ns) {
+        if (src.empty())
+            src.resize(ns);
+        else if (src.size() != ns)
+            throw runtime_error("FileSourceStack attempt to alloc when already allocated");
+    }
+    void free() {
+        src.clear();
+    }
+    bool empty() const {
+        return stkpos == -1;
+    }
+    FileSource& top() {
+        if (stkpos >= 0 && size_t(stkpos) < src.size())
+            return src[stkpos];
+
+        throw overflow_error("FileSourceStack top() called when empty");
+    }
+    void push() {
+        const size_t np = size_t(stkpos+1);
+
+        if (np < src.size())
+            stkpos = np;
+        else
+            throw overflow_error("FileSourceStack stack overflow");
+    }
+    void pop() {
+        if (stkpos >= 0) {
+            src[stkpos].close();
+            stkpos--;
+        }
+        else {
+            throw underflow_error("FileSourceStack stack underflow");
+        }
+    }
+};
+
+static FileSourceStack          in_src_stk;
 static FileDest                 out_dst;
 
 static string                   in_file = "-";
@@ -199,7 +247,8 @@ int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
-    in_src_stk.push(FileSource());
+    in_src_stk.alloc();
+    in_src_stk.push();
     if (in_file == "-")
         in_src_stk.top().set(stdin);
     else
