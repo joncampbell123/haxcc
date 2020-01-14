@@ -427,7 +427,13 @@ public:
     void                        dump_all_macros();
     bool                        add_macro(const string &macroname,const haxpp_macro &macro);
     bool                        parse_cmdline_macrodef(char* &a);
+    bool                        eval_ifdef(const string &name);
 };
+
+bool haxpp::eval_ifdef(const string &name) {
+    auto i = haxpp_macros.find(name);
+    return (i != haxpp_macros.end());
+}
 
 void haxpp::dump_all_macros() {
     for (auto mi=haxpp_macros.begin();mi!=haxpp_macros.end();mi++) {
@@ -549,11 +555,6 @@ static int parse_argv(int argc,char **argv) {
 void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     string msg = string("#line ") + to_string(line) + " \"" + name + "\"\n";
     ls.write(msg.c_str());
-}
-
-bool eval_ifdef(const string &name) {
-    auto i = preproc.haxpp_macros.find(name);
-    return (i != preproc.haxpp_macros.end());
 }
 
 enum class token_t {
@@ -1800,7 +1801,7 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && eval_ifdef(macroname);
+                    if_cond = if_cond.eval() && preproc.eval_ifdef(macroname);
                     if_cond.allow_else = true; /* #ifdef enables #else */
 
                     emit_line = true;
@@ -1816,7 +1817,7 @@ int main(int argc,char **argv) {
                     }
 
                     if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && !eval_ifdef(macroname);
+                    if_cond = if_cond.eval() && !preproc.eval_ifdef(macroname);
                     if_cond.allow_else = true; /* #ifndef enables #else */
 
                     emit_line = true;
