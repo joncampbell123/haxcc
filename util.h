@@ -9,6 +9,7 @@ bool is_file(const std::string &path);
 bool is_out_file(const char * const path);
 bool is_out_file(const std::string &path);
 
+int hex2digit(char c);
 bool iswordchar(char c);
 bool iswordcharfirst(char c);
 void cstrskipsquote(char* &s);

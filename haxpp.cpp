@@ -591,17 +591,6 @@ struct haxpp_token {
     signed long long    number = 0;
 };
 
-int hex2digit(char c) {
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    else if (c >= 'a' && c <= 'f')
-        return c + 10 - 'a';
-    else if (c >= 'A' && c <= 'F')
-        return c + 10 - 'A';
-
-    return 0;
-}
-
 signed long long eval_exmif_escchar_xx(char* &s) {
     if (isxdigit(s[0]) && isxdigit(s[1])) {
         const signed long long c =

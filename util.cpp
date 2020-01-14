@@ -129,3 +129,14 @@ void cstrskipstring(char* &s) {
     }
 }
 
+int hex2digit(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'a' && c <= 'f')
+        return c + 10 - 'a';
+    else if (c >= 'A' && c <= 'F')
+        return c + 10 - 'A';
+
+    return 0;
+}
+
