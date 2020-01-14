@@ -125,8 +125,6 @@ int FileSource::getc() {
             c = fgetc(fp);
         } while (c == '\r'/*chars to ignore*/);
 
-        if (c == '\t') c = ' '; /* convert tab to space */
-
         pchar = c;
         if (ferror(fp))
             throw runtime_error("File I/O error, reading");
