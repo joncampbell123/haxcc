@@ -125,7 +125,262 @@ public:
     bool                        add_macro(const string &macroname,const haxpp_macro &macro);
     bool                        parse_cmdline_macrodef(char* &a);
     bool                        eval_ifdef(const string &name);
+    string                      lookup_header(const string &rpath);
+    bool                        macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr);
+    void                        macro_replace(char *fence,char *base,char *to,const string &after,const string &with);
+    string                      expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam);
+    void                        parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &macro);
+
+    static bool                 cstriswidestrprefix(char* &s);
+    static signed long long     eval_exmif_escchar_xx(char* &s);
+    static signed long long     eval_exmif_escchar_u(char* &s);
+    static signed long long     eval_exmif_escchar_bigu(char* &s);
+    static signed long long     eval_exmif_escchar(char* &s);
+    static signed long long     eval_exmif_char(char* &s);
+    static haxpp_token          eval_pptoken(char* &s);
+    static haxpp_token          eval_exmif_token(char* &s);
+    static bool                 eval_exmif(char* &s);
+    static haxpp_token          eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec=token_t::NUMBER);
+    static bool                 eval_exmif_unary2(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static bool                 eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static bool                 eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static bool                 eval_exmif_addsub(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static bool                 eval_exmif_muldiv(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static bool                 eval_exmif_shift(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop);
+    static void                 macro_param_scan_va_args(string &dst,char* &s);
+    static void                 macro_param_scan(string &dst,char* &s);
+    static void                 macro_param_scan_parenpair(char* &s);
 };
+
+signed long long haxpp::eval_exmif_escchar_xx(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1])) {
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 4ll) +
+             (signed long long)hex2digit(s[1]);
+        s += 2;
+        return c;
+    }
+
+    throw invalid_argument("\\xhh invalid sequence");
+}
+
+signed long long haxpp::eval_exmif_escchar_u(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3])) {
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 12ll) +
+            ((signed long long)hex2digit(s[1]) << 8ll) +
+            ((signed long long)hex2digit(s[2]) << 4ll) +
+             (signed long long)hex2digit(s[3]);
+        s += 4;
+        return c;
+    }
+
+    throw invalid_argument("\\uhhhh invalid sequence");
+}
+
+signed long long haxpp::eval_exmif_escchar_bigu(char* &s) {
+    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3]) &&
+        isxdigit(s[4]) && isxdigit(s[5]) && isxdigit(s[6]) && isxdigit(s[7])) {
+        const signed long long c =
+            ((signed long long)hex2digit(s[0]) << 28ll) +
+            ((signed long long)hex2digit(s[1]) << 24ll) +
+            ((signed long long)hex2digit(s[2]) << 20ll) +
+            ((signed long long)hex2digit(s[3]) << 16ll) +
+            ((signed long long)hex2digit(s[4]) << 12ll) +
+            ((signed long long)hex2digit(s[5]) << 8ll) +
+            ((signed long long)hex2digit(s[6]) << 4ll) +
+             (signed long long)hex2digit(s[7]);
+        s += 8;
+        return c;
+    }
+
+    throw invalid_argument("\\Uhhhhhhhh invalid sequence");
+}
+
+signed long long haxpp::eval_exmif_escchar(char* &s) {
+    if (*s == '\\') {
+        s++;
+        switch (*s) {
+            case 'a':   s++; return 0x07;
+            case 'b':   s++; return 0x08;
+            case 'e':   s++; return 0x1B; /* nonstandard but common apparently */
+            case 'f':   s++; return 0x0C;
+            case 'n':   s++; return 0x0A;
+            case 'r':   s++; return 0x0D;
+            case 't':   s++; return 0x09;
+            case 'v':   s++; return 0x0B;
+            case '\\':  s++; return '\\';
+            case '\'':  s++; return '\'';
+            case '\"':  s++; return '\"';
+            case '?':   s++; return '?';
+            case 'x':   s++; return eval_exmif_escchar_xx(s);
+            case 'u':   s++; return eval_exmif_escchar_u(s);
+            case 'U':   s++; return eval_exmif_escchar_bigu(s);
+            /* octal \nnn */
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7': {
+                int c = 0;
+
+                for (unsigned int i=0;i < 3;i++) {
+                    if (*s >= '0' && *s <= '7') {
+                        c <<= 3;
+                        c += *s - '0';
+                        s++;
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+                return c;
+            };
+            /* I don't know */
+            default:
+                fprintf(stderr,"WARNING: Unknown char escape %c\n",*s);
+                s++;
+                break;
+        };
+    }
+
+    return 0;
+}
+
+/* *s is == '\'' */
+signed long long haxpp::eval_exmif_char(char* &s) {
+    if (*s == '\'') {
+        int c;
+
+        s++;
+        if (*s == '\\')
+            c = eval_exmif_escchar(s);
+        else
+            c = *s++;
+
+        if (*s == '\'') {
+            s++;
+            return c;
+        }
+
+        throw invalid_argument(string("Unexpected char in char constant ") + s);
+    }
+
+    return 0;
+}
+
+haxpp_token haxpp::eval_pptoken(char* &s) {
+    cstrskipwhitespace(s);
+
+    if (*s == 0)
+        return token_t::NOTHING;
+    else if (*s == '\"')
+        throw invalid_argument("No strings allowed in preprocessor #if evaluation");
+    else if (isdigit(*s)) {
+        haxpp_token t = strtoll(s,&s,0); /* let strtoll handle 0xhhhh vs 0oooo vs decimal */
+        if (*s == '.') /* if a dot follows, it's a float and therefore invalid here */
+            throw invalid_argument("No floating point allowed in preprocessor #if evaluation");
+
+        /* GCC allows numeric constants in the preprocessor stage to have the 'u', 'l', etc. suffixes */
+        if (*s == 'u' || *s == 'U') s++;
+        if (*s == 'l' || *s == 'L') s++;
+        if (*s == 'l' || *s == 'L') s++;
+
+        return t;
+    }
+    else if (*s == '(') {
+        s++; return token_t::OPEN_PARENS;
+    }
+    else if (*s == ')') {
+        s++; return token_t::CLOSE_PARENS;
+    }
+    else if (*s == '~') {
+        s++; return token_t::UNARY_COMPLEMENT;
+    }
+    else if (*s == '-') {
+        s++; return token_t::MINUS;
+    }
+    else if (*s == '+') {
+        s++; return token_t::PLUS;
+    }
+    else if (*s == '*') {
+        s++; return token_t::MULTIPLY;
+    }
+    else if (*s == '/') {
+        s++; return token_t::DIVIDE;
+    }
+    else if (*s == '%') {
+        s++; return token_t::MODULUS;
+    }
+    else if (s[0] == '<' && s[1] == '<') {
+        s += 2; return token_t::SHIFT_LEFT;
+    }
+    else if (s[0] == '>' && s[1] == '>') {
+        s += 2; return token_t::SHIFT_RIGHT;
+    }
+    else if (s[0] == '<' && s[1] == '=') {
+        s += 2; return token_t::LESS_THAN_OR_EQUAL;
+    }
+    else if (s[0] == '>' && s[1] == '=') {
+        s += 2; return token_t::GREATER_THAN_OR_EQUAL;
+    }
+    else if (*s == '<') {
+        s++; return token_t::LESS_THAN;
+    }
+    else if (*s == '>') {
+        s++; return token_t::GREATER_THAN;
+    }
+    else if (s[0] == '=' && s[1] == '=') {
+        s += 2; return token_t::EQUALS;
+    }
+    else if (s[0] == '!' && s[1] == '=') {
+        s += 2; return token_t::NOT_EQUALS;
+    }
+    else if (s[0] == '&' && s[1] == '&') {
+        s += 2; return token_t::LOGICAL_AND;
+    }
+    else if (s[0] == '|' && s[1] == '|') {
+        s += 2; return token_t::LOGICAL_OR;
+    }
+    else if (*s == '!') {
+        s++; return token_t::UNARY_NOT;
+    }
+    else if (*s == '&') {
+        s++; return token_t::BITWISE_AND;
+    }
+    else if (*s == '|') {
+        s++; return token_t::BITWISE_OR;
+    }
+    else if (*s == '^') {
+        s++; return token_t::BITWISE_XOR;
+    }
+    else if (*s == ',') {
+        s++; return token_t::COMMA;
+    }
+    else if (*s == '?') {
+        s++; return token_t::QUESTION_MARK;
+    }
+    else if (*s == ':') {
+        s++; return token_t::COLON;
+    }
+    else if (*s == '\'') {
+        return eval_exmif_char(s);
+    }
+    else if (s[0] == 'u' && s[1] == '8' && s[2] == '\'') {
+        s += 2;
+        return eval_exmif_char(s); /* meh, treat the same at this time */
+    }
+    else if ((s[0] == 'u' || s[0] == 'U' || s[0] == 'L') && s[1] == '\'') {
+        s++;
+        return eval_exmif_char(s); /* meh, treat the same at this time */
+    }
+
+    throw invalid_argument(string("Unexpected char in #if evaluation ") + s);
+}
 
 bool haxpp_macro::operator!=(const haxpp_macro &m) const {
     return !(*this == m);
@@ -604,239 +859,7 @@ void send_line(haxpp_linesink &ls,const string &name,const linecount_t line) {
     ls.write(msg.c_str());
 }
 
-signed long long eval_exmif_escchar_xx(char* &s) {
-    if (isxdigit(s[0]) && isxdigit(s[1])) {
-        const signed long long c =
-            ((signed long long)hex2digit(s[0]) << 4ll) +
-             (signed long long)hex2digit(s[1]);
-        s += 2;
-        return c;
-    }
-
-    throw invalid_argument("\\xhh invalid sequence");
-}
-
-signed long long eval_exmif_escchar_u(char* &s) {
-    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3])) {
-        const signed long long c =
-            ((signed long long)hex2digit(s[0]) << 12ll) +
-            ((signed long long)hex2digit(s[1]) << 8ll) +
-            ((signed long long)hex2digit(s[2]) << 4ll) +
-             (signed long long)hex2digit(s[3]);
-        s += 4;
-        return c;
-    }
-
-    throw invalid_argument("\\uhhhh invalid sequence");
-}
-
-signed long long eval_exmif_escchar_bigu(char* &s) {
-    if (isxdigit(s[0]) && isxdigit(s[1]) && isxdigit(s[2]) && isxdigit(s[3]) &&
-        isxdigit(s[4]) && isxdigit(s[5]) && isxdigit(s[6]) && isxdigit(s[7])) {
-        const signed long long c =
-            ((signed long long)hex2digit(s[0]) << 28ll) +
-            ((signed long long)hex2digit(s[1]) << 24ll) +
-            ((signed long long)hex2digit(s[2]) << 20ll) +
-            ((signed long long)hex2digit(s[3]) << 16ll) +
-            ((signed long long)hex2digit(s[4]) << 12ll) +
-            ((signed long long)hex2digit(s[5]) << 8ll) +
-            ((signed long long)hex2digit(s[6]) << 4ll) +
-             (signed long long)hex2digit(s[7]);
-        s += 8;
-        return c;
-    }
-
-    throw invalid_argument("\\Uhhhhhhhh invalid sequence");
-}
-
-signed long long eval_exmif_escchar(char* &s) {
-    if (*s == '\\') {
-        s++;
-        switch (*s) {
-            case 'a':   s++; return 0x07;
-            case 'b':   s++; return 0x08;
-            case 'e':   s++; return 0x1B; /* nonstandard but common apparently */
-            case 'f':   s++; return 0x0C;
-            case 'n':   s++; return 0x0A;
-            case 'r':   s++; return 0x0D;
-            case 't':   s++; return 0x09;
-            case 'v':   s++; return 0x0B;
-            case '\\':  s++; return '\\';
-            case '\'':  s++; return '\'';
-            case '\"':  s++; return '\"';
-            case '?':   s++; return '?';
-            case 'x':   s++; return eval_exmif_escchar_xx(s);
-            case 'u':   s++; return eval_exmif_escchar_u(s);
-            case 'U':   s++; return eval_exmif_escchar_bigu(s);
-            /* octal \nnn */
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7': {
-                int c = 0;
-
-                for (unsigned int i=0;i < 3;i++) {
-                    if (*s >= '0' && *s <= '7') {
-                        c <<= 3;
-                        c += *s - '0';
-                        s++;
-                    }
-                    else {
-                        break;
-                    }
-                }
-
-                return c;
-            };
-            /* I don't know */
-            default:
-                fprintf(stderr,"WARNING: Unknown char escape %c\n",*s);
-                s++;
-                break;
-        };
-    }
-
-    return 0;
-}
-
-/* *s is == '\'' */
-signed long long eval_exmif_char(char* &s) {
-    if (*s == '\'') {
-        int c;
-
-        s++;
-        if (*s == '\\')
-            c = eval_exmif_escchar(s);
-        else
-            c = *s++;
-
-        if (*s == '\'') {
-            s++;
-            return c;
-        }
-
-        throw invalid_argument(string("Unexpected char in char constant ") + s);
-    }
-
-    return 0;
-}
-
-haxpp_token eval_pptoken(char* &s) {
-    cstrskipwhitespace(s);
-
-    if (*s == 0)
-        return token_t::NOTHING;
-    else if (*s == '\"')
-        throw invalid_argument("No strings allowed in preprocessor #if evaluation");
-    else if (isdigit(*s)) {
-        haxpp_token t = strtoll(s,&s,0); /* let strtoll handle 0xhhhh vs 0oooo vs decimal */
-        if (*s == '.') /* if a dot follows, it's a float and therefore invalid here */
-            throw invalid_argument("No floating point allowed in preprocessor #if evaluation");
-
-        /* GCC allows numeric constants in the preprocessor stage to have the 'u', 'l', etc. suffixes */
-        if (*s == 'u' || *s == 'U') s++;
-        if (*s == 'l' || *s == 'L') s++;
-        if (*s == 'l' || *s == 'L') s++;
-
-        return t;
-    }
-    else if (*s == '(') {
-        s++; return token_t::OPEN_PARENS;
-    }
-    else if (*s == ')') {
-        s++; return token_t::CLOSE_PARENS;
-    }
-    else if (*s == '~') {
-        s++; return token_t::UNARY_COMPLEMENT;
-    }
-    else if (*s == '-') {
-        s++; return token_t::MINUS;
-    }
-    else if (*s == '+') {
-        s++; return token_t::PLUS;
-    }
-    else if (*s == '*') {
-        s++; return token_t::MULTIPLY;
-    }
-    else if (*s == '/') {
-        s++; return token_t::DIVIDE;
-    }
-    else if (*s == '%') {
-        s++; return token_t::MODULUS;
-    }
-    else if (s[0] == '<' && s[1] == '<') {
-        s += 2; return token_t::SHIFT_LEFT;
-    }
-    else if (s[0] == '>' && s[1] == '>') {
-        s += 2; return token_t::SHIFT_RIGHT;
-    }
-    else if (s[0] == '<' && s[1] == '=') {
-        s += 2; return token_t::LESS_THAN_OR_EQUAL;
-    }
-    else if (s[0] == '>' && s[1] == '=') {
-        s += 2; return token_t::GREATER_THAN_OR_EQUAL;
-    }
-    else if (*s == '<') {
-        s++; return token_t::LESS_THAN;
-    }
-    else if (*s == '>') {
-        s++; return token_t::GREATER_THAN;
-    }
-    else if (s[0] == '=' && s[1] == '=') {
-        s += 2; return token_t::EQUALS;
-    }
-    else if (s[0] == '!' && s[1] == '=') {
-        s += 2; return token_t::NOT_EQUALS;
-    }
-    else if (s[0] == '&' && s[1] == '&') {
-        s += 2; return token_t::LOGICAL_AND;
-    }
-    else if (s[0] == '|' && s[1] == '|') {
-        s += 2; return token_t::LOGICAL_OR;
-    }
-    else if (*s == '!') {
-        s++; return token_t::UNARY_NOT;
-    }
-    else if (*s == '&') {
-        s++; return token_t::BITWISE_AND;
-    }
-    else if (*s == '|') {
-        s++; return token_t::BITWISE_OR;
-    }
-    else if (*s == '^') {
-        s++; return token_t::BITWISE_XOR;
-    }
-    else if (*s == ',') {
-        s++; return token_t::COMMA;
-    }
-    else if (*s == '?') {
-        s++; return token_t::QUESTION_MARK;
-    }
-    else if (*s == ':') {
-        s++; return token_t::COLON;
-    }
-    else if (*s == '\'') {
-        return eval_exmif_char(s);
-    }
-    else if (s[0] == 'u' && s[1] == '8' && s[2] == '\'') {
-        s += 2;
-        return eval_exmif_char(s); /* meh, treat the same at this time */
-    }
-    else if ((s[0] == 'u' || s[0] == 'U' || s[0] == 'L') && s[1] == '\'') {
-        s++;
-        return eval_exmif_char(s); /* meh, treat the same at this time */
-    }
-
-    throw invalid_argument(string("Unexpected char in #if evaluation ") + s);
-}
-
-haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec=token_t::NUMBER);
-
-bool eval_exmif_unary2(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_unary2(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is UNARY_NOT */
     if (si != stop) {
         if ((*si).token == token_t::UNARY_NOT) {
@@ -892,7 +915,7 @@ bool eval_exmif_unary2(haxpp_token &r1,vector<haxpp_token>::iterator &si,const v
     return false;
 }
 
-bool eval_exmif_muldiv(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_muldiv(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is MULTIPLY */
     if (si != stop) {
         if ((*si).token == token_t::MULTIPLY) {
@@ -949,7 +972,7 @@ bool eval_exmif_muldiv(haxpp_token &r1,vector<haxpp_token>::iterator &si,const v
     return false;
 }
 
-bool eval_exmif_addsub(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_addsub(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is MINUS */
     if (si != stop) {
         if ((*si).token == token_t::PLUS) {
@@ -987,7 +1010,7 @@ bool eval_exmif_addsub(haxpp_token &r1,vector<haxpp_token>::iterator &si,const v
     return false;
 }
 
-bool eval_exmif_shift(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_shift(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is SHIFT_LEFT */
     if (si != stop) {
         if ((*si).token == token_t::SHIFT_RIGHT) {
@@ -1025,7 +1048,7 @@ bool eval_exmif_shift(haxpp_token &r1,vector<haxpp_token>::iterator &si,const ve
     return false;
 }
 
-bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is LESS_THAN */
     if (si != stop) {
         if ((*si).token == token_t::LESS_THAN) {
@@ -1093,7 +1116,7 @@ bool eval_exmif_relational(haxpp_token &r1,vector<haxpp_token>::iterator &si,con
     return false;
 }
 
-bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
+bool haxpp::eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop) {
     /* highest enum value is EQUALS */
     if (si != stop) {
         if ((*si).token == token_t::EQUALS) {
@@ -1131,7 +1154,7 @@ bool eval_exmif_equ_nequ(haxpp_token &r1,vector<haxpp_token>::iterator &si,const
     return false;
 }
 
-haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec) {
+haxpp_token haxpp::eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_token>::iterator stop,token_t min_prec) {
     haxpp_token r1;
 
     /* (expression) */
@@ -1322,7 +1345,7 @@ haxpp_token eval_exmif(vector<haxpp_token>::iterator &si,const vector<haxpp_toke
     return r1;
 }
 
-haxpp_token eval_exmif_token(char* &s) {
+haxpp_token haxpp::eval_exmif_token(char* &s) {
     vector<haxpp_token> tokens;
     cstrskipwhitespace(s);
     while (*s != 0) {
@@ -1339,7 +1362,7 @@ haxpp_token eval_exmif_token(char* &s) {
     return r;
 }
 
-bool eval_exmif(char* &s) {
+bool haxpp::eval_exmif(char* &s) {
     haxpp_token r = eval_exmif_token(s);
 
     if (r.token == token_t::NUMBER)
@@ -1350,7 +1373,7 @@ bool eval_exmif(char* &s) {
         throw invalid_argument(string("Token not implemented ") + to_string((unsigned int)(r.token)));
 }
 
-string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
+string haxpp::expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<string> &ivparam) {
     bool va_opt = false;
     string r;
 
@@ -1402,7 +1425,7 @@ string expand_macro_string(haxpp_macro &macro,bool &multiline,const vector<strin
     return r;
 }
 
-void macro_replace(char *fence,char *base,char *to,const string &after,const string &with) {
+void haxpp::macro_replace(char *fence,char *base,char *to,const string &after,const string &with) {
     if (to >= fence || to < base || fence <= base)
         throw invalid_argument("macro_replace() to pointer out of bounds");
 
@@ -1423,7 +1446,7 @@ void macro_replace(char *fence,char *base,char *to,const string &after,const str
 }
 
 /* *s == '(' scan until ')' and return with s just past it */
-void macro_param_scan_parenpair(char* &s) {
+void haxpp::macro_param_scan_parenpair(char* &s) {
     int paren = 0;
 
     while (*s != 0) {
@@ -1449,7 +1472,7 @@ void macro_param_scan_parenpair(char* &s) {
         throw runtime_error("mismatched parens in macro expansion");
 }
 
-void macro_param_scan_va_args(string &dst,char* &s) {
+void haxpp::macro_param_scan_va_args(string &dst,char* &s) {
     char *base = s;
 
     while (*s != 0) {
@@ -1468,7 +1491,7 @@ void macro_param_scan_va_args(string &dst,char* &s) {
     dst = string(base,(size_t)(s-base));
 }
 
-void macro_param_scan(string &dst,char* &s) {
+void haxpp::macro_param_scan(string &dst,char* &s) {
      char *base = s;
 
      while (*s != 0) {
@@ -1488,7 +1511,7 @@ void macro_param_scan(string &dst,char* &s) {
 }
 
 /* caller has already handled '(' */
-void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &macro) {
+void haxpp::parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &macro) {
     size_t param = 0;
 
     ivparam.resize(macro.parameters.size());
@@ -1546,7 +1569,7 @@ void parse_macro_invoke_params(vector<string> &ivparam,char* &s,haxpp_macro &mac
         throw runtime_error("macro() invocation wrong number of parameters");
 }
 
-bool cstriswidestrprefix(char* &s) {
+bool haxpp::cstriswidestrprefix(char* &s) {
     if (s[0] == 'u' && s[1] == '8' && (s[2] == '\'' || s[2] == '\"')) {
         s += 2; /* return pointing at quotation mark */
         return true;
@@ -1559,7 +1582,7 @@ bool cstriswidestrprefix(char* &s) {
     return false;
 }
 
-bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
+bool haxpp::macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
     bool changed = false;
     char *scan = line;
 
@@ -1665,7 +1688,7 @@ bool macro_expand(char *line,char *linefence,bool &multiline,bool ifexpr) {
     return changed;
 }
 
-string lookup_header(const string &rpath) {
+string haxpp::lookup_header(const string &rpath) {
     if (is_file(rpath))
         return rpath;
 
@@ -1826,10 +1849,10 @@ int main(int argc,char **argv) {
                 else if (what == "if") {
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,true);
+                    preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
                     if_cond_stack.push(if_cond);
-                    if_cond = if_cond.eval() && eval_exmif(s);
+                    if_cond = if_cond.eval() && preproc.eval_exmif(s);
                     if_cond.allow_else = true; /* #if enables #else */
                     if_cond.allow_elif = true; /* #if enables #elif */
 
@@ -1850,10 +1873,10 @@ int main(int argc,char **argv) {
                     if (pwhat == "echoif") { /* debug function */
                         /* expand macros in the expression */
                         bool expand_multiline = false;
-                        macro_expand(s,line+linebufsize,expand_multiline,true);
+                        preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
                         char *base = s;
-                        auto res = eval_exmif(s);
+                        auto res = preproc.eval_exmif(s);
 
                         fprintf(stderr,"#if expanded to: '%s'\n",base);
                         fprintf(stderr,"           bool: %u\n",res?1:0);
@@ -1864,11 +1887,11 @@ int main(int argc,char **argv) {
                     else if (pwhat == "echovalif") { /* debug function */
                         /* expand macros in the expression */
                         bool expand_multiline = false;
-                        macro_expand(s,line+linebufsize,expand_multiline,true);
+                        preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
                         fprintf(stderr,"#if expanded to: '%s'\n",s);
 
-                        haxpp_token r = eval_exmif_token(s);
+                        haxpp_token r = preproc.eval_exmif_token(s);
 
                         if (r.token == token_t::NUMBER)
                             fprintf(stderr,"         number: %lld\n",r.number);
@@ -1906,9 +1929,9 @@ int main(int argc,char **argv) {
 
                     /* expand macros in the expression */
                     bool expand_multiline = false;
-                    macro_expand(s,line+linebufsize,expand_multiline,true);
+                    preproc.macro_expand(s,line+linebufsize,expand_multiline,true);
 
-                    if_cond.cond = !if_cond.done && eval_exmif(s);
+                    if_cond.cond = !if_cond.done && preproc.eval_exmif(s);
                     if (if_cond.cond) if_cond.done = true;
 
                     emit_line = true;
@@ -1980,7 +2003,7 @@ int main(int argc,char **argv) {
                         return 1;
                     }
 
-                    string respath = lookup_header(path);
+                    string respath = preproc.lookup_header(path);
                     if (respath.empty()) {
                         fprintf(stderr,"#include statement unable to find '%s'\n",path.c_str());
                         return 1;
@@ -2006,7 +2029,7 @@ int main(int argc,char **argv) {
 
         bool expand_multiline = false;
 
-        macro_expand(line,line+linebufsize,expand_multiline,false);
+        preproc.macro_expand(line,line+linebufsize,expand_multiline,false);
 
         if (emit_line) {
             send_line(out_ls,linesource,lineno);
