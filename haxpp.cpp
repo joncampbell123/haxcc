@@ -15,51 +15,14 @@ public:
     FileSource() : fp(NULL), ownership(false) { }
     ~FileSource() { close(); }
 public:
-    void set(FILE *_fp) {
-        close();
-        fp = _fp;
-        path.clear();
-    }
-    void set(const string &_path) {
-        close();
-        path = _path;
-    }
-    void close() {
-        if (fp != NULL) {
-            if (ownership) fclose(fp);
-            fp = NULL;
-        }
-        ownership = false;
-    }
-    void open() {
-        if (fp == NULL) {
-            fp = fopen(path.c_str(),"rb");
-            if (fp != NULL)
-                ownership = true;
-        }
-    }
-    bool is_open() const {
-        return (fp != NULL);
-    }
-    bool eof() const {
-        if (fp != NULL)
-            return feof(fp);
-        return true;
-    }
-    const string& get_path() const {
-        return path;
-    }
-    int getc() {
-        int c = EOF;
-
-        if (fp != NULL) {
-            c = fgetc(fp);
-            if (ferror(fp))
-                throw runtime_error("File I/O error, reading");
-        }
-
-        return c;
-    }
+    void                        set(FILE *_fp);
+    void                        set(const string &_path);
+    void                        close();
+    void                        open();
+    bool                        is_open() const;
+    bool                        eof() const;
+    const string&               get_path() const;
+    int                         getc();
 private:
     FILE*                       fp;
     bool                        ownership;
@@ -71,48 +34,115 @@ public:
     FileDest() : fp(NULL), ownership(false) { }
     ~FileDest() { close(); }
 public:
-    void set(FILE *_fp) {
-        close();
-        fp = _fp;
-        path.clear();
-    }
-    void set(const string &_path) {
-        close();
-        path = _path;
-    }
-    void close() {
-        if (fp != NULL) {
-            if (ownership) fclose(fp);
-            fp = NULL;
-        }
-        ownership = false;
-    }
-    void open() {
-        if (fp == NULL) {
-            fp = fopen(path.c_str(),"wb");
-            if (fp != NULL)
-                ownership = true;
-        }
-    }
-    bool is_open() const {
-        return (fp != NULL);
-    }
-    const string& get_path() const {
-        return path;
-    }
-    void putc(char c) {
-        if (fp != NULL) {
-            if (fputc((int)c,fp) == EOF) {
-                if (ferror(fp))
-                    throw runtime_error("File I/O error, writing");
-            }
-        }
-    }
+    void                        set(FILE *_fp);
+    void                        set(const string &_path);
+    void                        close();
+    void                        open();
+    bool                        is_open() const;
+    const string&               get_path() const;
+    void                        putc(char c);
 private:
     FILE*                       fp;
     bool                        ownership;
     string                      path;
 };
+
+void FileSource::set(FILE *_fp) {
+    close();
+    fp = _fp;
+    path.clear();
+}
+
+void FileSource::set(const string &_path) {
+    close();
+    path = _path;
+}
+
+void FileSource::close() {
+    if (fp != NULL) {
+        if (ownership) fclose(fp);
+        fp = NULL;
+    }
+    ownership = false;
+}
+
+void FileSource::open() {
+    if (fp == NULL) {
+        fp = fopen(path.c_str(),"rb");
+        if (fp != NULL)
+            ownership = true;
+    }
+}
+
+bool FileSource::is_open() const {
+    return (fp != NULL);
+}
+
+bool FileSource::eof() const {
+    if (fp != NULL)
+        return feof(fp);
+    return true;
+}
+
+const string& FileSource::get_path() const {
+    return path;
+}
+
+int FileSource::getc() {
+    int c = EOF;
+
+    if (fp != NULL) {
+        c = fgetc(fp);
+        if (ferror(fp))
+            throw runtime_error("File I/O error, reading");
+    }
+
+    return c;
+}
+
+void FileDest::set(FILE *_fp) {
+    close();
+    fp = _fp;
+    path.clear();
+}
+
+void FileDest::set(const string &_path) {
+    close();
+    path = _path;
+}
+
+void FileDest::close() {
+    if (fp != NULL) {
+        if (ownership) fclose(fp);
+        fp = NULL;
+    }
+    ownership = false;
+}
+
+void FileDest::open() {
+    if (fp == NULL) {
+        fp = fopen(path.c_str(),"wb");
+        if (fp != NULL)
+            ownership = true;
+    }
+}
+
+bool FileDest::is_open() const {
+    return (fp != NULL);
+}
+
+const string& FileDest::get_path() const {
+    return path;
+}
+
+void FileDest::putc(char c) {
+    if (fp != NULL) {
+        if (fputc((int)c,fp) == EOF) {
+            if (ferror(fp))
+                throw runtime_error("File I/O error, writing");
+        }
+    }
+}
 
 static FileSource               in_src;
 static FileDest                 out_dst;
