@@ -29,6 +29,9 @@ private:
     FILE*                       fp;
     bool                        ownership;
     string                      path;
+    int                         line;
+    int                         column;
+    int                         pchar;
 };
 
 class FileDest {
@@ -70,6 +73,9 @@ void FileSource::close() {
 
 void FileSource::open() {
     if (fp == NULL) {
+        line = 1;
+        pchar = 0;
+        column = 0;
         fp = fopen(path.c_str(),"rb");
         if (fp != NULL)
             ownership = true;
@@ -94,12 +100,21 @@ int FileSource::getc() {
     int c = EOF;
 
     if (fp != NULL) {
+        if (pchar == '\n') {
+            line++;
+            column = 1;
+        }
+        else {
+            column++;
+        }
+
         do {
             c = fgetc(fp);
         } while (c == '\r'/*chars to ignore*/);
 
         if (c == '\t') c = ' '; /* convert tab to space */
 
+        pchar = c;
         if (ferror(fp))
             throw runtime_error("File I/O error, reading");
     }
