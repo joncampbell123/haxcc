@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <stack>
 
 using namespace std;
 
@@ -144,7 +145,7 @@ void FileDest::putc(char c) {
     }
 }
 
-static FileSource               in_src;
+static stack<FileSource>        in_src_stk;
 static FileDest                 out_dst;
 
 static string                   in_file = "-";
@@ -198,13 +199,14 @@ int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
+    in_src_stk.push(FileSource());
     if (in_file == "-")
-        in_src.set(stdin);
+        in_src_stk.top().set(stdin);
     else
-        in_src.set(in_file);
+        in_src_stk.top().set(in_file);
 
-    in_src.open();
-    if (!in_src.is_open()) {
+    in_src_stk.top().open();
+    if (!in_src_stk.top().is_open()) {
         fprintf(stderr,"Unable to open source\n");
         return 1;
     }
@@ -220,8 +222,13 @@ int main(int argc,char **argv) {
         return 1;
     }
 
-    while (!in_src.eof()) {
-        c = in_src.getc();
+    while (!in_src_stk.empty()) {
+        if (in_src_stk.top().eof()) {
+            in_src_stk.pop();
+            continue;
+        }
+
+        c = in_src_stk.top().getc();
         if (c == EOF) break;
         out_dst.putc(c);
     }
