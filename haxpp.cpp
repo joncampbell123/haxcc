@@ -39,7 +39,6 @@ private:
     string                      path;
     int32_t                     line;
     int                         column;
-    int                         pchar;
 };
 
 class FileDest {
@@ -64,7 +63,6 @@ private:
 
 void FileSource::reset_counters() {
     line = 1;
-    pchar = 0;
     column = 0;
 }
 
@@ -115,7 +113,11 @@ int FileSource::getc() {
     int c = EOF;
 
     if (fp != NULL) {
-        if (pchar == '\n') {
+        do {
+            c = fgetc(fp);
+        } while (c == '\r'/*chars to ignore*/);
+
+        if (c == '\n') {
             line++;
             column = 1;
         }
@@ -123,11 +125,6 @@ int FileSource::getc() {
             column++;
         }
 
-        do {
-            c = fgetc(fp);
-        } while (c == '\r'/*chars to ignore*/);
-
-        pchar = c;
         if (ferror(fp))
             throw runtime_error("File I/O error, reading");
     }
@@ -434,12 +431,28 @@ int main(int argc,char **argv) {
     }
 
     string line;
+    bool emit_line = false;
+    int32_t lineno_expect = -1;
     while (!in_src_stk.empty()) {
+        int32_t lineno = in_src_stk.top().current_line();
+        const string &source = in_src_stk.top().get_path();
+
         if (read_line(/*&*/line,in_src_stk.top())) {
+            if (lineno_expect != lineno)
+                emit_line = true;
+
+            if (emit_line) {
+                out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
+                emit_line = false;
+            }
+
             out_dst.puts(line);
             out_dst.putc('\n');
+
+            lineno_expect = lineno + int32_t(1);
         }
         else if (in_src_stk.top().eof()) {
+            emit_line = true;
             in_src_stk.pop();
         }
     }
