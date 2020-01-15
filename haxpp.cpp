@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <fcntl.h>
 
 #include <stdexcept>
@@ -11,6 +12,146 @@
 #include <stack>
 
 using namespace std;
+
+template <typename T> struct bitmask_t {
+    T                           start_bit;
+    T                           num_bits;
+
+    constexpr bitmask_t() : start_bit(0), num_bits(1) { }
+    constexpr bitmask_t(const T start,const T num) : start_bit(start), num_bits(num) { }
+
+    constexpr inline T get_field(const T t) const {
+        return (t >> start_bit) & unshifted_bit_mask();
+    }
+    constexpr inline T unshifted_bit_mask() const {
+        return (num_bits != T(0)) ? ((T(1) << num_bits) - T(1)) : T(0);
+    }
+    constexpr inline T bit_mask() const {
+        return unshifted_bit_mask() << start_bit;
+    }
+    constexpr inline T make_field(const T t) const {
+        return (t & unshifted_bit_mask()) << start_bit;
+    }
+};
+
+typedef size_t                              stringref_t;
+
+static constexpr stringref_t                stringref_t_invalid =       stringref_t( ~stringref_t(0) );
+static constexpr stringref_t                stringref_t_bits =          CHAR_BIT * sizeof(stringref_t);
+static constexpr stringref_t                stringref_t_class_bits =    stringref_t(2u);
+static constexpr stringref_t                stringref_t_index_bits =    stringref_t_bits - stringref_t_class_bits;
+static constexpr bitmask_t<stringref_t>     stringref_t_index =         { stringref_t(0), stringref_t(stringref_t_index_bits) };
+static constexpr bitmask_t<stringref_t>     stringref_t_class =         { stringref_t(stringref_t_index_bits), stringref_t(stringref_t_class_bits) };
+
+static constexpr inline stringref_t stringref_class(const stringref_t t) {
+    return stringref_t_class.get_field(t);
+}
+
+static constexpr inline stringref_t stringref_index(const stringref_t t) {
+    return stringref_t_index.get_field(t);
+}
+
+static constexpr inline stringref_t make_stringref(const stringref_t _class,const stringref_t _index) {
+    return stringref_t_class.make_field(_class) + stringref_t_index.make_field(_index);
+}
+
+static_assert((stringref_t_class.bit_mask() | stringref_t_index.bit_mask()) == stringref_t_invalid, "index and class field added do not fill all bits");
+static_assert((stringref_t_class.bit_mask() & stringref_t_index.bit_mask()) == stringref_t(0), "index and class overlap");
+static_assert(stringref_t_class.get_field(make_stringref(2,55)) == 2, "class field corrupted round trip");
+static_assert(stringref_t_index.get_field(make_stringref(2,55)) == 55, "index field corrupted round trip");
+
+/* this one requires explanation: class is bits [n-1:n-2] and index is bits [n-3:0].
+ * adding +1 to the index bitmask should overflow into the class bitmask */
+static_assert(stringref_t_class.get_field(stringref_t_index.bit_mask() + stringref_t(1)) == stringref_t(1), "index and class not adjacent fields");
+
+enum class strtype_t {
+    CHAR,
+    WIDE16,
+    WIDE32
+};
+
+class string_storage {
+public:
+    const string&                           get_char(const stringref_t);
+    const basic_string<uint16_t>&           get_wide16(const stringref_t);
+    const basic_string<uint32_t>&           get_wide32(const stringref_t);
+    stringref_t                             add(const string &x);
+    stringref_t                             add(const basic_string<uint16_t> &x);
+    stringref_t                             add(const basic_string<uint32_t> &x);
+private:
+    template <class T> const T&             get(const stringref_t s,const vector<T> &vec,const stringref_t type);
+    template <class T> stringref_t          add(vector<T> &vec,const T &x);
+private:
+    vector<string>                          char_strings;
+    vector<string>                          utf8_strings;
+    vector< basic_string<uint16_t> >        wide16_strings;
+    vector< basic_string<uint32_t> >        wide32_strings;
+};
+
+template <class T> const T& string_storage::get(const stringref_t s,const vector<T> &vec,const stringref_t type) {
+    if (stringref_class(s) == type) {
+        const stringref_t i = stringref_index(s);
+        if (i < vec.size())
+            return vec[i];
+
+        throw range_error("get_char() out of range");
+    }
+
+    throw invalid_argument("get_char() wrong string type");
+}
+
+template <class T> stringref_t string_storage::add(vector<T> &vec,const T &x) {
+    const stringref_t r = vec.size();
+    vec.push_back(x);
+    return r;
+}
+
+const string& string_storage::get_char(const stringref_t s) {
+    return get(s,char_strings,stringref_t(strtype_t::CHAR));
+}
+
+const basic_string<uint16_t>& string_storage::get_wide16(const stringref_t s) {
+    return get(s,wide16_strings,stringref_t(strtype_t::WIDE16));
+}
+
+const basic_string<uint32_t>& string_storage::get_wide32(const stringref_t s) {
+    return get(s,wide32_strings,stringref_t(strtype_t::WIDE32));
+}
+
+stringref_t string_storage::add(const string &x) {
+    return make_stringref(stringref_t(strtype_t::CHAR),add(char_strings,x));
+}
+
+stringref_t string_storage::add(const basic_string<uint16_t> &x) {
+    return make_stringref(stringref_t(strtype_t::WIDE16),add(wide16_strings,x));
+}
+
+stringref_t string_storage::add(const basic_string<uint32_t> &x) {
+    return make_stringref(stringref_t(strtype_t::WIDE32),add(wide32_strings,x));
+}
+
+class token {
+public:
+    enum token_t {
+        NONE=0,
+        MACRO,
+        IDENTIFIER,
+        INTEGER,
+        FLOAT,
+        STRING,
+        COMMA
+    };
+public:
+    token_t                     token = NONE;
+    union int_t {
+        signed long long        s;
+        unsigned long long      u;
+    } i;
+    long double                 f;
+    stringref_t                 strval = stringref_t_invalid;
+};
+
+typedef vector<token>           token_string;
 
 class FileSource {
 public:
@@ -235,6 +376,8 @@ public:
         }
     }
 };
+
+static string_storage           string_store;
 
 static FileSourceStack          in_src_stk;
 static FileDest                 out_dst;
