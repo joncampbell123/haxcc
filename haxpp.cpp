@@ -239,6 +239,8 @@ public:
 static FileSourceStack          in_src_stk;
 static FileDest                 out_dst;
 
+static bool                     pp_only = false;
+
 static string                   in_file = "-";
 static string                   out_file = "-";
 
@@ -260,6 +262,9 @@ static int parse_argv(int argc,char **argv) {
             if (!strcmp(a,"h") || !strcmp(a,"help")) {
                 help();
                 return 1;
+            }
+            else if (!strcmp(a,"E")) {
+                pp_only = true;
             }
             else {
                 fprintf(stderr,"Unknown switch %s\n",a);
@@ -441,13 +446,15 @@ int main(int argc,char **argv) {
             if (lineno_expect != lineno)
                 emit_line = true;
 
-            if (emit_line) {
-                out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
-                emit_line = false;
-            }
+            if (pp_only) {
+                if (emit_line) {
+                    out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
+                    emit_line = false;
+                }
 
-            out_dst.puts(line);
-            out_dst.putc('\n');
+                out_dst.puts(line);
+                out_dst.putc('\n');
+            }
 
             lineno_expect = lineno + int32_t(1);
         }
