@@ -54,6 +54,7 @@ public:
     bool                        is_open() const;
     const string&               get_path() const;
     void                        putc(char c);
+    void                        puts(const char *s);
 private:
     FILE*                       fp;
     bool                        ownership;
@@ -171,6 +172,15 @@ const string& FileDest::get_path() const {
 void FileDest::putc(char c) {
     if (fp != NULL) {
         if (fputc((int)c,fp) == EOF) {
+            if (ferror(fp))
+                throw runtime_error("File I/O error, writing");
+        }
+    }
+}
+
+void FileDest::puts(const char *s) {
+    if (fp != NULL) {
+        if (fputs(s,fp) == EOF) {
             if (ferror(fp))
                 throw runtime_error("File I/O error, writing");
         }
