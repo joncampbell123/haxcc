@@ -7,3 +7,6 @@ Hello /* comment
 Hello world// should not see this
 Hello\
 world
+This \t should not be filtered
+This newline\
+break should be combined
