@@ -434,7 +434,7 @@ int main(int argc,char **argv) {
     bool emit_line = false;
     int32_t lineno_expect = -1;
     while (!in_src_stk.empty()) {
-        int32_t lineno = in_src_stk.top().current_line();
+        const int32_t lineno = in_src_stk.top().current_line();
         const string &source = in_src_stk.top().get_path();
 
         if (read_line(/*&*/line,in_src_stk.top())) {
