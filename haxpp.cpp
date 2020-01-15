@@ -55,6 +55,7 @@ public:
     const string&               get_path() const;
     void                        putc(char c);
     void                        puts(const char *s);
+    void                        puts(const string &s);
 private:
     FILE*                       fp;
     bool                        ownership;
@@ -187,6 +188,10 @@ void FileDest::puts(const char *s) {
     }
 }
 
+void FileDest::puts(const string &s) {
+    puts(s.c_str());
+}
+
 class FileSourceStack {
 public:
     static constexpr size_t     default_size = 64;
@@ -282,9 +287,125 @@ static int parse_argv(int argc,char **argv) {
     return 0;
 }
 
-int main(int argc,char **argv) {
+/* caller just read a backslash '\\' */
+static void read_line_esc(string &line,FileSource &src) {
+    int c2 = src.getc();
+    if (c2 != EOF) { /* trailing \<EOF> should just do nothing */
+        if (c2 == '\n') { /* \<newline>, so it continues on the next line */
+            line += ' ';
+        }
+        else {
+            line += '\\';
+            line += c2;
+        }
+    }
+}
+
+/* caller just read a quote '\'' or '\"' in (c) */
+static void read_line_quote(string &line,FileSource &src,const char c) {
+    int c2;
+
+    line += c;
+    do {
+        c2 = src.getc();
+        if (c == EOF)
+            break;
+        else if (c == '\n')
+            break;
+        else if (c == '\\')
+            read_line_esc(line,src);
+        else {
+            line += c2;
+            if (c2 == c)
+                break;
+        }
+    } while(1);
+}
+
+/* caller just read // */
+static bool read_line_skip_cpp_comment(FileSource &src) {
+    string tmp;
     int c;
 
+    do {
+        c = src.getc();
+        if (c == EOF)
+            break;
+        else if (c == '\n')
+            return false;
+        else if (c == '\\') {
+            c = src.getc();
+            if (c == '\n') break;
+        }
+    } while(1);
+
+    return true;
+}
+
+/* caller just read / * * / */
+static void read_line_skip_c_comment(FileSource &src) {
+    string tmp;
+    int c;
+
+    do {
+        c = src.getc();
+        if (c == EOF)
+            break;
+        else if (c == '*') { /* C comment closing */
+            c = src.getc();
+            if (c == '/') break;
+        }
+        else if (c == '/') {
+            c = src.getc();
+            if (c == '*') /* another C comment opening. we allow nesting */
+                read_line_skip_c_comment(src);
+        }
+    } while(1);
+}
+
+bool read_line(string &line,FileSource &src) {
+    int c;
+
+    line.clear();
+    while (!src.eof()) {
+        c = src.getc();
+
+        if (c == EOF)
+            break;
+        else if (c == '\n')
+            break;
+        else if (c == '\\')
+            read_line_esc(line,src);
+        else if (c == '\'')
+            read_line_quote(line,src,c);
+        else if (c == '/') {
+            int c2 = src.getc();
+            if (c2 == EOF) {
+                line += c;
+            }
+            else if (c2 == '/') { /* C++ // comment */
+                if (!read_line_skip_cpp_comment(src))
+                    break;
+            }
+            else if (c2 == '*') { /* C comment like this */
+                read_line_skip_c_comment(src);
+            }
+            else {
+                line += c;
+                line += c2;
+            }
+        }
+        else
+            line += c;
+    }
+
+    if (line.empty() && src.eof())
+        return false;
+
+    return true;
+}
+
+int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
 
@@ -312,14 +433,15 @@ int main(int argc,char **argv) {
         return 1;
     }
 
+    string line;
     while (!in_src_stk.empty()) {
-        c = in_src_stk.top().getc();
-        if (c == EOF) {
-            in_src_stk.pop();
-            continue;
+        if (read_line(/*&*/line,in_src_stk.top())) {
+            out_dst.puts(line);
+            out_dst.putc('\n');
         }
-
-        out_dst.putc(c);
+        else if (in_src_stk.top().eof()) {
+            in_src_stk.pop();
+        }
     }
 
     return 0;
