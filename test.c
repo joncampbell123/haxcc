@@ -4,3 +4,6 @@ Hello /* comment
          that
          spans
          lines */world
+Hello world// should not see this
+Hello\
+world
