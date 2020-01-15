@@ -10,3 +10,5 @@ world
 This \t should not be filtered
 This newline\
 break should be combined
+How about "a string that\
+spans lines" right now?
