@@ -745,8 +745,6 @@ stringref_t parse_string(string::iterator &li,const string::iterator lie) {
         r += c;
     } while (1);
 
-    fprintf(stderr,"String \"%s\"\n",r.c_str());
-
     return string_store.add(r);
 }
 
