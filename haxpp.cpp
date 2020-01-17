@@ -595,10 +595,12 @@ void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
 }
 
 bool is_keyword(const string &s) {
+    (void)s;
     return false;
 }
 
 bool is_macro(const string &s) {
+    (void)s;
     return false;
 }
 
@@ -765,6 +767,9 @@ string parse_identifier(string::iterator &li,const string::iterator lie) {
 
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
     auto li = lib;
+
+    (void)lineno;
+    (void)source;
 
     /* initial whitespace skip */
     parse_skip_whitespace(li,lie);
