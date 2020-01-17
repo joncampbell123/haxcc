@@ -136,14 +136,16 @@ public:
     enum token_t {
         NONE=0,
         MACRO,
+        PREPROCDIR,
         IDENTIFIER,
+        KEYWORD,
         INTEGER,
         FLOAT,
         STRING,
         COMMA
     };
 public:
-    token_t                     token = NONE;
+    token_t                     tval = NONE;
     unsigned char               bsize = 0;
     struct int_t { /* also char constants like 'a' */
         union { /* bsize == 1, 2, 4, 8 */
@@ -168,7 +170,22 @@ public:
     struct string_t {
         stringref_t             strref = stringref_t_invalid; /* NTS: stringref_t also encodes string type */
     } s;
+    string                      sval;
+
+    token();
+    token(const stringref_t sr);
+    token(const token_t t,const string _sval);
 };
+
+token::token() {
+}
+
+token::token(const stringref_t sr) : tval(STRING) {
+    s.strref = sr;
+}
+
+token::token(const token_t t,const string _sval) : tval(t), sval(_sval) {
+}
 
 typedef vector<token>           token_string;
 
@@ -573,6 +590,221 @@ bool read_line(string &line,FileSource &src) {
     return true;
 }
 
+void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
+    while (li != lie && (*li == ' ' || *li == '\t')) li++;
+}
+
+bool is_keyword(const string &s) {
+    return false;
+}
+
+bool is_macro(const string &s) {
+    return false;
+}
+
+/* ANSI C89 Sec 3.1.2 "Identifiers" */
+bool isidentifier_fc(const char c) { /* first char */
+    return (isalpha(c) || c == '_');
+}
+
+bool isidentifier_mc(const char c) { /* non-first char */
+    return isdigit(c) || isidentifier_fc(c);
+}
+
+bool isoctdigit(const char c) {
+    return (c >= '0' && c <= '7');
+}
+
+unsigned char char2oct_assume(const char c) { /* assumes you checked first! */
+    return (c - '0');
+}
+
+bool ishexdigit(const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+unsigned char char2hex_assume(const char c) { /* assumes you checked first! */
+    if (c >= 'A' && c <= 'F')
+        return (c + 10 - 'A');
+    if (c >= 'a' && c <= 'f')
+        return (c + 10 - 'a');
+
+    return (c - '0');
+}
+
+unsigned long long parse_escape_oct(string::iterator &li,const string::iterator lie,const unsigned int min_digits,const unsigned int max_digits) {
+    unsigned long long r = 0;
+    unsigned int digits = 0;
+
+    while (li != lie && digits < max_digits) {
+        if (isoctdigit(*li)) {
+            r = (r << 3ull) + char2oct_assume(*(li++));
+            digits++;
+        }
+        else {
+            break;
+        }
+    }
+
+    if (digits < min_digits)
+        throw invalid_argument("octal parse: not enough digits");
+
+    return r;
+}
+
+unsigned long long parse_escape_hex(string::iterator &li,const string::iterator lie,const unsigned int min_digits,const unsigned int max_digits) {
+    unsigned long long r = 0;
+    unsigned int digits = 0;
+
+    while (li != lie && digits < max_digits) {
+        if (ishexdigit(*li)) {
+            r = (r << 4ull) + char2hex_assume(*(li++));
+            digits++;
+        }
+        else {
+            break;
+        }
+    }
+
+    if (digits < min_digits)
+        throw invalid_argument("hex parse: not enough digits");
+
+    return r;
+}
+
+unsigned long long parse_string_char_escape(string::iterator &li,const string::iterator lie) {
+    unsigned long long r = ' ';
+    char c;
+
+    if (li == lie) throw invalid_argument("expected string char escape");
+    if (*li != '\\') throw invalid_argument("expected string char escape backslash");
+    li++;
+    if (li == lie) throw invalid_argument("expected string char escape and char");
+    c = (*li++);
+
+    switch (c) {
+        case 'a':   return 0x07;
+        case 'b':   return 0x08;
+        case 'e':   return 0x1B;
+        case 'f':   return 0x0C;
+        case 'n':   return 0x0A;
+        case 'r':   return 0x0D;
+        case 't':   return 0x09;
+        case 'v':   return 0x0B;
+        case '\\':  return 0x5C;
+        case '\'':  return 0x27;
+        case '\"':  return 0x22;
+        case '?':   return 0x3F;
+        case 'x':   return parse_escape_hex(li,lie,2,2);
+        case 'u':   return parse_escape_hex(li,lie,4,4);
+        case 'U':   return parse_escape_hex(li,lie,8,8);
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+            li--; /* step back so it can parse the first digit we just ate */
+            return parse_escape_oct(li,lie,1,3);
+        default:
+            fprintf(stderr,"WARNING: Unknown char escape \\%c\n",c);
+            break;
+    };
+
+    return r;
+}
+
+char parse_string_char(string::iterator &li,const string::iterator lie) {
+    if (li == lie) throw invalid_argument("expected string char");
+
+    if (*li == '\\') {
+        unsigned long long c = parse_string_char_escape(li,lie);
+        if (c > 0xFFu) fprintf(stderr,"WARNING: Char constant exceeds type range\n");
+
+        return (char)(c & 0xFFul);
+    }
+
+    return *(li++);
+}
+
+stringref_t parse_string(string::iterator &li,const string::iterator lie) {
+    /* at this point *li == '\"' */
+    string r;
+    char c;
+
+    if (li == lie) throw invalid_argument("expected string, got end of line");
+    if (*li != '\"') throw invalid_argument("expected string, got " + *li);
+    li++;
+
+    do {
+        if (li == lie) throw invalid_argument("string cut short, expected close quote");
+        if (*li == '\"') { li++; break; }
+        c = parse_string_char(li,lie);
+        r += c;
+    } while (1);
+
+    fprintf(stderr,"String \"%s\"\n",r.c_str());
+
+    return string_store.add(r);
+}
+
+string parse_identifier(string::iterator &li,const string::iterator lie) {
+    string r;
+
+    if (li == lie) throw invalid_argument("expected identifier, got end of line");
+    if (!isidentifier_fc(*li)) throw invalid_argument("expected identifier");
+
+    do {
+        r += *(li++);
+        if (li == lie) break;
+        if (!isidentifier_mc(*li)) break;
+    } while (1);
+
+    return r;
+}
+
+void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
+    auto li = lib;
+
+    /* initial whitespace skip */
+    parse_skip_whitespace(li,lie);
+    if (li == lie) return;
+
+    /* li != lie */
+    if (*li == '#') {
+        /* preprocessor handling */
+        li++;
+        parse_skip_whitespace(li,lie);
+        /* expect identifier, or else */
+        string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+        tokens.push_back(move(token(token::PREPROCDIR,ident)));
+        parse_skip_whitespace(li,lie);
+    }
+
+    /* general parsing. expects code to skip whitespace after doing it's part */
+    while (li != lie) {
+        if (*li == '\"') {
+            tokens.push_back(move(parse_string(li,lie)));
+        }
+        else if (isidentifier_fc(*li)) {
+            string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+            if (is_keyword(ident))
+                tokens.push_back(move(token(token::KEYWORD,ident)));
+            else if (is_macro(ident))
+                tokens.push_back(move(token(token::MACRO,ident))); // TODO: In place macro expansion HERE, with recursion, and parameters
+            else
+                tokens.push_back(move(token(token::IDENTIFIER,ident)));
+        }
+        else {
+            throw invalid_argument("token parser unexpected char " + *li);
+        }
+
+        parse_skip_whitespace(li,lie);
+    }
+}
+
 int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
@@ -604,6 +836,8 @@ int main(int argc,char **argv) {
     string line;
     bool emit_line = false;
     int32_t lineno_expect = -1;
+    token_string tokens;
+
     while (!in_src_stk.empty()) {
         const int32_t lineno = in_src_stk.top().current_line();
         const string &source = in_src_stk.top().get_path();
@@ -621,14 +855,13 @@ int main(int argc,char **argv) {
                 out_dst.puts(line);
                 out_dst.putc('\n');
             }
-            else if (pp_only) {
-                if (emit_line) {
-                    out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
-                    emit_line = false;
-                }
+            else {
+                tokens.clear();
+                parse_tokens(tokens,line.begin(),line.end(),lineno,source);
 
-                out_dst.puts(line);
-                out_dst.putc('\n');
+                if (pp_only) {
+                    // TODO
+                }
             }
 
             lineno_expect = lineno + int32_t(1);
