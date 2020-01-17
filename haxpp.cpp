@@ -146,13 +146,13 @@ public:
     token_t                     token = NONE;
     unsigned char               bsize = 0;
     struct int_t { /* also char constants like 'a' */
-        union {
+        union { /* bsize == 1, 2, 4, 8 */
             signed long long    s = 0;
             unsigned long long  u; /* this is a UNION, preinit only one */
         };
         bool                    sign = true;
     } i;
-    struct float_t {
+    struct float_t { /* bsize == 4, 8 */
         long double             fraction = 0;
         int                     exponent = 0;
 
