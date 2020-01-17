@@ -621,6 +621,15 @@ int main(int argc,char **argv) {
                 out_dst.puts(line);
                 out_dst.putc('\n');
             }
+            else if (pp_only) {
+                if (emit_line) {
+                    out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
+                    emit_line = false;
+                }
+
+                out_dst.puts(line);
+                out_dst.putc('\n');
+            }
 
             lineno_expect = lineno + int32_t(1);
         }
