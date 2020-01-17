@@ -731,6 +731,33 @@ char parse_string_char(string::iterator &li,const string::iterator lie) {
     return *(li++);
 }
 
+unsigned long long parse_sq_char(string::iterator &li,const string::iterator lie) {
+    /* at this point *li == '\'' */
+    unsigned long long shf = 0;
+    unsigned long long r = 0;
+    char c;
+
+    if (li == lie) throw invalid_argument("expected char, got end of line");
+    if (*li != '\'') throw invalid_argument("expected char quote, got " + *li);
+    li++;
+
+    /* NTS: The reason we loop like this is to support things like 'abcd' to define a 32-bit value
+     *      that, when written to memory, spells out 'abcd'. Used in i.e. Microsoft VFW libraries. */
+    do {
+        if (li == lie) throw invalid_argument("string cut short, expected close quote");
+        if (*li == '\'') { li++; break; }
+        c = parse_string_char(li,lie);
+        r += ((unsigned long long)((unsigned char)c)) << shf;
+        shf += 8ull;
+    } while (1);
+
+    if (shf > 64ull) fprintf(stderr,"WARNING: char constant too big for compiler storage, truncated");
+
+    fprintf(stderr,"0x%llx\n",r);
+
+    return r;
+}
+
 stringref_t parse_string(string::iterator &li,const string::iterator lie) {
     /* at this point *li == '\"' */
     string r;
@@ -790,6 +817,9 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
     while (li != lie) {
         if (*li == '\"') {
             tokens.push_back(move(parse_string(li,lie)));
+        }
+        else if (*li == '\'') {
+            tokens.push_back(move(parse_sq_char(li,lie)));
         }
         else if (isidentifier_fc(*li)) {
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
