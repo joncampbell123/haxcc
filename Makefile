@@ -8,6 +8,7 @@ OUTPUTS=haxpp
 LIBOBJ=
 
 # default CFLAGS (GCC+Linux)
+LDFLAGS=-lm
 CFLAGS=-Wall -Wextra -pedantic -std=c11
 CXXFLAGS=-Wall -Wextra -pedantic -std=c++11
 

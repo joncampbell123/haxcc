@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
+#include <math.h>
 
 #include <stdexcept>
 #include <string>
@@ -143,12 +144,30 @@ public:
     };
 public:
     token_t                     token = NONE;
-    union int_t {
-        signed long long        s;
-        unsigned long long      u;
+    unsigned char               bsize = 0;
+    struct int_t { /* also char constants like 'a' */
+        union {
+            signed long long    s = 0;
+            unsigned long long  u; /* this is a UNION, preinit only one */
+        };
+        bool                    sign = true;
     } i;
-    long double                 f;
-    stringref_t                 strval = stringref_t_invalid;
+    struct float_t {
+        long double             fraction = 0;
+        int                     exponent = 0;
+
+        inline long double get_double() {
+            return ldexpl(fraction,exponent);
+        }
+        inline float_t &operator=(const long double f) {
+            exponent = 0;
+            fraction = frexpl(f,&exponent);
+            return *this;
+        }
+    } f;
+    struct string_t {
+        stringref_t             strref = stringref_t_invalid; /* NTS: stringref_t also encodes string type */
+    } s;
 };
 
 typedef vector<token>           token_string;
