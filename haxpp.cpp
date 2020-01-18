@@ -150,6 +150,7 @@ public:
         COMMA,
         PERIOD,
         DOTDOTDOT,
+        PTRARROW,
         COMPLEMENT,
         NOT,
         AMPERSAND,
@@ -1193,6 +1194,8 @@ string to_string(const token &t) {
             return ". ";
         case token::DOTDOTDOT:
             return "...";
+        case token::PTRARROW:
+            return "-> ";
         case token::COMPLEMENT:
             return "~";
         case token::NOT:
@@ -1257,6 +1260,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::PERIOD);
         else if (strit_next_match_inc(li,lie,','))
             tokens.push_back(token::COMMA);
+        else if (strit_next_match_inc(li,lie,'-','>'))
+            tokens.push_back(token::PTRARROW);
         else if (strit_next_match_inc(li,lie,'-','-'))
             tokens.push_back(token::DECREMENT);
         else if (strit_next_match_inc(li,lie,'-'))
