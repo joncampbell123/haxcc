@@ -181,6 +181,16 @@ public:
         LOGICAL_OR,
         QUESTIONMARK,
         COLON,
+        PLUS_EQUALS,
+        MINUS_EQUALS,
+        MULTIPLY_EQUALS,
+        DIVIDE_EQUALS,
+        MODULUS_EQUALS,
+        LEFT_SHIFT_EQUALS,
+        RIGHT_SHIFT_EQUALS,
+        AND_EQUALS,
+        XOR_EQUALS,
+        OR_EQUALS,
 
         MAX_TOKEN
     };
@@ -1284,6 +1294,26 @@ string to_string(const token &t) {
             return "? ";
         case token::COLON:
             return ": ";
+        case token::PLUS_EQUALS:
+            return "+= ";
+        case token::MINUS_EQUALS:
+            return "-= ";
+        case token::MULTIPLY_EQUALS:
+            return "*= ";
+        case token::DIVIDE_EQUALS:
+            return "/= ";
+        case token::MODULUS_EQUALS:
+            return "%= ";
+        case token::LEFT_SHIFT_EQUALS:
+            return "<<= ";
+        case token::RIGHT_SHIFT_EQUALS:
+            return ">>= ";
+        case token::AND_EQUALS:
+            return "&= ";
+        case token::XOR_EQUALS:
+            return "^= ";
+        case token::OR_EQUALS:
+            return "|= ";
         default:
             break;
     };
@@ -1332,12 +1362,16 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::PERIOD);
         else if (strit_next_match_inc(li,lie,','))
             tokens.push_back(token::COMMA);
+        else if (strit_next_match_inc(li,lie,'<','<','='))
+            tokens.push_back(token::LEFT_SHIFT_EQUALS);
         else if (strit_next_match_inc(li,lie,'<','<'))
             tokens.push_back(token::LEFT_SHIFT);
         else if (strit_next_match_inc(li,lie,'<','='))
             tokens.push_back(token::LESS_THAN_OR_EQUAL);
         else if (strit_next_match_inc(li,lie,'<'))
             tokens.push_back(token::LESS_THAN);
+        else if (strit_next_match_inc(li,lie,'>','>','='))
+            tokens.push_back(token::RIGHT_SHIFT_EQUALS);
         else if (strit_next_match_inc(li,lie,'>','>'))
             tokens.push_back(token::RIGHT_SHIFT);
         else if (strit_next_match_inc(li,lie,'>','='))
@@ -1348,10 +1382,14 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::PTRARROW);
         else if (strit_next_match_inc(li,lie,'-','-'))
             tokens.push_back(token::DECREMENT);
+        else if (strit_next_match_inc(li,lie,'-','='))
+            tokens.push_back(token::MINUS_EQUALS);
         else if (strit_next_match_inc(li,lie,'-'))
             tokens.push_back(token::MINUS);
         else if (strit_next_match_inc(li,lie,'+','+'))
             tokens.push_back(token::INCREMENT);
+        else if (strit_next_match_inc(li,lie,'+','='))
+            tokens.push_back(token::PLUS_EQUALS);
         else if (strit_next_match_inc(li,lie,'+'))
             tokens.push_back(token::PLUS);
         else if (strit_next_match_inc(li,lie,'=','='))
@@ -1360,6 +1398,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::ASSIGNMENT);
         else if (strit_next_match_inc(li,lie,'~'))
             tokens.push_back(token::COMPLEMENT);
+        else if (strit_next_match_inc(li,lie,'^','='))
+            tokens.push_back(token::XOR_EQUALS);
         else if (strit_next_match_inc(li,lie,'^'))
             tokens.push_back(token::CARET);
         else if (strit_next_match_inc(li,lie,'?'))
@@ -1368,6 +1408,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::COLON);
         else if (strit_next_match_inc(li,lie,'|','|'))
             tokens.push_back(token::LOGICAL_OR);
+        else if (strit_next_match_inc(li,lie,'|','='))
+            tokens.push_back(token::OR_EQUALS);
         else if (strit_next_match_inc(li,lie,'|'))
             tokens.push_back(token::PIPE);
         else if (strit_next_match_inc(li,lie,'!','='))
@@ -1376,12 +1418,20 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::NOT);
         else if (strit_next_match_inc(li,lie,'&','&'))
             tokens.push_back(token::LOGICAL_AND);
+        else if (strit_next_match_inc(li,lie,'&','='))
+            tokens.push_back(token::AND_EQUALS);
         else if (strit_next_match_inc(li,lie,'&'))
             tokens.push_back(token::AMPERSAND);
+        else if (strit_next_match_inc(li,lie,'*','='))
+            tokens.push_back(token::MULTIPLY_EQUALS);
         else if (strit_next_match_inc(li,lie,'*'))
             tokens.push_back(token::STAR);
+        else if (strit_next_match_inc(li,lie,'/','='))
+            tokens.push_back(token::DIVIDE_EQUALS);
         else if (strit_next_match_inc(li,lie,'/'))
             tokens.push_back(token::DIVISION);
+        else if (strit_next_match_inc(li,lie,'%','='))
+            tokens.push_back(token::MODULUS_EQUALS);
         else if (strit_next_match_inc(li,lie,'%'))
             tokens.push_back(token::MODULUS);
         else if (strit_next_match_inc(li,lie,'('))
