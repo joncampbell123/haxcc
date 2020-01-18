@@ -166,6 +166,12 @@ public:
         ALIGNOF,
         DIVISION,
         MODULUS,
+        LESS_THAN,
+        GREATER_THAN,
+        LESS_THAN_OR_EQUAL,
+        GREATER_THAN_OR_EQUAL,
+        LEFT_SHIFT,
+        RIGHT_SHIFT,
 
         MAX_TOKEN
     };
@@ -1239,6 +1245,18 @@ string to_string(const token &t) {
             return "/ ";
         case token::MODULUS:
             return "% ";
+        case token::LESS_THAN:
+            return "< ";
+        case token::GREATER_THAN:
+            return "> ";
+        case token::LESS_THAN_OR_EQUAL:
+            return "<= ";
+        case token::GREATER_THAN_OR_EQUAL:
+            return ">= ";
+        case token::LEFT_SHIFT:
+            return "<< ";
+        case token::RIGHT_SHIFT:
+            return ">> ";
         default:
             break;
     };
@@ -1287,6 +1305,18 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::PERIOD);
         else if (strit_next_match_inc(li,lie,','))
             tokens.push_back(token::COMMA);
+        else if (strit_next_match_inc(li,lie,'<','<'))
+            tokens.push_back(token::LEFT_SHIFT);
+        else if (strit_next_match_inc(li,lie,'<','='))
+            tokens.push_back(token::LESS_THAN_OR_EQUAL);
+        else if (strit_next_match_inc(li,lie,'<'))
+            tokens.push_back(token::LESS_THAN);
+        else if (strit_next_match_inc(li,lie,'>','>'))
+            tokens.push_back(token::RIGHT_SHIFT);
+        else if (strit_next_match_inc(li,lie,'>','='))
+            tokens.push_back(token::GREATER_THAN_OR_EQUAL);
+        else if (strit_next_match_inc(li,lie,'>'))
+            tokens.push_back(token::GREATER_THAN);
         else if (strit_next_match_inc(li,lie,'-','>'))
             tokens.push_back(token::PTRARROW);
         else if (strit_next_match_inc(li,lie,'-','-'))
