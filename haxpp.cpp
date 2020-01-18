@@ -1268,17 +1268,17 @@ string to_string(const token &t) {
         case token::STAR:
             return "* ";
         case token::OPEN_PARENS:
-            return " (";
+            return "( ";
         case token::CLOSE_PARENS:
-            return " )";
+            return ") ";
         case token::OPEN_SBRACKET:
-            return " [";
+            return "[ ";
         case token::CLOSE_SBRACKET:
-            return " ]";
+            return "] ";
         case token::OPEN_CBRACKET:
-            return " {";
+            return "{ ";
         case token::CLOSE_CBRACKET:
-            return " }";
+            return "} ";
         case token::SIZEOF:
             return "sizeof ";
         case token::ALIGNAS:
