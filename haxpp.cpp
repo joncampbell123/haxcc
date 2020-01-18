@@ -191,6 +191,14 @@ public:
         AND_EQUALS,
         XOR_EQUALS,
         OR_EQUALS,
+        AUTO,
+        BREAK,
+        CASE,
+        CHAR,
+        CONST,
+        CONTINUE,
+        DEFAULT,
+        DO,
 
         MAX_TOKEN
     };
@@ -672,6 +680,23 @@ enum token::token_t is_keyword(const string &s) {
         return token::ALIGNAS;
     if (s == "alignof")
         return token::ALIGNOF;
+
+    if (s == "auto")
+        return token::AUTO;
+    if (s == "break")
+        return token::BREAK;
+    if (s == "case")
+        return token::CASE;
+    if (s == "char")
+        return token::CHAR;
+    if (s == "const")
+        return token::CONST;
+    if (s == "continue")
+        return token::CONTINUE;
+    if (s == "default")
+        return token::DEFAULT;
+    if (s == "do")
+        return token::DO;
 
     return token::NONE;
 }
@@ -1255,11 +1280,11 @@ string to_string(const token &t) {
         case token::CLOSE_CBRACKET:
             return "}";
         case token::SIZEOF:
-            return "sizeof";
+            return "sizeof ";
         case token::ALIGNAS:
-            return "alignas";
+            return "alignas ";
         case token::ALIGNOF:
-            return "alignof";
+            return "alignof ";
         case token::DIVISION:
             return "/ ";
         case token::MODULUS:
@@ -1314,6 +1339,22 @@ string to_string(const token &t) {
             return "^= ";
         case token::OR_EQUALS:
             return "|= ";
+        case token::AUTO:
+            return "auto ";
+        case token::BREAK:
+            return "break ";
+        case token::CASE:
+            return "case ";
+        case token::CHAR:
+            return "char ";
+        case token::CONST:
+            return "const ";
+        case token::CONTINUE:
+            return "continue ";
+        case token::DEFAULT:
+            return "default ";
+        case token::DO:
+            return "do ";
         default:
             break;
     };
