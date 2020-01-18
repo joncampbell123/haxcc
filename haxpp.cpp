@@ -162,6 +162,8 @@ public:
         OPEN_CBRACKET,
         CLOSE_CBRACKET,
         SIZEOF,
+        ALIGNAS,
+        ALIGNOF,
 
         MAX_TOKEN
     };
@@ -639,6 +641,10 @@ void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
 enum token::token_t is_keyword(const string &s) {
     if (s == "sizeof")
         return token::SIZEOF;
+    if (s == "alignas")
+        return token::ALIGNAS;
+    if (s == "alignof")
+        return token::ALIGNOF;
 
     return token::NONE;
 }
@@ -1223,6 +1229,10 @@ string to_string(const token &t) {
             return "}";
         case token::SIZEOF:
             return "sizeof";
+        case token::ALIGNAS:
+            return "alignas";
+        case token::ALIGNOF:
+            return "alignof";
         default:
             break;
     };
