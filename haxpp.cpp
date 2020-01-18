@@ -1219,6 +1219,10 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(move(parse_string(li,lie)));
         else if (*li == '\'')
             tokens.push_back(move(parse_sq_char(li,lie)));
+        else if (*li == ',') {
+            li++;
+            tokens.push_back(token::COMMA);
+        }
         else if (*li == '-') {
             li++;
             if (*li == '-') {
