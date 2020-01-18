@@ -1145,45 +1145,42 @@ string parse_identifier(string::iterator &li,const string::iterator lie) {
     return r;
 }
 
-void print_token(FILE *fp,const token &t) {
-    if (fp == NULL)
-        fp = stderr;
-
+string to_string(const token &t) {
     switch (t.tval) {
         case token::MACRO:
         case token::PREPROCDIR:
         case token::IDENTIFIER:
         case token::KEYWORD:
-            fprintf(fp,"%s ",t.sval.c_str());
-            break;
+            return t.sval + " ";
         case token::INTEGER:
-            fprintf(fp,"%lld ",t.i.s);
-            break;
+            return to_string(t.i.s) + " ";
         case token::FLOAT:
-            fprintf(fp,"%.30Lf ",t.f.get_double());
-            break;
+            return to_string(t.f.get_double()) + " ";
         case token::STRING:
-            fprintf(fp,"\"%s\" ",string_store.get_char(t.s.strref).c_str());
-            break;
+            return string("\"") + string_store.get_char(t.s.strref) + string("\"") + " ";
         case token::MINUS:
-            fprintf(fp,"- ");
-            break;
+            return "- ";
         case token::PLUS:
-            fprintf(fp,"+ ");
-            break;
+            return "+ ";
         case token::DECREMENT:
-            fprintf(fp,"-- ");
-            break;
+            return "-- ";
         case token::INCREMENT:
-            fprintf(fp,"++ ");
-            break;
+            return "++ ";
         case token::COMMA:
-            fputc(',',fp);
-            break;
+            return ",";
         default:
-            fprintf(fp,"? ");
             break;
     };
+
+    return "? ";
+}
+
+void print_token(FILE *fp,const token &t) {
+    if (fp == NULL)
+        fp = stderr;
+
+    const string s = to_string(t);
+    fputs(s.c_str(),fp);
 }
 
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
@@ -1313,7 +1310,7 @@ int main(int argc,char **argv) {
                     }
 
                     for (const auto &t : tokens)
-                        print_token(stderr/*FIXME*/,t);
+                        out_dst.puts(to_string(t));
 
                     out_dst.putc('\n');
                 }
