@@ -861,6 +861,20 @@ unsigned long long parse_dec_number(string::iterator &li,const string::iterator 
     return r;
 }
 
+void parse_float_hexponent(signed long long &exponent,string::iterator &li,const string::iterator lie) {
+    /* e.g. "p-3". caller has already eaten the 'p' */
+    signed long long exp_adjust;
+
+    if (strit_next_match_inc(li,lie,'-'))
+        exp_adjust = -((signed long long)parse_dec_number(li,lie));
+    else if (strit_next_match_inc(li,lie,'+'))
+        exp_adjust =   (signed long long)parse_dec_number(li,lie);
+    else
+        exp_adjust =   (signed long long)parse_dec_number(li,lie);
+
+    exponent += exp_adjust;
+}
+
 void parse_float_exponent(long double &r,string::iterator &li,const string::iterator lie) {
     /* e.g. "e-3". caller has already eaten the 'e' */
     signed long long exp_adjust;
@@ -929,6 +943,59 @@ void parse_int_suffixes(token &r,string::iterator &li,const string::iterator lie
         r.bsize = 32; /* long */
     else if (strit_next_match_inc(li,lie,'L'))
         r.bsize = 32; /* long */
+}
+
+token parse_hex_number_float_sub(string::iterator &li,const string::iterator lie) {
+    const unsigned long long tmp_msd = 0xfull << (64ull - 4ull);
+    unsigned long long tmp = 0;
+    int tmpshf = 64;
+    token r;
+
+    if (li != lie) {
+        while (li != lie && isxdigit(*li)) {
+            if (tmpshf >= 4) {
+                tmpshf -= 4;
+                tmp += ((unsigned long long)char2hex_assume(*li)) << (unsigned long long)tmpshf;
+            }
+
+            li++;
+        }
+    }
+
+    if (tmp != 0ull) { /* or else this will loop forever */
+        while ((tmp & tmp_msd) == 0ull) {
+            tmpshf += 4;
+            tmp <<= 4ull;
+        }
+
+        assert(tmpshf <= 64);
+    }
+
+    const int dpshf = tmpshf;
+
+    if (strit_next_match_inc(li,lie,'.')) {
+        while (li != lie && isxdigit(*li)) {
+            if (tmpshf >= 4) {
+                tmpshf -= 4;
+                tmp += ((unsigned long long)char2hex_assume(*li)) << (unsigned long long)tmpshf;
+            }
+
+            li++;
+        }
+    }
+
+    signed long long exponent = -dpshf;
+
+    /* FIXME: GCC behavior suggests the 'p' is mandatory. */
+    if (strit_next_match_inc(li,lie,'p'))
+        parse_float_hexponent(exponent,li,lie);
+    else if (strit_next_match_inc(li,lie,'P'))
+        parse_float_hexponent(exponent,li,lie);
+
+    r.tval = token::FLOAT;
+    r.f.fraction = tmp;
+    r.f.exponent = exponent;
+    return r;
 }
 
 long double parse_dec_number_float_sub(string::iterator &li,const string::iterator lie) {
@@ -1013,7 +1080,7 @@ token parse_number(string::iterator &li,const string::iterator lie) {
 
     if (parse_number_looks_like_float(li,lie)) {
         if (strit_next_match_inc(li,lie,'0','x'))
-            throw invalid_argument("hex float not supported");
+            r = parse_hex_number_float_sub(li,lie);
         else
             r = parse_dec_number_float_sub(li,lie);
 
