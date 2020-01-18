@@ -861,6 +861,21 @@ unsigned long long parse_dec_number(string::iterator &li,const string::iterator 
     return r;
 }
 
+void parse_float_suffixes(token &r,string::iterator &li,const string::iterator lie) {
+    if (strit_next_match_inc(li,lie,'f'))
+        r.bsize = 32; /* float */
+    else if (strit_next_match_inc(li,lie,'F'))
+        r.bsize = 32; /* float */
+    else if (strit_next_match_inc(li,lie,'d'))
+        r.bsize = 64; /* double */
+    else if (strit_next_match_inc(li,lie,'D'))
+        r.bsize = 64; /* double */
+    else if (strit_next_match_inc(li,lie,'l'))
+        r.bsize = 80; /* long double */
+    else if (strit_next_match_inc(li,lie,'L'))
+        r.bsize = 80; /* long double */
+}
+
 void parse_int_suffixes(token &r,string::iterator &li,const string::iterator lie) {
     if (strit_next_match_inc(li,lie,'u'))
         r.i.sign = false;
@@ -949,6 +964,7 @@ token parse_number(string::iterator &li,const string::iterator lie) {
         /* it's a float. parse the rest of the digits */
         assert(r.tval == token::INTEGER);
         r = (long double)r.i.u + parse_dec_number_float_sub(li,lie);
+        parse_float_suffixes(r,li,lie);
     }
     else {
         parse_int_suffixes(r,li,lie);
