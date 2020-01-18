@@ -149,6 +149,7 @@ public:
         INCREMENT,
         COMMA,
         COMPLEMENT,
+        NOT,
 
         MAX_TOKEN
     };
@@ -1182,6 +1183,8 @@ string to_string(const token &t) {
             return ",";
         case token::COMPLEMENT:
             return "~";
+        case token::NOT:
+            return "!";
         default:
             break;
     };
@@ -1236,6 +1239,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::PLUS);
         else if (strit_next_match_inc(li,lie,'~'))
             tokens.push_back(token::COMPLEMENT);
+        else if (strit_next_match_inc(li,lie,'!'))
+            tokens.push_back(token::NOT);
         else if (isdigit(*li))
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
