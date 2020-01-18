@@ -9,8 +9,8 @@ LIBOBJ=
 
 # default CFLAGS (GCC+Linux)
 LDFLAGS=-lm
-CFLAGS=-Wall -Wextra -pedantic -std=c11
-CXXFLAGS=-Wall -Wextra -pedantic -std=c++11
+CFLAGS=-Wall -Wextra -pedantic -std=c11 -g3 -O0
+CXXFLAGS=-Wall -Wextra -pedantic -std=c++11 -g3 -O0
 
 # how to compile in general
 %.o: %.c

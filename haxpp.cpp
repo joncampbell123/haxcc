@@ -1059,7 +1059,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                 tokens.push_back(move(token(token::IDENTIFIER,ident)));
         }
         else {
-            throw invalid_argument("token parser unexpected char " + *li);
+            throw invalid_argument(string("token parser unexpected char ") + *li);
         }
 
         parse_skip_whitespace(li,lie);
