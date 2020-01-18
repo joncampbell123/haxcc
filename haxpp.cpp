@@ -810,6 +810,24 @@ static inline bool strit_next_match_inc(string::iterator &ti,const string::itera
     return false;
 }
 
+static inline bool strit_next_match_inc(string::iterator &ti,const string::iterator lie,const char c,const char c2,const char c3) {
+    auto tmp = ti;
+
+    if (tmp != lie && *tmp == c) {
+        tmp++;
+        if (tmp != lie && *tmp == c2) {
+            tmp++;
+            if (tmp != lie && *tmp == c3) {
+                tmp++;
+                ti = tmp;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 unsigned long long parse_hex_number(string::iterator &li,const string::iterator lie) {
     unsigned long long r = 0;
 
@@ -837,8 +855,30 @@ unsigned long long parse_dec_number(string::iterator &li,const string::iterator 
     return r;
 }
 
+void parse_int_suffixes(token &r,string::iterator &li,const string::iterator lie) {
+    if (strit_next_match_inc(li,lie,'u'))
+        r.i.sign = false;
+    else if (strit_next_match_inc(li,lie,'U'))
+        r.i.sign = false;
+
+    if (strit_next_match_inc(li,lie,'i','6','4'))
+        r.bsize = 64; /* long long */
+    else if (strit_next_match_inc(li,lie,'I','6','4'))
+        r.bsize = 64; /* long long */
+    else if (strit_next_match_inc(li,lie,'l','l'))
+        r.bsize = 64; /* long long */
+    else if (strit_next_match_inc(li,lie,'L','L'))
+        r.bsize = 64; /* long long */
+    else if (strit_next_match_inc(li,lie,'l'))
+        r.bsize = 32; /* long */
+    else if (strit_next_match_inc(li,lie,'L'))
+        r.bsize = 32; /* long */
+}
+
 /* will return int or float */
 token parse_number(string::iterator &li,const string::iterator lie) {
+    token r;
+
     /* at this point isdigit(*li) */
     if (li == lie) throw invalid_argument("expected number, got end of line");
     if (!isdigit(*li)) throw invalid_argument("expected number, got " + *li);
@@ -850,19 +890,25 @@ token parse_number(string::iterator &li,const string::iterator lie) {
                 /* hexadecimal floating point */
                 throw invalid_argument("hexadecimal floating point not yet supported");
             }
-
-            /* hexadecimal integer */
-            return parse_hex_number(li,lie);
+            else {
+                /* hexadecimal integer */
+                r = parse_hex_number(li,lie);
+                parse_int_suffixes(r,li,lie);
+            }
         }
-
-        /* octal */
-        return parse_oct_number(li,lie);
+        else {
+            /* octal */
+            r = parse_oct_number(li,lie);
+            parse_int_suffixes(r,li,lie);
+        }
+    }
+    else {
+        /* decimal (int or float) */
+        r = parse_dec_number(li,lie);
+        parse_int_suffixes(r,li,lie);
     }
 
-    /* decimal (int or float) */
-    const unsigned long long v = parse_dec_number(li,lie);
-
-    return v;
+    return r;
 }
 
 stringref_t parse_string(string::iterator &li,const string::iterator lie) {
