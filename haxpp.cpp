@@ -1233,10 +1233,13 @@ string a_better_float_to_string(const long double v) {
 string to_string(const token &t) {
     switch (t.tval) {
         case token::MACRO:
+            return string("[macro]") + t.sval + " ";
         case token::PREPROCDIR:
+            return string("[preprocessordirective]") + t.sval + " ";
         case token::IDENTIFIER:
+            return string("[identifier]") + t.sval + " ";
         case token::KEYWORD:
-            return t.sval + " ";
+            return string("[keyword]") + t.sval + " ";
         case token::INTEGER:
             return to_string(t.i.s) + " ";
         case token::FLOAT:
@@ -1256,29 +1259,29 @@ string to_string(const token &t) {
         case token::PERIOD:
             return ". ";
         case token::DOTDOTDOT:
-            return "...";
+            return "... ";
         case token::PTRARROW:
             return "-> ";
         case token::COMPLEMENT:
-            return "~";
+            return " ~";
         case token::NOT:
-            return "!";
+            return " !";
         case token::AMPERSAND:
             return "& ";
         case token::STAR:
             return "* ";
         case token::OPEN_PARENS:
-            return "(";
+            return " (";
         case token::CLOSE_PARENS:
-            return ")";
+            return " )";
         case token::OPEN_SBRACKET:
-            return "[";
+            return " [";
         case token::CLOSE_SBRACKET:
-            return "]";
+            return " ]";
         case token::OPEN_CBRACKET:
-            return "{";
+            return " {";
         case token::CLOSE_CBRACKET:
-            return "}";
+            return " }";
         case token::SIZEOF:
             return "sizeof ";
         case token::ALIGNAS:
