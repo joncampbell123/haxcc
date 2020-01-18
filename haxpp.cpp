@@ -178,7 +178,7 @@ public:
     token(const long double v);
     token(const stringref_t sr);
     token(const unsigned long long v);
-    token(const token_t t,const string _sval);
+    explicit token(const token_t t,const string _sval);
 };
 
 token::token() {
