@@ -861,7 +861,7 @@ unsigned long long parse_dec_number(string::iterator &li,const string::iterator 
     return r;
 }
 
-void parse_float_exponent(token &r,string::iterator &li,const string::iterator lie) {
+void parse_float_exponent(long double &r,string::iterator &li,const string::iterator lie) {
     /* e.g. "e-3". caller has already eaten the 'e' */
     signed long long exp_adjust;
 
@@ -873,9 +873,6 @@ void parse_float_exponent(token &r,string::iterator &li,const string::iterator l
         exp_adjust =   (signed long long)parse_dec_number(li,lie);
 
     if (exp_adjust != 0) {
-        if (r.tval == token::INTEGER)
-            r = (long double)r.i.s;
-
         long double m = 1;
         while (exp_adjust <= -9) {
             exp_adjust += 9;
@@ -895,7 +892,7 @@ void parse_float_exponent(token &r,string::iterator &li,const string::iterator l
             m *= 10;
         }
 
-        r = r.f.get_double() * m;
+        r *= m;
     }
 }
 
@@ -983,6 +980,11 @@ long double parse_dec_number_float_sub(string::iterator &li,const string::iterat
         }
     }
 
+    if (strit_next_match_inc(li,lie,'e'))
+        parse_float_exponent(r,li,lie);
+    else if (strit_next_match_inc(li,lie,'E'))
+        parse_float_exponent(r,li,lie);
+
     return r;
 }
 
@@ -1012,13 +1014,8 @@ token parse_number(string::iterator &li,const string::iterator lie) {
     if (parse_number_looks_like_float(li,lie)) {
         if (strit_next_match_inc(li,lie,'0','x'))
             throw invalid_argument("hex float not supported");
-        else {
+        else
             r = parse_dec_number_float_sub(li,lie);
-            if (strit_next_match_inc(li,lie,'e'))
-                parse_float_exponent(r,li,lie);
-            else if (strit_next_match_inc(li,lie,'E'))
-                parse_float_exponent(r,li,lie);
-        }
 
         parse_float_suffixes(r,li,lie);
     }
