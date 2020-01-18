@@ -143,6 +143,10 @@ public:
         INTEGER,
         FLOAT,
         STRING,
+        MINUS,
+        PLUS,
+        DECREMENT,
+        INCREMENT,
         COMMA
     };
 public:
@@ -178,6 +182,7 @@ public:
     token(const long double v);
     token(const stringref_t sr);
     token(const unsigned long long v);
+    token(const token_t t);
     explicit token(const token_t t,const string _sval);
 };
 
@@ -203,6 +208,9 @@ token::token(const unsigned long long v) : tval(INTEGER) {
 }
 
 token::token(const token_t t,const string _sval) : tval(t), sval(_sval) {
+}
+
+token::token(const token_t t) : tval(t) {
 }
 
 typedef vector<token>           token_string;
@@ -1193,6 +1201,26 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(move(parse_string(li,lie)));
         else if (*li == '\'')
             tokens.push_back(move(parse_sq_char(li,lie)));
+        else if (*li == '-') {
+            li++;
+            if (*li == '-') {
+                li++;
+                tokens.push_back(token::DECREMENT);
+            }
+            else {
+                tokens.push_back(token::MINUS);
+            }
+        }
+        else if (*li == '+') {
+            li++;
+            if (*li == '+') {
+                li++;
+                tokens.push_back(token::INCREMENT);
+            }
+            else {
+                tokens.push_back(token::PLUS);
+            }
+        }
         else if (isdigit(*li))
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
