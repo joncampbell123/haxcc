@@ -159,7 +159,7 @@ public:
         long double             fraction = 0;
         int                     exponent = 0;
 
-        inline long double get_double() {
+        inline long double get_double() const {
             return ldexpl(fraction,exponent);
         }
         inline float_t &operator=(const long double f) {
@@ -989,6 +989,35 @@ string parse_identifier(string::iterator &li,const string::iterator lie) {
     } while (1);
 
     return r;
+}
+
+void print_token(FILE *fp,const token &t) {
+    if (fp == NULL)
+        fp = stderr;
+
+    switch (t.tval) {
+        case token::MACRO:
+        case token::PREPROCDIR:
+        case token::IDENTIFIER:
+        case token::KEYWORD:
+            fprintf(fp,"%s ",t.sval.c_str());
+            break;
+        case token::INTEGER:
+            fprintf(fp,"%lld ",t.i.s);
+            break;
+        case token::FLOAT:
+            fprintf(fp,"%.30Lf ",t.f.get_double());
+            break;
+        case token::STRING:
+            fprintf(fp,"\"%s\" ",string_store.get_char(t.s.strref).c_str());
+            break;
+        case token::COMMA:
+            fputc(',',fp);
+            break;
+        default:
+            fprintf(fp,"? ");
+            break;
+    };
 }
 
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
