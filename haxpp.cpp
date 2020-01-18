@@ -139,7 +139,6 @@ public:
         MACRO,
         PREPROCDIR,
         IDENTIFIER,
-        KEYWORD,
         INTEGER,
         FLOAT,
         STRING,
@@ -1238,8 +1237,6 @@ string to_string(const token &t) {
             return string("[preprocessordirective]") + t.sval + " ";
         case token::IDENTIFIER:
             return string("[identifier]") + t.sval + " ";
-        case token::KEYWORD:
-            return string("[keyword]") + t.sval + " ";
         case token::INTEGER:
             return to_string(t.i.s) + " ";
         case token::FLOAT:
