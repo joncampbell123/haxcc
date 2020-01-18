@@ -20,3 +20,4 @@ Hello "world" today
 "Hello\u0020world"
 "Hello\U00000020world"
 'a' 'b' 'c' '0' '\t' '\40' '\040' '\0' '\000' '\xff' 'abcd' 'abcdefgh'
+0 1 2 10 11 19 333 12345678 07 010 040 0x20 0x33 0xAA 0x123456789ABCDEF0

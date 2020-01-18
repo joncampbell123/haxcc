@@ -173,7 +173,9 @@ public:
     string                      sval;
 
     token();
+    token(const long long v);
     token(const stringref_t sr);
+    token(const unsigned long long v);
     token(const token_t t,const string _sval);
 };
 
@@ -182,6 +184,16 @@ token::token() {
 
 token::token(const stringref_t sr) : tval(STRING) {
     s.strref = sr;
+}
+
+token::token(const long long v) : tval(INTEGER) {
+    i.s = v;
+    i.sign = true;
+}
+
+token::token(const unsigned long long v) : tval(INTEGER) {
+    i.u = v;
+    i.sign = false;
 }
 
 token::token(const token_t t,const string _sval) : tval(t), sval(_sval) {
@@ -617,6 +629,17 @@ bool isoctdigit(const char c) {
     return (c >= '0' && c <= '7');
 }
 
+bool isoctdigit_throw(const char c) {
+    if (c == '8' || c == '9')
+        throw invalid_argument("invalid octal digit");
+
+    return (c >= '0' && c <= '7');
+}
+
+unsigned char char2dec_assume(const char c) { /* assumes you checked first! */
+    return (c - '0');
+}
+
 unsigned char char2oct_assume(const char c) { /* assumes you checked first! */
     return (c - '0');
 }
@@ -756,6 +779,92 @@ unsigned long long parse_sq_char(string::iterator &li,const string::iterator lie
     return r;
 }
 
+static inline char strit_next(string::iterator &ti,const string::iterator lie) {
+    if (ti != lie)
+        return *ti;
+
+    return 0;
+}
+
+static inline bool strit_next_match_inc(string::iterator &ti,const string::iterator lie,const char c) {
+    if (ti != lie && *ti == c) {
+        ti++;
+        return true;
+    }
+
+    return false;
+}
+
+static inline bool strit_next_match_inc(string::iterator &ti,const string::iterator lie,const char c,const char c2) {
+    auto tmp = ti;
+
+    if (tmp != lie && *tmp == c) {
+        tmp++;
+        if (tmp != lie && *tmp == c2) {
+            tmp++;
+            ti = tmp;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+unsigned long long parse_hex_number(string::iterator &li,const string::iterator lie) {
+    unsigned long long r = 0;
+
+    while (li != lie && ishexdigit(*li))
+        r = (r << 4ull) + char2hex_assume(*(li++));
+
+    return r;
+}
+
+unsigned long long parse_oct_number(string::iterator &li,const string::iterator lie) {
+    unsigned long long r = 0;
+
+    while (li != lie && isoctdigit_throw(*li))
+        r = (r << 3ull) + char2oct_assume(*(li++));
+
+    return r;
+}
+
+unsigned long long parse_dec_number(string::iterator &li,const string::iterator lie) {
+    unsigned long long r = 0;
+
+    while (li != lie && isdigit(*li))
+        r = (r * 10ull) + char2dec_assume(*(li++));
+
+    return r;
+}
+
+/* will return int or float */
+token parse_number(string::iterator &li,const string::iterator lie) {
+    /* at this point isdigit(*li) */
+    if (li == lie) throw invalid_argument("expected number, got end of line");
+    if (!isdigit(*li)) throw invalid_argument("expected number, got " + *li);
+
+    /* next_match_inc() will increment li in place if match */
+    if (strit_next_match_inc(li,lie,'0')) {
+        if (strit_next_match_inc(li,lie,'x')) {
+            if (strit_next_match_inc(li,lie,'1','.')) { /* 0x1. */
+                /* hexadecimal floating point */
+                throw invalid_argument("hexadecimal floating point not yet supported");
+            }
+
+            /* hexadecimal integer */
+            return parse_hex_number(li,lie);
+        }
+
+        /* octal */
+        return parse_oct_number(li,lie);
+    }
+
+    /* decimal (int or float) */
+    const unsigned long long v = parse_dec_number(li,lie);
+
+    return v;
+}
+
 stringref_t parse_string(string::iterator &li,const string::iterator lie) {
     /* at this point *li == '\"' */
     string r;
@@ -813,12 +922,12 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
 
     /* general parsing. expects code to skip whitespace after doing it's part */
     while (li != lie) {
-        if (*li == '\"') {
+        if (*li == '\"')
             tokens.push_back(move(parse_string(li,lie)));
-        }
-        else if (*li == '\'') {
+        else if (*li == '\'')
             tokens.push_back(move(parse_sq_char(li,lie)));
-        }
+        else if (isdigit(*li))
+            tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
             if (is_keyword(ident))
