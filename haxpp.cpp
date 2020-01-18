@@ -152,6 +152,8 @@ public:
         NOT,
         AMPERSAND,
         STAR,
+        OPEN_PARENS,
+        CLOSE_PARENS,
 
         MAX_TOKEN
     };
@@ -1191,6 +1193,10 @@ string to_string(const token &t) {
             return "&";
         case token::STAR:
             return "*";
+        case token::OPEN_PARENS:
+            return "(";
+        case token::CLOSE_PARENS:
+            return ")";
         default:
             break;
     };
@@ -1251,6 +1257,10 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::AMPERSAND);
         else if (strit_next_match_inc(li,lie,'*'))
             tokens.push_back(token::STAR);
+        else if (strit_next_match_inc(li,lie,'('))
+            tokens.push_back(token::OPEN_PARENS);
+        else if (strit_next_match_inc(li,lie,')'))
+            tokens.push_back(token::CLOSE_PARENS);
         else if (isdigit(*li))
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
