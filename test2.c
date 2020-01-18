@@ -105,3 +105,4 @@ Hello "world" today
 0x1.0p-3
 0x1.0p-4
 -4 -- +3 ++ , , ,,,, ~ ~~ 5 !4   !0 4 & 3  &amp * 2 *indir **ptr () ( ) (x) ((x)) [4] [4[2]] [2][3] . a . a .. a . a . a . a . a ... a . a . a -> b -> c -> -> d {} { { } }
+sizeof(char[6])

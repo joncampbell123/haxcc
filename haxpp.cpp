@@ -161,6 +161,7 @@ public:
         CLOSE_SBRACKET,
         OPEN_CBRACKET,
         CLOSE_CBRACKET,
+        SIZEOF,
 
         MAX_TOKEN
     };
@@ -635,9 +636,11 @@ void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
     while (li != lie && (*li == ' ' || *li == '\t')) li++;
 }
 
-bool is_keyword(const string &s) {
-    (void)s;
-    return false;
+enum token::token_t is_keyword(const string &s) {
+    if (s == "sizeof")
+        return token::SIZEOF;
+
+    return token::NONE;
 }
 
 bool is_macro(const string &s) {
@@ -1218,6 +1221,8 @@ string to_string(const token &t) {
             return "{";
         case token::CLOSE_CBRACKET:
             return "}";
+        case token::SIZEOF:
+            return "sizeof";
         default:
             break;
     };
@@ -1300,8 +1305,10 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
-            if (is_keyword(ident))
-                tokens.push_back(move(token(token::KEYWORD,ident)));
+            enum token::token_t tk;
+
+            if ((tk=is_keyword(ident)) != token::NONE)
+                tokens.push_back(tk);
             else if (is_macro(ident))
                 tokens.push_back(move(token(token::MACRO,ident))); // TODO: In place macro expansion HERE, with recursion, and parameters
             else
