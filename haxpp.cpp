@@ -206,6 +206,13 @@ public:
         FOR,
         GOTO,
         IF,
+        INT,
+        LONG,
+        REGISTER,
+        RETURN,
+        SHORT,
+        SIGNED,
+        STATIC,
 
         MAX_TOKEN
     };
@@ -717,9 +724,22 @@ enum token::token_t is_keyword(const string &s) {
         return token::GOTO;
     if (s == "if")
         return token::IF;
-
+    if (s == "int")
+        return token::INT;
+    if (s == "long")
+        return token::LONG;
+    if (s == "register")
+        return token::REGISTER;
+    if (s == "return")
+        return token::RETURN;
+    if (s == "short")
+        return token::SHORT;
+    if (s == "signed")
+        return token::SIGNED;
     if (s == "sizeof")
         return token::SIZEOF;
+    if (s == "static")
+        return token::STATIC;
 
     return token::NONE;
 }
@@ -1395,6 +1415,20 @@ string to_string(const token &t) {
             return "goto ";
         case token::IF:
             return "if ";
+        case token::INT:
+            return "int ";
+        case token::LONG:
+            return "long ";
+        case token::REGISTER:
+            return "register ";
+        case token::RETURN:
+            return "return ";
+        case token::SHORT:
+            return "short ";
+        case token::SIGNED:
+            return "signed ";
+        case token::STATIC:
+            return "static ";
         default:
             break;
     };

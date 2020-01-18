@@ -118,4 +118,4 @@ sizeof(char[6]) alignas(5) alignof(6) 5/3 5%3 5*3 5<<3 5>>3 5<=3 5>=3 5<3 5>3 5=
 5&=3
 5^=3
 5|=3
-auto break case char const continue default do double else enum extern float for goto if
+auto break case char const continue default do double else enum extern float for goto if int long register return short signed sizeof static
