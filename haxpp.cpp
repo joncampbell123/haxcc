@@ -198,6 +198,14 @@ public:
         CONTINUE,
         DEFAULT,
         DO,
+        DOUBLE,
+        ELSE,
+        ENUM,
+        EXTERN,
+        FLOAT_KW,
+        FOR,
+        GOTO,
+        IF,
 
         MAX_TOKEN
     };
@@ -693,6 +701,22 @@ enum token::token_t is_keyword(const string &s) {
         return token::DEFAULT;
     if (s == "do")
         return token::DO;
+    if (s == "double")
+        return token::DOUBLE;
+    if (s == "else")
+        return token::ELSE;
+    if (s == "enum")
+        return token::ENUM;
+    if (s == "extern")
+        return token::EXTERN;
+    if (s == "float")
+        return token::FLOAT_KW;
+    if (s == "for")
+        return token::FOR;
+    if (s == "goto")
+        return token::GOTO;
+    if (s == "if")
+        return token::IF;
 
     if (s == "sizeof")
         return token::SIZEOF;
@@ -1355,6 +1379,22 @@ string to_string(const token &t) {
             return "default ";
         case token::DO:
             return "do ";
+        case token::DOUBLE:
+            return "double ";
+        case token::ELSE:
+            return "else ";
+        case token::ENUM:
+            return "enum ";
+        case token::EXTERN:
+            return "extern ";
+        case token::FLOAT_KW:
+            return "float ";
+        case token::FOR:
+            return "for ";
+        case token::GOTO:
+            return "goto ";
+        case token::IF:
+            return "if ";
         default:
             break;
     };
