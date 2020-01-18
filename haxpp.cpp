@@ -867,6 +867,8 @@ void parse_float_exponent(token &r,string::iterator &li,const string::iterator l
 
     if (strit_next_match_inc(li,lie,'-'))
         exp_adjust = -((signed long long)parse_dec_number(li,lie));
+    else if (strit_next_match_inc(li,lie,'+'))
+        exp_adjust =   (signed long long)parse_dec_number(li,lie);
     else
         exp_adjust =   (signed long long)parse_dec_number(li,lie);
 
