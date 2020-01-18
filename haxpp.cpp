@@ -159,6 +159,8 @@ public:
         CLOSE_PARENS,
         OPEN_SBRACKET,
         CLOSE_SBRACKET,
+        OPEN_CBRACKET,
+        CLOSE_CBRACKET,
 
         MAX_TOKEN
     };
@@ -1212,6 +1214,10 @@ string to_string(const token &t) {
             return "[";
         case token::CLOSE_SBRACKET:
             return "]";
+        case token::OPEN_CBRACKET:
+            return "{";
+        case token::CLOSE_CBRACKET:
+            return "}";
         default:
             break;
     };
@@ -1286,6 +1292,10 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::OPEN_SBRACKET);
         else if (strit_next_match_inc(li,lie,']'))
             tokens.push_back(token::CLOSE_SBRACKET);
+        else if (strit_next_match_inc(li,lie,'{'))
+            tokens.push_back(token::OPEN_CBRACKET);
+        else if (strit_next_match_inc(li,lie,'}'))
+            tokens.push_back(token::CLOSE_CBRACKET);
         else if (isdigit(*li))
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
