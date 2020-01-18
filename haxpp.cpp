@@ -1145,6 +1145,15 @@ string parse_identifier(string::iterator &li,const string::iterator lie) {
     return r;
 }
 
+/* standard C++ to_string() always prints 6 digits in GCC.
+ * we want more digits! */
+string a_better_float_to_string(const long double v) {
+    char tmp[40];
+
+    snprintf(tmp,sizeof(tmp),"%.40Lf",v); /* expect overprint, but snprintf to stop at 39 chars + NUL */
+    return tmp;
+}
+
 string to_string(const token &t) {
     switch (t.tval) {
         case token::MACRO:
@@ -1155,7 +1164,7 @@ string to_string(const token &t) {
         case token::INTEGER:
             return to_string(t.i.s) + " ";
         case token::FLOAT:
-            return to_string(t.f.get_double()) + " ";
+            return a_better_float_to_string(t.f.get_double()) + " ";
         case token::STRING:
             return string("\"") + string_store.get_char(t.s.strref) + string("\"") + " ";
         case token::MINUS:
