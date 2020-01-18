@@ -164,6 +164,8 @@ public:
         SIZEOF,
         ALIGNAS,
         ALIGNOF,
+        DIVISION,
+        MODULUS,
 
         MAX_TOKEN
     };
@@ -1212,9 +1214,9 @@ string to_string(const token &t) {
         case token::NOT:
             return "!";
         case token::AMPERSAND:
-            return "&";
+            return "& ";
         case token::STAR:
-            return "*";
+            return "* ";
         case token::OPEN_PARENS:
             return "(";
         case token::CLOSE_PARENS:
@@ -1233,6 +1235,10 @@ string to_string(const token &t) {
             return "alignas";
         case token::ALIGNOF:
             return "alignof";
+        case token::DIVISION:
+            return "/ ";
+        case token::MODULUS:
+            return "% ";
         default:
             break;
     };
@@ -1299,6 +1305,10 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::AMPERSAND);
         else if (strit_next_match_inc(li,lie,'*'))
             tokens.push_back(token::STAR);
+        else if (strit_next_match_inc(li,lie,'/'))
+            tokens.push_back(token::DIVISION);
+        else if (strit_next_match_inc(li,lie,'%'))
+            tokens.push_back(token::MODULUS);
         else if (strit_next_match_inc(li,lie,'('))
             tokens.push_back(token::OPEN_PARENS);
         else if (strit_next_match_inc(li,lie,')'))
