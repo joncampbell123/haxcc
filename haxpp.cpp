@@ -753,8 +753,6 @@ unsigned long long parse_sq_char(string::iterator &li,const string::iterator lie
 
     if (shf > 64ull) fprintf(stderr,"WARNING: char constant too big for compiler storage, truncated");
 
-    fprintf(stderr,"0x%llx\n",r);
-
     return r;
 }
 
