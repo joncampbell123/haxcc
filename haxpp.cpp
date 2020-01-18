@@ -213,6 +213,14 @@ public:
         SHORT,
         SIGNED,
         STATIC,
+        STRUCT,
+        SWITCH,
+        TYPEDEF,
+        UNION,
+        UNSIGNED,
+        VOID,
+        VOLATILE,
+        WHILE,
 
         MAX_TOKEN
     };
@@ -740,6 +748,22 @@ enum token::token_t is_keyword(const string &s) {
         return token::SIZEOF;
     if (s == "static")
         return token::STATIC;
+    if (s == "struct")
+        return token::STRUCT;
+    if (s == "switch")
+        return token::SWITCH;
+    if (s == "typedef")
+        return token::TYPEDEF;
+    if (s == "union")
+        return token::UNION;
+    if (s == "unsigned")
+        return token::UNSIGNED;
+    if (s == "void")
+        return token::VOID;
+    if (s == "volatile")
+        return token::VOLATILE;
+    if (s == "while")
+        return token::WHILE;
 
     return token::NONE;
 }
@@ -1429,6 +1453,22 @@ string to_string(const token &t) {
             return "signed ";
         case token::STATIC:
             return "static ";
+        case token::STRUCT:
+            return "struct ";
+        case token::SWITCH:
+            return "switch ";
+        case token::TYPEDEF:
+            return "typedef ";
+        case token::UNION:
+            return "union ";
+        case token::UNSIGNED:
+            return "unsigned ";
+        case token::VOID:
+            return "void ";
+        case token::VOLATILE:
+            return "volatile ";
+        case token::WHILE:
+            return "while ";
         default:
             break;
     };
