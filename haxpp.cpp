@@ -1307,7 +1307,15 @@ int main(int argc,char **argv) {
                 parse_tokens(tokens,line.begin(),line.end(),lineno,source);
 
                 if (pp_only) {
-                    // TODO
+                    if (emit_line) {
+                        out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
+                        emit_line = false;
+                    }
+
+                    for (const auto &t : tokens)
+                        print_token(stderr/*FIXME*/,t);
+
+                    out_dst.putc('\n');
                 }
             }
 
