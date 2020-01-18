@@ -172,6 +172,9 @@ public:
         GREATER_THAN_OR_EQUAL,
         LEFT_SHIFT,
         RIGHT_SHIFT,
+        EQUALS,
+        NOT_EQUALS,
+        ASSIGNMENT,
 
         MAX_TOKEN
     };
@@ -1257,6 +1260,12 @@ string to_string(const token &t) {
             return "<< ";
         case token::RIGHT_SHIFT:
             return ">> ";
+        case token::EQUALS:
+            return "== ";
+        case token::NOT_EQUALS:
+            return "!= ";
+        case token::ASSIGNMENT:
+            return "= ";
         default:
             break;
     };
@@ -1327,8 +1336,14 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::INCREMENT);
         else if (strit_next_match_inc(li,lie,'+'))
             tokens.push_back(token::PLUS);
+        else if (strit_next_match_inc(li,lie,'=','='))
+            tokens.push_back(token::EQUALS);
+        else if (strit_next_match_inc(li,lie,'='))
+            tokens.push_back(token::ASSIGNMENT);
         else if (strit_next_match_inc(li,lie,'~'))
             tokens.push_back(token::COMPLEMENT);
+        else if (strit_next_match_inc(li,lie,'!','='))
+            tokens.push_back(token::NOT_EQUALS);
         else if (strit_next_match_inc(li,lie,'!'))
             tokens.push_back(token::NOT);
         else if (strit_next_match_inc(li,lie,'&'))
