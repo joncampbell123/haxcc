@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <math.h>
 
@@ -174,6 +175,7 @@ public:
 
     token();
     token(const long long v);
+    token(const long double v);
     token(const stringref_t sr);
     token(const unsigned long long v);
     token(const token_t t,const string _sval);
@@ -189,6 +191,10 @@ token::token(const stringref_t sr) : tval(STRING) {
 token::token(const long long v) : tval(INTEGER) {
     i.s = v;
     i.sign = true;
+}
+
+token::token(const long double v) : tval(FLOAT) {
+    f = v;
 }
 
 token::token(const unsigned long long v) : tval(INTEGER) {
@@ -875,6 +881,31 @@ void parse_int_suffixes(token &r,string::iterator &li,const string::iterator lie
         r.bsize = 32; /* long */
 }
 
+long double parse_dec_number_float_sub(string::iterator &li,const string::iterator lie) {
+    unsigned long long tmp = 0,tmpdiv = 1;
+    long double r = 0,d = 1.0;
+
+    /* NTS: Process digits in batches to allow precision in integer math and reduce cumulative floating point error */
+    while (li != lie && isdigit(*li)) {
+        if (tmpdiv >= 100000000000ull) {
+            d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
+            r += tmp / d;
+            tmpdiv = 1;
+            tmp = 0;
+        }
+
+        tmp = (tmp * 10ull) + ((unsigned long long)(*(li++) - '0'));
+        tmpdiv *= 10ull;
+    }
+
+    if (tmpdiv > 1ull) {
+        d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
+        r += tmp / d;
+    }
+
+    return r;
+}
+
 /* will return int or float */
 token parse_number(string::iterator &li,const string::iterator lie) {
     token r;
@@ -894,17 +925,32 @@ token parse_number(string::iterator &li,const string::iterator lie) {
                 /* hexadecimal integer */
                 r = parse_hex_number(li,lie);
                 parse_int_suffixes(r,li,lie);
+                return r;
             }
+        }
+        else if (strit_next(li,lie) == '.') {
+            /* floating point 0.nnnnn, fall through */
+            r = 0ull;
         }
         else {
             /* octal */
             r = parse_oct_number(li,lie);
             parse_int_suffixes(r,li,lie);
+            return r; /* no, you can't do floating point octal */
         }
     }
     else {
         /* decimal (int or float) */
         r = parse_dec_number(li,lie);
+    }
+
+    /* integer parsing complete. if decimal follows, it's float */
+    if (strit_next_match_inc(li,lie,'.')) {
+        /* it's a float. parse the rest of the digits */
+        assert(r.tval == token::INTEGER);
+        r = (long double)r.i.u + parse_dec_number_float_sub(li,lie);
+    }
+    else {
         parse_int_suffixes(r,li,lie);
     }
 
