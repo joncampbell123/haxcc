@@ -1219,30 +1219,16 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(move(parse_string(li,lie)));
         else if (*li == '\'')
             tokens.push_back(move(parse_sq_char(li,lie)));
-        else if (*li == ',') {
-            li++;
+        else if (strit_next_match_inc(li,lie,','))
             tokens.push_back(token::COMMA);
-        }
-        else if (*li == '-') {
-            li++;
-            if (*li == '-') {
-                li++;
-                tokens.push_back(token::DECREMENT);
-            }
-            else {
-                tokens.push_back(token::MINUS);
-            }
-        }
-        else if (*li == '+') {
-            li++;
-            if (*li == '+') {
-                li++;
-                tokens.push_back(token::INCREMENT);
-            }
-            else {
-                tokens.push_back(token::PLUS);
-            }
-        }
+        else if (strit_next_match_inc(li,lie,'-','-'))
+            tokens.push_back(token::DECREMENT);
+        else if (strit_next_match_inc(li,lie,'-'))
+            tokens.push_back(token::MINUS);
+        else if (strit_next_match_inc(li,lie,'+','+'))
+            tokens.push_back(token::INCREMENT);
+        else if (strit_next_match_inc(li,lie,'+'))
+            tokens.push_back(token::PLUS);
         else if (isdigit(*li))
             tokens.push_back(move(parse_number(li,lie)));
         else if (isidentifier_fc(*li)) {
