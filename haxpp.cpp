@@ -987,8 +987,15 @@ long double parse_dec_number_float_sub(string::iterator &li,const string::iterat
 void print_token(FILE *fp,const token &t);
 
 bool parse_number_looks_like_float(string::iterator /*does not modify caller copy*/li,const string::iterator lie) {
-    while (li != lie && isdigit(*li)) li++;
-    if (li != lie) return (*li == '.' || *li == 'e' || *li == 'E');
+    if (strit_next_match_inc(li,lie,'0','x')) {
+        while (li != lie && isxdigit(*li)) li++;
+        if (li != lie) return (*li == '.' || *li == 'p' || *li == 'p');
+    }
+    else {
+        while (li != lie && isdigit(*li)) li++;
+        if (li != lie) return (*li == '.' || *li == 'e' || *li == 'E');
+    }
+
     return false;
 }
 
