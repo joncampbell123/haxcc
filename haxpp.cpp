@@ -1165,6 +1165,18 @@ void print_token(FILE *fp,const token &t) {
         case token::STRING:
             fprintf(fp,"\"%s\" ",string_store.get_char(t.s.strref).c_str());
             break;
+        case token::MINUS:
+            fprintf(fp,"- ");
+            break;
+        case token::PLUS:
+            fprintf(fp,"+ ");
+            break;
+        case token::DECREMENT:
+            fprintf(fp,"-- ");
+            break;
+        case token::INCREMENT:
+            fprintf(fp,"++ ");
+            break;
         case token::COMMA:
             fputc(',',fp);
             break;
