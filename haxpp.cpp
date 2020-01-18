@@ -674,13 +674,10 @@ void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
 }
 
 enum token::token_t is_keyword(const string &s) {
-    if (s == "sizeof")
-        return token::SIZEOF;
     if (s == "alignas")
         return token::ALIGNAS;
     if (s == "alignof")
         return token::ALIGNOF;
-
     if (s == "auto")
         return token::AUTO;
     if (s == "break")
@@ -697,6 +694,9 @@ enum token::token_t is_keyword(const string &s) {
         return token::DEFAULT;
     if (s == "do")
         return token::DO;
+
+    if (s == "sizeof")
+        return token::SIZEOF;
 
     return token::NONE;
 }
