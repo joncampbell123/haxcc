@@ -175,6 +175,12 @@ public:
         EQUALS,
         NOT_EQUALS,
         ASSIGNMENT,
+        CARET,
+        PIPE,
+        LOGICAL_AND,
+        LOGICAL_OR,
+        QUESTIONMARK,
+        COLON,
 
         MAX_TOKEN
     };
@@ -1266,6 +1272,18 @@ string to_string(const token &t) {
             return "!= ";
         case token::ASSIGNMENT:
             return "= ";
+        case token::CARET:
+            return "^ ";
+        case token::PIPE:
+            return "| ";
+        case token::LOGICAL_AND:
+            return "&& ";
+        case token::LOGICAL_OR:
+            return "|| ";
+        case token::QUESTIONMARK:
+            return "? ";
+        case token::COLON:
+            return ": ";
         default:
             break;
     };
@@ -1342,10 +1360,22 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(token::ASSIGNMENT);
         else if (strit_next_match_inc(li,lie,'~'))
             tokens.push_back(token::COMPLEMENT);
+        else if (strit_next_match_inc(li,lie,'^'))
+            tokens.push_back(token::CARET);
+        else if (strit_next_match_inc(li,lie,'?'))
+            tokens.push_back(token::QUESTIONMARK);
+        else if (strit_next_match_inc(li,lie,':'))
+            tokens.push_back(token::COLON);
+        else if (strit_next_match_inc(li,lie,'|','|'))
+            tokens.push_back(token::LOGICAL_OR);
+        else if (strit_next_match_inc(li,lie,'|'))
+            tokens.push_back(token::PIPE);
         else if (strit_next_match_inc(li,lie,'!','='))
             tokens.push_back(token::NOT_EQUALS);
         else if (strit_next_match_inc(li,lie,'!'))
             tokens.push_back(token::NOT);
+        else if (strit_next_match_inc(li,lie,'&','&'))
+            tokens.push_back(token::LOGICAL_AND);
         else if (strit_next_match_inc(li,lie,'&'))
             tokens.push_back(token::AMPERSAND);
         else if (strit_next_match_inc(li,lie,'*'))
