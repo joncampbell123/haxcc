@@ -148,6 +148,7 @@ public:
         DECREMENT,
         INCREMENT,
         COMMA,
+        PERIOD,
         COMPLEMENT,
         NOT,
         AMPERSAND,
@@ -1187,6 +1188,8 @@ string to_string(const token &t) {
             return "++ ";
         case token::COMMA:
             return ",";
+        case token::PERIOD:
+            return ".";
         case token::COMPLEMENT:
             return "~";
         case token::NOT:
@@ -1245,6 +1248,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             tokens.push_back(move(parse_string(li,lie)));
         else if (*li == '\'')
             tokens.push_back(move(parse_sq_char(li,lie)));
+        else if (strit_next_match_inc(li,lie,'.'))
+            tokens.push_back(token::PERIOD);
         else if (strit_next_match_inc(li,lie,','))
             tokens.push_back(token::COMMA);
         else if (strit_next_match_inc(li,lie,'-','-'))
