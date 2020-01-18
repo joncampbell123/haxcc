@@ -933,25 +933,52 @@ void parse_int_suffixes(token &r,string::iterator &li,const string::iterator lie
 }
 
 long double parse_dec_number_float_sub(string::iterator &li,const string::iterator lie) {
-    unsigned long long tmp = 0,tmpdiv = 1;
-    long double r = 0,d = 1.0;
+    long double r = 0;
 
-    /* NTS: Process digits in batches to allow precision in integer math and reduce cumulative floating point error */
-    while (li != lie && isdigit(*li)) {
-        if (tmpdiv >= 100000000000ull) {
-            d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
-            r += tmp / d;
-            tmpdiv = 1;
-            tmp = 0;
+    if (li != lie) {
+        unsigned long long tmp = 0,tmpdiv = 1;
+
+        /* NTS: Process digits in batches to allow precision in integer math and reduce cumulative floating point error */
+        while (li != lie && isdigit(*li)) {
+            if (tmpdiv >= 100000000000ull) {
+                r = (r * tmpdiv) + tmp;
+                tmpdiv = 1;
+                tmp = 0;
+            }
+
+            tmp = (tmp * 10ull) + ((unsigned long long)(*(li++) - '0'));
+            tmpdiv *= 10ull;
         }
 
-        tmp = (tmp * 10ull) + ((unsigned long long)(*(li++) - '0'));
-        tmpdiv *= 10ull;
+        if (tmpdiv > 1ull) {
+            r = (r * tmpdiv) + tmp;
+        }
     }
 
-    if (tmpdiv > 1ull) {
-        d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
-        r += tmp / d;
+    if (li != lie && *li == '.') {
+        unsigned long long tmp = 0,tmpdiv = 1;
+        long double d = 1.0;
+
+        /* skip '.' */
+        li++;
+
+        /* NTS: Process digits in batches to allow precision in integer math and reduce cumulative floating point error */
+        while (li != lie && isdigit(*li)) {
+            if (tmpdiv >= 100000000000ull) {
+                d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
+                r += tmp / d;
+                tmpdiv = 1;
+                tmp = 0;
+            }
+
+            tmp = (tmp * 10ull) + ((unsigned long long)(*(li++) - '0'));
+            tmpdiv *= 10ull;
+        }
+
+        if (tmpdiv > 1ull) {
+            d *= (signed long long)tmpdiv; /* only because on x86 there is only a signed divide by int */
+            r += tmp / d;
+        }
     }
 
     return r;
@@ -959,63 +986,44 @@ long double parse_dec_number_float_sub(string::iterator &li,const string::iterat
 
 void print_token(FILE *fp,const token &t);
 
+bool parse_number_looks_like_float(string::iterator /*does not modify caller copy*/li,const string::iterator lie) {
+    while (li != lie && isdigit(*li)) li++;
+    if (li != lie) return (*li == '.' || *li == 'e' || *li == 'E');
+    return false;
+}
+
 /* will return int or float */
 token parse_number(string::iterator &li,const string::iterator lie) {
     token r;
 
     /* at this point isdigit(*li) */
     if (li == lie) throw invalid_argument("expected number, got end of line");
-    if (!isdigit(*li)) throw invalid_argument("expected number, got " + *li);
+    if (!isdigit(*li)) throw invalid_argument(string("expected number, got ") + *li);
 
-    /* next_match_inc() will increment li in place if match */
-    if (strit_next_match_inc(li,lie,'0')) {
-        if (strit_next_match_inc(li,lie,'x')) {
-            if (strit_next_match_inc(li,lie,'1','.')) { /* 0x1. */
-                /* hexadecimal floating point */
-                throw invalid_argument("hexadecimal floating point not yet supported");
-            }
-            else {
-                /* hexadecimal integer */
-                r = parse_hex_number(li,lie);
-                parse_int_suffixes(r,li,lie);
-                return r;
-            }
-        }
-        else if (strit_next(li,lie) == '.') {
-            /* floating point 0.nnnnn, fall through */
-            r = 0ull;
-        }
+    if (parse_number_looks_like_float(li,lie)) {
+        if (strit_next_match_inc(li,lie,'0','x'))
+            throw invalid_argument("hex float not supported");
         else {
-            /* octal */
-            r = parse_oct_number(li,lie);
-            parse_int_suffixes(r,li,lie);
-            return r; /* no, you can't do floating point octal */
+            r = parse_dec_number_float_sub(li,lie);
+            if (strit_next_match_inc(li,lie,'e'))
+                parse_float_exponent(r,li,lie);
+            else if (strit_next_match_inc(li,lie,'E'))
+                parse_float_exponent(r,li,lie);
         }
-    }
-    else {
-        /* decimal (int or float) */
-        r = parse_dec_number(li,lie);
-    }
-
-    /* integer parsing complete. if decimal follows, it's float */
-    if (strit_next_match_inc(li,lie,'.')) {
-        /* it's a float. parse the rest of the digits */
-        assert(r.tval == token::INTEGER);
-        r = (long double)r.i.u + parse_dec_number_float_sub(li,lie);
-
-        if (strit_next_match_inc(li,lie,'e'))
-            parse_float_exponent(r,li,lie);
-        else if (strit_next_match_inc(li,lie,'E'))
-            parse_float_exponent(r,li,lie);
 
         parse_float_suffixes(r,li,lie);
     }
-    /* if an 'e' follows it's a float with an exponent */
-    else if (strit_next_match_inc(li,lie,'e'))
-        parse_float_exponent(r,li,lie);
-    else if (strit_next_match_inc(li,lie,'E'))
-        parse_float_exponent(r,li,lie);
     else {
+        if (strit_next_match_inc(li,lie,'0')) {
+            if (strit_next_match_inc(li,lie,'x')) /* hexadecimal integer */
+                r = parse_hex_number(li,lie);
+            else /* octal */
+                r = parse_oct_number(li,lie);
+        }
+        else { /* integer */
+            r = parse_dec_number(li,lie);
+        }
+
         parse_int_suffixes(r,li,lie);
     }
 
