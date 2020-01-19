@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <stack>
+#include <map>
 
 using namespace std;
 
@@ -571,6 +572,26 @@ void pp_cond_t::on_else() {
     }
 }
 
+class macro_elem_t {
+public:
+    enum elem_t {
+        COPY=0,
+        PARAM
+    };
+public:
+    string                      sval;
+    size_t                      param = 0;
+};
+
+class macro_t {
+public:
+    vector<macro_elem_t>        subst;
+    vector<string>              param;
+    bool                        last_param_variadic = false;
+    bool                        parens = false;
+};
+
+static map<string,macro_t>      macro_store;
 static string_storage           string_store;
 
 static FileSourceStack          in_src_stk;
@@ -1839,7 +1860,7 @@ const string &tokenit_next_identifier(token_string::iterator &ti,const token_str
     throw invalid_argument("identifier token expected");
 }
 
-stack<pp_cond_t>    pp_cond_stack;
+static stack<pp_cond_t>         pp_cond_stack;
 
 bool pp_pass() {
     if (!pp_cond_stack.empty())
