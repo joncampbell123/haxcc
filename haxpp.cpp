@@ -166,6 +166,12 @@ public:
         ATOMIC,
         BOOL_KW,
         COMPLEX,
+        GENERIC,
+        IMAGINARY,
+        NORETURN,
+        STATIC_ASSERT,
+        THREAD_LOCAL,
+        PRAGMA,
         DIVISION,
         MODULUS,
         LESS_THAN,
@@ -713,6 +719,18 @@ enum token::token_t is_keyword(const string &s) {
         return token::BOOL_KW;
     if (s == "_Complex")
         return token::COMPLEX;
+    if (s == "_Generic")
+        return token::GENERIC;
+    if (s == "_Imaginary")
+        return token::IMAGINARY;
+    if (s == "_Noreturn")
+        return token::NORETURN;
+    if (s == "_Pragma")
+        return token::PRAGMA;
+    if (s == "_Static_assert")
+        return token::STATIC_ASSERT;
+    if (s == "_Thread_local")
+        return token::THREAD_LOCAL;
     if (s == "auto")
         return token::AUTO;
     if (s == "break")
@@ -1378,6 +1396,18 @@ string to_string(const token &t) {
             return "_Bool ";
         case token::COMPLEX:
             return "_Complex ";
+        case token::GENERIC:
+            return "_Generic ";
+        case token::IMAGINARY:
+            return "_Imaginary ";
+        case token::NORETURN:
+            return "_Noreturn ";
+        case token::PRAGMA:
+            return "_Pragma ";
+        case token::STATIC_ASSERT:
+            return "_Static_assert ";
+        case token::THREAD_LOCAL:
+            return "_Thread_local ";
         case token::DIVISION:
             return "/ ";
         case token::MODULUS:
@@ -1499,9 +1529,9 @@ string to_string(const token &t) {
         case token::TOKEN_PASTE:
             return "## ";
         case token::VA_ARGS:
-            return "__VA_ARGS__";
+            return "__VA_ARGS__ ";
         case token::VA_OPT:
-            return "__VA_OPT__";
+            return "__VA_OPT__ ";
         default:
             break;
     };
