@@ -1614,6 +1614,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
     (void)lineno;
     (void)source;
 
+    bool macro_expand = true;
     bool is_pp = false;
 
     /* initial whitespace skip */
@@ -1633,10 +1634,25 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
             enum token::token_t tk;
 
-            if ((tk=is_pp_keyword(ident)) != token::NONE)
+            if ((tk=is_pp_keyword(ident)) != token::NONE) {
                 tokens.push_back(tk);
-            else
+
+                switch (tk) {
+                    case token::IFDEF:
+                    case token::IFNDEF:
+                    case token::DEFINE:
+                    case token::ENDIF:
+                    case token::UNDEF:
+                    case token::ELSE:
+                        macro_expand = false;
+                        break;
+                    default:
+                        break;
+                };
+            }
+            else {
                 throw invalid_argument(string("Invalid preprocessor directive ") + ident);
+            }
         }
 
         parse_skip_whitespace(li,lie);
@@ -1752,7 +1768,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                 tokens.push_back(tk);
             else if ((tk=is_keyword(ident)) != token::NONE)
                 tokens.push_back(tk);
-            else if (is_macro(ident))
+            else if (macro_expand && is_macro(ident))
                 tokens.push_back(move(token(token::MACRO,ident))); // TODO: In place macro expansion HERE, with recursion, and parameters
             else
                 tokens.push_back(move(token(token::IDENTIFIER,ident)));
