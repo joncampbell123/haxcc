@@ -1727,8 +1727,11 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                          * params = identifier ... */
                         tokens.push_back(token::OPEN_PARENS);
                         parse_skip_whitespace(li,lie);
-                        while (li != lie) {
-                            if (strit_next_match_inc(li,lie,')')) {
+                        while (1) {
+                            if (li == lie) {
+                                throw invalid_argument("macro param list ended without closing parens");
+                            }
+                            else if (strit_next_match_inc(li,lie,')')) {
                                 tokens.push_back(token::CLOSE_PARENS);
                                 break;
                             }
