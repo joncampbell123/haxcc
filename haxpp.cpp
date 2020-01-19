@@ -1777,6 +1777,9 @@ string pp_stringify(const string &s) {
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source);
 
 static inline bool do_macro_expand_val(string &fstr,vector<token>::const_iterator &si,const vector<token>::const_iterator sie,const vector<string> &param,const macro_t &macro,const bool variadic_given) {
+    if (si == sie)
+        throw runtime_error("do_macro_expand_val started with iterator == end");
+
     if ((*si).tval == token::MACROSUBST) {
         fstr += (*si).sval;
         si++;
