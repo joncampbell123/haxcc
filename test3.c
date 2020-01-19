@@ -181,3 +181,8 @@ testing the HELLO (a,b) today
 testing the HELLO (funny,man) today
 #undef HELLO
 
+#define HELLO(a,...) a world __VA_OPT__(,) __VA_ARGS__
+testing the HELLO (funny) today
+testing the HELLO (funny,man) today
+#undef HELLO
+
