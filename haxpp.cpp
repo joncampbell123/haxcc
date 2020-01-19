@@ -969,8 +969,7 @@ enum token::token_t is_keyword(const string &s) {
 }
 
 bool is_macro(const string &s) {
-    (void)s;
-    return false;
+    return macro_store.find(s) != macro_store.end();
 }
 
 /* ANSI C89 Sec 3.1.2 "Identifiers" */
