@@ -1757,7 +1757,21 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                     parse_skip_whitespace(li,lie);
 
                     while (li != lie) {
-                        if (isidentifier_fc(*li)) {
+                        if (strit_next_match_inc(li,lie,'#','#')) {
+                            if (!r.empty()) {
+                                tokens.push_back(move(token(token::MACROSUBST,r)));
+                                r.clear();
+                            }
+                            tokens.push_back(token::TOKEN_PASTE);
+                        }
+                        else if (strit_next_match_inc(li,lie,'#')) {
+                            if (!r.empty()) {
+                                tokens.push_back(move(token(token::MACROSUBST,r)));
+                                r.clear();
+                            }
+                            tokens.push_back(token::STRINGIFY);
+                        }
+                        else if (isidentifier_fc(*li)) {
                             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
 
                             auto paridx = find(params.begin(),params.end(),ident);
