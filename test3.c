@@ -176,3 +176,8 @@ testing the HELLO (a,b) today
 testing the HELLO (abc,xyz) today
 #undef HELLO
 
+#define HELLO(a,b) #a #b world #a#b
+testing the HELLO (a,b) today
+testing the HELLO (funny,man) today
+#undef HELLO
+

@@ -1761,6 +1761,19 @@ string do_macro_expand_read_invoke_param(string::iterator &li,const string::iter
     return r;
 }
 
+string pp_stringify(const string &s) {
+    string r;
+
+    r += '\"';
+    for (auto si=s.begin();si!=s.end();si++) {
+        if (*si == '\'' || *si == '\"' || *si == '\\') r += '\\';
+        r += *si;
+    }
+    r += '\"';
+
+    return r;
+}
+
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source);
 
 void do_macro_expand(token_string &tokens,const string &ident,string::iterator &li,const string::iterator lie,const int32_t lineno,const string &source) {
@@ -1831,6 +1844,32 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 si++;
                 if (si == macro.subst.end())
                     throw invalid_argument("token paste must be followed by another token");
+            }
+            else if ((*si).tval == token::STRINGIFY) {
+                si++;
+                if (si == macro.subst.end())
+                    throw invalid_argument("macro stringify with nothing to stringify");
+
+                if ((*si).tval == token::MACROSUBST) {
+                    fstr += pp_stringify((*si).sval);
+                    si++;
+                }
+                else if ((*si).tval == token::MACROPARAM) {
+                    if ((*si).i.u >= (unsigned long long)param.size())
+                        throw invalid_argument("macro parameter index out of range");
+
+                    fstr += pp_stringify(param[size_t((*si).i.u)]);
+                    si++;
+                }
+                else if ((*si).tval == token::VA_ARGS) {
+                    if (!param.empty() && macro.last_param_variadic && macro.last_param_optional)
+                        fstr += pp_stringify(param[param.size() - size_t(1)]);
+
+                    si++;
+                }
+                else {
+                    throw invalid_argument("unexpected token in macro stringify");
+                }
             }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
