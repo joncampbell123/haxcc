@@ -104,5 +104,10 @@ Hello
 testing the HELLO today
 #define HELLO world
 testing the HELLO today
+testing the HELLO() today
 #undef HELLO
 
+#define HELLO() world
+testing the HELLO() today
+testing the HELLO () today
+#undef HELLO

@@ -1733,6 +1733,94 @@ void print_token(FILE *fp,const token &t) {
     fputs(s.c_str(),fp);
 }
 
+string do_macro_expand_read_invoke_param(string::iterator &li,const string::iterator lie,bool final_variadic=false) {
+    int paren = 0;
+    string r;
+
+    do {
+        if (li == lie)
+            throw invalid_argument("string terminated unexpectedly");
+        if (*li == '(') {
+            paren++;
+        }
+        else if (*li == ')') {
+            if (paren > 0)
+                paren--;
+            else
+                break;
+        }
+        else if (*li == ',' && !final_variadic) {
+            break;
+        }
+
+        r += *(li++);
+    } while (1);
+
+    return r;
+}
+
+void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source);
+
+void do_macro_expand(token_string &tokens,const string &ident,string::iterator &li,const string::iterator lie,const int32_t lineno,const string &source) {
+    auto mi = macro_store.find(ident);
+    if (mi != macro_store.end()) {
+        const macro_t &macro = mi->second;
+        vector<string> param;
+        string fstr;
+
+        if (macro.parens) {
+            parse_skip_whitespace(li,lie);
+            if (strit_next_match_inc(li,lie,'(')) {
+                do {
+                    bool variad = macro.last_param_variadic && (param.size()+size_t(1)) == macro.param.size();
+
+                    parse_skip_whitespace(li,lie);
+                    if (li == lie) throw invalid_argument("macro invocation parameter list ended suddenly");
+                    if (strit_next_match_inc(li,lie,')')) break;
+
+                    if (param.size() >= macro.param.size())
+                        throw invalid_argument("macro invocation parameter list with too many parameters");
+                    param.push_back(do_macro_expand_read_invoke_param(li,lie,variad));
+
+                    parse_skip_whitespace(li,lie);
+                    if (li == lie) throw invalid_argument("macro invocation parameter list ended suddenly");
+                    if (strit_next_match_inc(li,lie,')'))
+                        break;
+                    else if (!strit_next_match_inc(li,lie,','))
+                        throw invalid_argument(string("macro invocation parameter list unexpected char ") + *li);
+                } while(1);
+
+                /* enforce required param count. the one for the variadic macro is not required to be present. */
+                size_t reqd_params = macro.param.size();
+                if (macro.last_param_variadic && reqd_params != size_t(0)) reqd_params--;
+                if (param.size() < reqd_params)
+                    throw invalid_argument("macro invocation parameter list has too few parameters");
+
+                /* fill in the rest with blank */
+                while (param.size() < macro.param.size())
+                    param.push_back(string());
+
+                parse_skip_whitespace(li,lie);
+            }
+            else {
+                throw invalid_argument("macro invoked without parenthesis when defined with parameters");
+            }
+        }
+
+        for (auto si=macro.subst.begin();si!=macro.subst.end();) {
+            if ((*si).tval == token::MACROSUBST) {
+                fstr += (*si).sval;
+                si++;
+            }
+            else {
+                throw invalid_argument("unexpected token in macro expansion");
+            }
+        }
+
+        parse_tokens(tokens,fstr.begin(),fstr.end(),lineno,source);
+    }
+}
+
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
     auto li = lib;
 
@@ -2025,7 +2113,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             else if ((tk=is_keyword(ident)) != token::NONE)
                 tokens.push_back(tk);
             else if (macro_expand && is_macro(ident))
-                tokens.push_back(move(token(token::MACRO,ident))); // TODO: In place macro expansion HERE, with recursion, and parameters
+                do_macro_expand(tokens,ident,li,lie,lineno,source);
             else
                 tokens.push_back(move(token(token::IDENTIFIER,ident)));
         }
