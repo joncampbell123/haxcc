@@ -1822,7 +1822,7 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 si++;
             }
             else if ((*si).tval == token::VA_ARGS) {
-                if (!param.empty())
+                if (!param.empty() && macro.last_param_variadic && macro.last_param_optional)
                     fstr += param[param.size() - size_t(1)];
 
                 si++;
