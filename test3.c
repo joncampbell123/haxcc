@@ -111,3 +111,24 @@ testing the HELLO() today
 testing the HELLO() today
 testing the HELLO () today
 #undef HELLO
+
+#define HELLO(x,y) world
+testing the HELLO(3,4) today
+testing the HELLO (3,4) today
+#undef HELLO
+
+#define HELLO(x,y) x world y
+testing the HELLO(3,4) today
+testing the HELLO (3,4) today
+#undef HELLO
+
+#define HELLO(x,y) y world x
+testing the HELLO(3,4) today
+testing the HELLO (3,4) today
+#undef HELLO
+
+#define HELLO(x,y) y x world x y
+testing the HELLO(3,4) today
+testing the HELLO (3,4) today
+#undef HELLO
+

@@ -1812,6 +1812,13 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 fstr += (*si).sval;
                 si++;
             }
+            else if ((*si).tval == token::MACROPARAM) {
+                if ((*si).i.u >= (unsigned long long)param.size())
+                    throw invalid_argument("macro parameter index out of range");
+
+                fstr += param[size_t((*si).i.u)];
+                si++;
+            }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
             }
