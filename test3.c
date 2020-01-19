@@ -155,16 +155,24 @@ testing the HELLO (3, 4   ,5) today
 #undef HELLO
 
 #define HELLO(a...) a world __VA_ARGS__
-//testing the HELLO() today
 testing the HELLO (3) today
 testing the HELLO (3,4,5) today
 testing the HELLO (3, 4   ,5) today
 #undef HELLO
 
 #define HELLO(a,...) a world __VA_ARGS__
-//testing the HELLO() today
 testing the HELLO (3) today
 testing the HELLO (3,4,5) today
 testing the HELLO (3, 4   ,5) today
+#undef HELLO
+
+#define HELLO(a,b) a##b world
+testing the HELLO (a,b) today
+testing the HELLO (funny_,man) today
+#undef HELLO
+
+#define HELLO(a,b) a##b##a##b##a world
+testing the HELLO (a,b) today
+testing the HELLO (abc,xyz) today
 #undef HELLO
 

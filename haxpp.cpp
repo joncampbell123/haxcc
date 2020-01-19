@@ -1827,6 +1827,11 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
 
                 si++;
             }
+            else if ((*si).tval == token::TOKEN_PASTE) {
+                si++;
+                if (si == macro.subst.end())
+                    throw invalid_argument("token paste must be followed by another token");
+            }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
             }
