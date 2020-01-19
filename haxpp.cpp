@@ -223,6 +223,8 @@ public:
         WHILE,
         STRINGIFY,
         TOKEN_PASTE,
+        VA_ARGS,
+        VA_OPT,
 
         MAX_TOKEN
     };
@@ -766,6 +768,12 @@ enum token::token_t is_keyword(const string &s) {
         return token::VOLATILE;
     if (s == "while")
         return token::WHILE;
+
+    /* GCC treats these as keywords anyway, why not do the same? */
+    if (s == "__VA_ARGS__")
+        return token::VA_ARGS;
+    if (s == "__VA_OPT__")
+        return token::VA_OPT;
 
     return token::NONE;
 }
@@ -1475,6 +1483,10 @@ string to_string(const token &t) {
             return "# ";
         case token::TOKEN_PASTE:
             return "## ";
+        case token::VA_ARGS:
+            return "__VA_ARGS__";
+        case token::VA_OPT:
+            return "__VA_OPT__";
         default:
             break;
     };

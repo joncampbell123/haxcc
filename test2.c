@@ -119,4 +119,4 @@ sizeof(char[6]) alignas(5) alignof(6) 5/3 5%3 5*3 5<<3 5>>3 5<=3 5>=3 5<3 5>3 5=
 5^=3
 5|=3
 macrodef #stringify #me token##paste
-auto break case char const continue default do double else enum extern float for goto if int long register return short signed sizeof static struct switch typedef union unsigned void volatile while
+auto break case char const continue default do double else enum extern float for goto if int long register return short signed sizeof static struct switch typedef union unsigned void volatile while __VA_OPT__ __VA_ARGS__
