@@ -2005,6 +2005,7 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
             macro_t macro;
 
             if (tokenit_next_match_inc(ti,tie,token::OPEN_PARENS)) {
+                macro.parens = true;
                 /* parameter list, IDENTIFIER. Final one may be __VA_ARGS__ */
                 do {
                     if (ti == tie) throw invalid_argument("#define macro param list expected close parens");
