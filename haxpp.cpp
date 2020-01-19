@@ -1897,7 +1897,8 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 if (!do_macro_expand_val(tmpr,si,macro.subst.end(),param,macro,variadic_given))
                     throw invalid_argument("stringify was not followed by expandable value");
 
-                fstr += pp_stringify(tmpr);
+                if (!tmpr.empty())
+                    fstr += pp_stringify(tmpr);
             }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
