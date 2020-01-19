@@ -2070,7 +2070,7 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                 } while (1);
             }
 
-            /* the tokens from here are MACROSUBST, IDENTIFIER, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ) */
+            /* the tokens from here are MACROSUBST, MACROPARAM, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ), STRINGIFY, AND TOKEN_PASTE */
             // TODO
         }
         else if (tokenit_next_match_inc(ti,tie,token::UNDEF)) {
