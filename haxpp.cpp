@@ -1628,6 +1628,18 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
         /* expect identifier, or else */
         tokens.push_back(token::PREPROC);
         is_pp = true;
+
+        {
+            string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+            enum token::token_t tk;
+
+            if ((tk=is_pp_keyword(ident)) != token::NONE)
+                tokens.push_back(tk);
+            else
+                throw invalid_argument(string("Invalid preprocessor directive ") + ident);
+        }
+
+        parse_skip_whitespace(li,lie);
     }
 
     /* general parsing. expects code to skip whitespace after doing it's part */
@@ -1766,19 +1778,15 @@ static inline bool tokenit_next_match_inc(token_string::iterator &ti,const token
 bool accept_tokens(const token_string::iterator &tib,const token_string::iterator &tie) {
     auto ti = tib;
 
-    /* we're only looking for #preprocessor directives */
+    /* we're only looking for #preprocessor directives here that control conditional inclusion */
     if (ti != tie && tokenit_next_match_inc(ti,tie,token::PREPROC)) {
         if (tokenit_next_match_inc(ti,tie,token::IFDEF)) {
-            return false;
         }
         else if (tokenit_next_match_inc(ti,tie,token::IFNDEF)) {
-            return false;
         }
         else if (tokenit_next_match_inc(ti,tie,token::ELSE)) {
-            return false;
         }
         else if (tokenit_next_match_inc(ti,tie,token::ENDIF)) {
-            return false;
         }
     }
 
