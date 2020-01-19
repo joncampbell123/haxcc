@@ -1438,7 +1438,7 @@ string to_string(const token &t) {
         case token::PREPROC:
             return "[preprocessordirective] ";
         case token::MACROSUBST:
-            return string("[macrosubst]") + t.sval + " ";
+            return string("[macrosubst]\"") + t.sval + "\" ";
         case token::IDENTIFIER:
             return string("[identifier]") + t.sval + " ";
         case token::INTEGER:
@@ -1712,6 +1712,26 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                     default:
                         break;
                 };
+
+                if (tk == token::DEFINE) {
+                    if (strit_next_match_inc(li,lie,'(')) {
+                        // TODO
+                        throw invalid_argument("Macro parameters not yet supported");
+                    }
+
+                    string r;
+
+                    parse_skip_whitespace(li,lie);
+                    // TODO: Identification of macro params by name and entering param index
+
+                    do {
+                        r += *(li++);
+                        if (li == lie) break;
+                    } while (1);
+
+                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                    return;
+                }
             }
             else {
                 throw invalid_argument(string("Invalid preprocessor directive ") + ident);
