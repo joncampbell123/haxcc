@@ -260,6 +260,9 @@ public:
             unsigned long long  u; /* this is a UNION, preinit only one */
         };
         bool                    sign = true;
+
+        bool operator!=(const int_t &i) const;
+        bool operator==(const int_t &i) const;
     } i;
     struct float_t { /* bsize == 4, 8 */
         long double             fraction = 0;
@@ -273,9 +276,15 @@ public:
             fraction = frexpl(f,&exponent);
             return *this;
         }
+
+        bool operator!=(const float_t &i) const;
+        bool operator==(const float_t &i) const;
     } f;
     struct string_t {
         stringref_t             strref = stringref_t_invalid; /* NTS: stringref_t also encodes string type */
+
+        bool operator!=(const string_t &i) const;
+        bool operator==(const string_t &i) const;
     } s;
     string                      sval;
 
@@ -287,7 +296,52 @@ public:
     token(const token_t t);
     explicit token(const token_t t,const string _sval);
     explicit token(const token_t t,const unsigned long long _v);
+    bool operator!=(const token &t) const;
+    bool operator==(const token &t) const;
 };
+
+bool token::int_t::operator!=(const int_t &i) const {
+    return !(*this == i);
+}
+
+bool token::int_t::operator==(const int_t &i) const {
+    if (u != i.u) return false;
+    if (sign != i.sign) return false;
+    return true;
+}
+
+bool token::float_t::operator!=(const float_t &i) const {
+    return !(*this == i);
+}
+
+bool token::float_t::operator==(const float_t &i) const {
+    if (fraction != i.fraction) return false;
+    if (exponent != i.exponent) return false;
+    return true;
+}
+
+bool token::string_t::operator!=(const string_t &i) const {
+    return !(*this == i);
+}
+
+bool token::string_t::operator==(const string_t &i) const {
+    if (strref != i.strref) return false;
+    return true;
+}
+
+bool token::operator!=(const token &t) const {
+    return !(*this == t);
+}
+
+bool token::operator==(const token &t) const {
+    if (tval != t.tval) return false;
+    if (bsize != t.bsize) return false;
+    if (i != t.i) return false;
+    if (f != t.f) return false;
+    if (s != t.s) return false;
+    if (sval != t.sval) return false;
+    return true;
+}
 
 token::token() {
 }
@@ -587,7 +641,22 @@ public:
     vector<string>              param;
     bool                        last_param_variadic = false;
     bool                        parens = false;
+public:
+    bool operator!=(const macro_t &m) const;
+    bool operator==(const macro_t &m) const;
 };
+
+bool macro_t::operator!=(const macro_t &m) const {
+    return !(*this == m);
+}
+
+bool macro_t::operator==(const macro_t &m) const {
+    if (subst != m.subst) return false;
+    if (param != m.param) return false;
+    if (parens != m.parens) return false;
+    if (last_param_variadic != m.last_param_variadic) return false;
+    return true;
+}
 
 static map<string,macro_t>      macro_store;
 static string_storage           string_store;
@@ -2096,9 +2165,9 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
             {
                 auto mi = macro_store.find(ident);
                 if (mi != macro_store.end()) {
-//                    if (mi->second != macro)
-//                        macro_store[ident] = macro;
-//                    else
+                    if (mi->second == macro)
+                        macro_store[ident] = macro;
+                    else
                         fprintf(stderr,"WARNING: Macro '%s' redefinition\n",ident.c_str());
                 }
                 else {

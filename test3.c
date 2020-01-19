@@ -70,3 +70,10 @@ Hello
 
 #define HELLO(a,b,c) world a##b ## c
 #undef HELLO
+
+#define HELLO world
+#define HELLO world
+#define HELLO world
+#define HELLO world
+#undef HELLO
+
