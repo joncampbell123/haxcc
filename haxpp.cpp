@@ -137,7 +137,7 @@ public:
     enum token_t {
         NONE=0,
         MACRO,
-        PREPROCDIR,
+        PREPROC,
         IDENTIFIER,
         INTEGER,
         FLOAT,
@@ -215,6 +215,16 @@ public:
         FOR,
         GOTO,
         IF,
+        ELIF,
+        ENDIF,
+        DEFINED,
+        IFDEF,
+        IFNDEF,
+        DEFINE,
+        UNDEF,
+        INCLUDE,
+        LINE,
+        ERROR,
         INT,
         LONG,
         REGISTER,
@@ -706,6 +716,37 @@ bool read_line(string &line,FileSource &src) {
 
 void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
     while (li != lie && (*li == ' ' || *li == '\t')) li++;
+}
+
+enum token::token_t is_pp_keyword(const string &s) {
+    if (s == "if")
+        return token::IF;
+    if (s == "else")
+        return token::ELSE;
+    if (s == "elif")
+        return token::ELIF;
+    if (s == "endif")
+        return token::ENDIF;
+    if (s == "defined")
+        return token::DEFINED;
+    if (s == "ifdef")
+        return token::IFDEF;
+    if (s == "ifndef")
+        return token::IFNDEF;
+    if (s == "define")
+        return token::DEFINE;
+    if (s == "undef")
+        return token::UNDEF;
+    if (s == "include")
+        return token::INCLUDE;
+    if (s == "line")
+        return token::LINE;
+    if (s == "error")
+        return token::ERROR;
+    if (s == "pragma")
+        return token::PRAGMA;
+
+    return token::NONE;
 }
 
 enum token::token_t is_keyword(const string &s) {
@@ -1338,8 +1379,8 @@ string to_string(const token &t) {
     switch (t.tval) {
         case token::MACRO:
             return string("[macro]") + t.sval + " ";
-        case token::PREPROCDIR:
-            return string("[preprocessordirective]") + t.sval + " ";
+        case token::PREPROC:
+            return "[preprocessordirective] ";
         case token::IDENTIFIER:
             return string("[identifier]") + t.sval + " ";
         case token::INTEGER:
@@ -1532,6 +1573,26 @@ string to_string(const token &t) {
             return "__VA_ARGS__ ";
         case token::VA_OPT:
             return "__VA_OPT__ ";
+        case token::ELIF:
+            return "elif ";
+        case token::ENDIF:
+            return "endif ";
+        case token::DEFINED:
+            return "defined ";
+        case token::IFDEF:
+            return "ifdef ";
+        case token::IFNDEF:
+            return "ifndef ";
+        case token::DEFINE:
+            return "define ";
+        case token::UNDEF:
+            return "undef ";
+        case token::INCLUDE:
+            return "include ";
+        case token::LINE:
+            return "line ";
+        case token::ERROR:
+            return "error ";
         default:
             break;
     };
@@ -1553,6 +1614,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
     (void)lineno;
     (void)source;
 
+    bool is_pp = false;
+
     /* initial whitespace skip */
     parse_skip_whitespace(li,lie);
     if (li == lie) return;
@@ -1563,9 +1626,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
         li++;
         parse_skip_whitespace(li,lie);
         /* expect identifier, or else */
-        string ident = parse_identifier(li,lie); /* will throw exception otherwise */
-        tokens.push_back(move(token(token::PREPROCDIR,ident)));
-        parse_skip_whitespace(li,lie);
+        tokens.push_back(token::PREPROC);
+        is_pp = true;
     }
 
     /* general parsing. expects code to skip whitespace after doing it's part */
@@ -1674,7 +1736,9 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
             enum token::token_t tk;
 
-            if ((tk=is_keyword(ident)) != token::NONE)
+            if (is_pp && (tk=is_pp_keyword(ident)) != token::NONE)
+                tokens.push_back(tk);
+            else if ((tk=is_keyword(ident)) != token::NONE)
                 tokens.push_back(tk);
             else if (is_macro(ident))
                 tokens.push_back(move(token(token::MACRO,ident))); // TODO: In place macro expansion HERE, with recursion, and parameters
