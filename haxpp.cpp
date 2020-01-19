@@ -2001,7 +2001,60 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
             pp_cond_t pc; pc.on_ifdef(!is_macro(ident),pass);
             pp_cond_stack.push(move(pc));
         }
-        else if (tokenit_next_match_inc(ti,tie,token::DEFINE)) {
+        else if (tokenit_next_match_inc(ti,tie,token::DEFINE)) { /* some preprocessing done by the parse token code */
+            const string &ident = tokenit_next_identifier(ti,tie); /* will throw exception if not! */
+            macro_t macro;
+
+            if (tokenit_next_match_inc(ti,tie,token::OPEN_PARENS)) {
+                /* parameter list, IDENTIFIER. Final one may be __VA_ARGS__ */
+                do {
+                    if (ti == tie) throw invalid_argument("#define macro param list expected close parens");
+                    if ((*ti).tval == token::IDENTIFIER) {
+                        if (find(macro.param.begin(),macro.param.end(),(*ti).sval) == macro.param.end()) {
+                            macro.param.push_back((*ti).sval);
+                            ti++;
+                        }
+                        else {
+                            throw invalid_argument(string("parameter specified more than once ") + (*ti).sval);
+                        }
+
+                        if (ti == tie) throw invalid_argument("#define macro param cut off suddenly");
+
+                        /* allow older style param... */
+                        if (tokenit_next_match_inc(ti,tie,token::DOTDOTDOT)) {
+                            macro.last_param_variadic = true;
+
+                            /* this must be the last param! */
+                            if (!tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS))
+                                throw invalid_argument("#define macro param list expected close parens after ...");
+
+                            break;
+                        }
+                        else if (tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS)) {
+                            break;
+                        }
+                        else if (tokenit_next_match_inc(ti,tie,token::COMMA)) {
+                            /* OK */
+                        }
+                    }
+                    else if (tokenit_next_match_inc(ti,tie,token::DOTDOTDOT)) {
+                        macro.param.push_back("__VA_ARGS__");
+                        macro.last_param_variadic = true;
+
+                        /* this must be the last param! */
+                        if (!tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS))
+                            throw invalid_argument("#define macro param list expected close parens after ...");
+
+                        break;
+                    }
+                    else if (tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS)) {
+                        break;
+                    }
+                    else {
+                        throw invalid_argument(string("unexpected token in macro parameter list ") + to_string(*ti));
+                    }
+                } while (1);
+            }
         }
         else if (tokenit_next_match_inc(ti,tie,token::UNDEF)) {
         }
