@@ -163,6 +163,9 @@ public:
         SIZEOF,
         ALIGNAS,
         ALIGNOF,
+        ATOMIC,
+        BOOL_KW,
+        COMPLEX,
         DIVISION,
         MODULUS,
         LESS_THAN,
@@ -700,10 +703,16 @@ void parse_skip_whitespace(string::iterator &li,const string::iterator lie) {
 }
 
 enum token::token_t is_keyword(const string &s) {
-    if (s == "alignas")
+    if (s == "_Alignas")
         return token::ALIGNAS;
-    if (s == "alignof")
+    if (s == "_Alignof")
         return token::ALIGNOF;
+    if (s == "_Atomic")
+        return token::ATOMIC;
+    if (s == "_Bool")
+        return token::BOOL_KW;
+    if (s == "_Complex")
+        return token::COMPLEX;
     if (s == "auto")
         return token::AUTO;
     if (s == "break")
@@ -1360,9 +1369,15 @@ string to_string(const token &t) {
         case token::SIZEOF:
             return "sizeof ";
         case token::ALIGNAS:
-            return "alignas ";
+            return "_Alignas ";
         case token::ALIGNOF:
-            return "alignof ";
+            return "_Alignof ";
+        case token::ATOMIC:
+            return "_Atomic ";
+        case token::BOOL_KW:
+            return "_Bool ";
+        case token::COMPLEX:
+            return "_Complex ";
         case token::DIVISION:
             return "/ ";
         case token::MODULUS:
