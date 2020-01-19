@@ -186,3 +186,15 @@ testing the HELLO (funny) today
 testing the HELLO (funny,man) today
 #undef HELLO
 
+#define HELLO(a,b,c...) #a #b world #a#b#c
+testing the HELLO (funny,man,hey) today
+testing the HELLO (funny,man,lol) today
+testing the HELLO (funny,man,lol,omg,wtf) today
+#undef HELLO
+
+#define HELLO(a,b,...) #a #b world #a#b#__VA_ARGS__
+testing the HELLO (funny,man) today
+testing the HELLO (funny,man,lol) today
+testing the HELLO (funny,man,lol,omg,wtf) today
+#undef HELLO
+

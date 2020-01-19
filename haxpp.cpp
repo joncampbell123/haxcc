@@ -1885,32 +1885,19 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 si++;
                 if (si == macro.subst.end())
                     throw invalid_argument("token paste must be followed by another token");
+                if (!do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given))
+                    throw invalid_argument("token paste was not followed by expandable value");
             }
             else if ((*si).tval == token::STRINGIFY) {
                 si++;
                 if (si == macro.subst.end())
                     throw invalid_argument("macro stringify with nothing to stringify");
 
-                if ((*si).tval == token::MACROSUBST) {
-                    fstr += pp_stringify((*si).sval);
-                    si++;
-                }
-                else if ((*si).tval == token::MACROPARAM) {
-                    if ((*si).i.u >= (unsigned long long)param.size())
-                        throw invalid_argument("macro parameter index out of range");
+                string tmpr;
+                if (!do_macro_expand_val(tmpr,si,macro.subst.end(),param,macro,variadic_given))
+                    throw invalid_argument("stringify was not followed by expandable value");
 
-                    fstr += pp_stringify(param[size_t((*si).i.u)]);
-                    si++;
-                }
-                else if ((*si).tval == token::VA_ARGS) {
-                    if (!param.empty() && macro.last_param_variadic && macro.last_param_optional)
-                        fstr += pp_stringify(param[param.size() - size_t(1)]);
-
-                    si++;
-                }
-                else {
-                    throw invalid_argument("unexpected token in macro stringify");
-                }
+                fstr += pp_stringify(tmpr);
             }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
