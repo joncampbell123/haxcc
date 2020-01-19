@@ -1641,8 +1641,13 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                     case token::IFDEF:
                     case token::IFNDEF:
                     case token::DEFINE:
-                    case token::ENDIF:
                     case token::UNDEF:
+                        parse_skip_whitespace(li,lie);
+                        ident = parse_identifier(li,lie);
+                        tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                        macro_expand = false;
+                        break;
+                    case token::ENDIF:
                     case token::ELSE:
                         macro_expand = false;
                         break;
