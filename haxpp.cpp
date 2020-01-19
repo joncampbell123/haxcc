@@ -1786,8 +1786,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
     }
 }
 
-static inline bool tokenit_next_match_inc(token_string::iterator &ti,const token_string::iterator lie,const token::token_t c) {
-    if (ti != lie && (*ti).tval == c) {
+static inline bool tokenit_next_match_inc(token_string::iterator &ti,const token_string::iterator tie,const token::token_t c) {
+    if (ti != tie && (*ti).tval == c) {
         ti++;
         return true;
     }
@@ -1795,23 +1795,96 @@ static inline bool tokenit_next_match_inc(token_string::iterator &ti,const token
     return false;
 }
 
+const string &tokenit_next_identifier(token_string::iterator &ti,const token_string::iterator tie) {
+    if (ti != tie) {
+        const auto &t = *(ti++);
+        if (t.tval == token::IDENTIFIER)
+            return t.sval;
+    }
+
+    throw invalid_argument("identifier token expected");
+}
+
+class pp_cond_t {
+public:
+    bool            cond = false;
+    bool            pcond = false;
+    bool            allow_else = false;
+    bool            allow_elif = false;
+public:
+    inline bool eval() const {
+        return cond && pcond;
+    }
+public:
+    void on_ifdef(const bool r,const bool pr) {
+        allow_elif = false;
+        allow_else = true;
+        pcond = pr;
+        cond = r;
+    }
+    void on_else() {
+        if (allow_else) {
+            /* cannot have #elif after #else */
+            allow_else = false;
+            allow_elif = false;
+            cond = !cond;
+        }
+        else {
+            throw invalid_argument("#else not allowed here");
+        }
+    }
+};
+
+stack<pp_cond_t>    pp_cond_stack;
+
+bool pp_pass() {
+    if (!pp_cond_stack.empty())
+        return pp_cond_stack.top().eval();
+
+    return true;
+}
+
 /* preprocessing stage */
 bool accept_tokens(const token_string::iterator &tib,const token_string::iterator &tie) {
+    bool pass = pp_pass();
     auto ti = tib;
 
     /* we're only looking for #preprocessor directives here that control conditional inclusion */
     if (ti != tie && tokenit_next_match_inc(ti,tie,token::PREPROC)) {
         if (tokenit_next_match_inc(ti,tie,token::IFDEF)) {
+            const string &ident = tokenit_next_identifier(ti,tie); /* will throw exception if not! */
+            pp_cond_t pc; pc.on_ifdef(is_macro(ident),pass);
+            pp_cond_stack.push(move(pc));
         }
         else if (tokenit_next_match_inc(ti,tie,token::IFNDEF)) {
+            const string &ident = tokenit_next_identifier(ti,tie); /* will throw exception if not! */
+            pp_cond_t pc; pc.on_ifdef(!is_macro(ident),pass);
+            pp_cond_stack.push(move(pc));
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::DEFINE)) {
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::UNDEF)) {
         }
         else if (tokenit_next_match_inc(ti,tie,token::ELSE)) {
+            if (!pp_cond_stack.empty()) {
+                pp_cond_stack.top().on_else();
+            }
+            else {
+                throw invalid_argument("#else not allowed here");
+            }
         }
         else if (tokenit_next_match_inc(ti,tie,token::ENDIF)) {
+            if (!pp_cond_stack.empty()) {
+                pp_cond_stack.pop();
+                pass = pp_pass();
+            }
+            else {
+                throw invalid_argument("too many #endif");
+            }
         }
     }
 
-    return true;
+    return pass;
 }
 
 int main(int argc,char **argv) {
