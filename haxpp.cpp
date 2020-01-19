@@ -2070,8 +2070,28 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                 } while (1);
             }
 
-            /* the tokens from here are MACROSUBST, MACROPARAM, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ), STRINGIFY, AND TOKEN_PASTE */
-            // TODO
+            /* the tokens from here are MACROSUBST, MACROPARAM, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ), STRINGIFY, AND TOKEN_PASTE.
+             * There will never be an IDENTIFIER because the parameter matching has already been done. */
+            while (ti != tie) {
+                if ((*ti).tval == token::MACROSUBST ||
+                    (*ti).tval == token::VA_ARGS ||
+                    (*ti).tval == token::VA_OPT ||
+                    (*ti).tval == token::STRINGIFY ||
+                    (*ti).tval == token::TOKEN_PASTE ||
+                    (*ti).tval == token::OPEN_PARENS ||
+                    (*ti).tval == token::CLOSE_PARENS) {
+                    macro.subst.push_back(*ti);
+                    ti++;
+                }
+                else if ((*ti).tval == token::MACROPARAM) {
+                    if ((*ti).i.u >= (unsigned long long)macro.param.size()) throw runtime_error("macro param out of range");
+                    macro.subst.push_back(*ti);
+                    ti++;
+                }
+                else {
+                    throw invalid_argument(string("unexpected token in the body of a macro ") + to_string(*ti));
+                }
+            }
         }
         else if (tokenit_next_match_inc(ti,tie,token::UNDEF)) {
         }
