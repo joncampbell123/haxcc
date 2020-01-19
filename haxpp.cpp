@@ -1776,6 +1776,55 @@ string pp_stringify(const string &s) {
 
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source);
 
+static inline bool do_macro_expand_val(string &fstr,vector<token>::const_iterator &si,const vector<token>::const_iterator sie,const vector<string> &param,const macro_t &macro,const bool variadic_given) {
+    if ((*si).tval == token::MACROSUBST) {
+        fstr += (*si).sval;
+        si++;
+        return true;
+    }
+    else if ((*si).tval == token::MACROPARAM) {
+        if ((*si).i.u >= (unsigned long long)param.size())
+            throw invalid_argument("macro parameter index out of range");
+
+        fstr += param[size_t((*si).i.u)];
+        si++;
+        return true;
+    }
+    else if ((*si).tval == token::VA_ARGS) {
+        if (!param.empty() && macro.last_param_variadic && macro.last_param_optional)
+            fstr += param[param.size() - size_t(1)];
+
+        si++;
+        return true;
+    }
+    else if ((*si).tval == token::VA_OPT) {
+        si++;
+
+        if (si == sie)
+            throw invalid_argument("__VA_OPT__ must be followed by (");
+        if ((*si).tval != token::OPEN_PARENS)
+            throw invalid_argument("__VA_OPT__ must be followed by (");
+        si++;
+
+        if (si == sie)
+            throw invalid_argument("__VA_OPT__ must be followed by something to expand to");
+        if ((*si).tval != token::MACROSUBST)
+            throw invalid_argument("__VA_OPT__ must be followed by something to expand to");
+        if (variadic_given)
+            fstr += (*si).sval;
+        si++;
+
+        if (si == sie)
+            throw invalid_argument("__VA_OPT__ must be followed by )");
+        if ((*si).tval != token::CLOSE_PARENS)
+            throw invalid_argument("__VA_OPT__ must be followed by )");
+        si++;
+        return true;
+    }
+
+    return false;
+}
+
 void do_macro_expand(token_string &tokens,const string &ident,string::iterator &li,const string::iterator lie,const int32_t lineno,const string &source) {
     auto mi = macro_store.find(ident);
     if (mi != macro_store.end()) {
@@ -1826,51 +1875,13 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
             }
         }
 
-        for (auto si=macro.subst.begin();si!=macro.subst.end();) {
-            if ((*si).tval == token::MACROSUBST) {
-                fstr += (*si).sval;
-                si++;
-            }
-            else if ((*si).tval == token::MACROPARAM) {
-                if ((*si).i.u >= (unsigned long long)param.size())
-                    throw invalid_argument("macro parameter index out of range");
-
-                fstr += param[size_t((*si).i.u)];
-                si++;
-            }
-            else if ((*si).tval == token::VA_ARGS) {
-                if (!param.empty() && macro.last_param_variadic && macro.last_param_optional)
-                    fstr += param[param.size() - size_t(1)];
-
-                si++;
+        for (vector<token>::const_iterator si=macro.subst.begin();si!=macro.subst.end();) {
+            if (do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given)) {
             }
             else if ((*si).tval == token::TOKEN_PASTE) {
                 si++;
                 if (si == macro.subst.end())
                     throw invalid_argument("token paste must be followed by another token");
-            }
-            else if ((*si).tval == token::VA_OPT) {
-                si++;
-
-                if (si == macro.subst.end())
-                    throw invalid_argument("__VA_OPT__ must be followed by (");
-                if ((*si).tval != token::OPEN_PARENS)
-                    throw invalid_argument("__VA_OPT__ must be followed by (");
-                si++;
-
-                if (si == macro.subst.end())
-                    throw invalid_argument("__VA_OPT__ must be followed by something to expand to");
-                if ((*si).tval != token::MACROSUBST)
-                    throw invalid_argument("__VA_OPT__ must be followed by something to expand to");
-                if (variadic_given)
-                    fstr += (*si).sval;
-                si++;
-
-                if (si == macro.subst.end())
-                    throw invalid_argument("__VA_OPT__ must be followed by )");
-                if ((*si).tval != token::CLOSE_PARENS)
-                    throw invalid_argument("__VA_OPT__ must be followed by )");
-                si++;
             }
             else if ((*si).tval == token::STRINGIFY) {
                 si++;
