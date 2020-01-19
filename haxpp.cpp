@@ -141,6 +141,7 @@ public:
         MACRO,
         PREPROC,
         MACROSUBST,
+        MACROPARAM,
         IDENTIFIER,
         INTEGER,
         FLOAT,
@@ -1431,6 +1432,8 @@ string to_string(const token &t) {
             return string("[macrosubst]\"") + t.sval + "\" ";
         case token::IDENTIFIER:
             return string("[identifier]") + t.sval + " ";
+        case token::MACROPARAM:
+            return string("[macroparam]") + to_string(t.i.u) + " ";
         case token::INTEGER:
             return to_string(t.i.s) + " ";
         case token::FLOAT:
