@@ -1714,9 +1714,37 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                 };
 
                 if (tk == token::DEFINE) {
+                    /* parens must follow #define with no space */
                     if (strit_next_match_inc(li,lie,'(')) {
-                        // TODO
-                        throw invalid_argument("Macro parameters not yet supported");
+                        /* (params)
+                         *
+                         * params =
+                         * params = identifier
+                         * params = identifier identifier
+                         * params = identifier ... */
+                        tokens.push_back(token::OPEN_PARENS);
+                        parse_skip_whitespace(li,lie);
+                        while (li != lie) {
+                            if (strit_next_match_inc(li,lie,')')) {
+                                tokens.push_back(token::CLOSE_PARENS);
+                                break;
+                            }
+                            else if (strit_next_match_inc(li,lie,',')) {
+                                tokens.push_back(token::COMMA);
+                            }
+                            else if (strit_next_match_inc(li,lie,'.','.','.')) {
+                                tokens.push_back(token::DOTDOTDOT);
+                            }
+                            else if (isidentifier_fc(*li)) {
+                                string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+                                tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                            }
+                            else {
+                                throw invalid_argument(string("macro param list has unexpected char ") + (*li));
+                            }
+
+                            parse_skip_whitespace(li,lie);
+                        }
                     }
 
                     string r;
