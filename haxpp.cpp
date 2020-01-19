@@ -1523,7 +1523,7 @@ string to_string(const token &t) {
         case token::INCREMENT:
             return "++ ";
         case token::COMMA:
-            return ",";
+            return ", ";
         case token::PERIOD:
             return ". ";
         case token::DOTDOTDOT:
@@ -1817,6 +1817,12 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                     throw invalid_argument("macro parameter index out of range");
 
                 fstr += param[size_t((*si).i.u)];
+                si++;
+            }
+            else if ((*si).tval == token::VA_ARGS) {
+                if (!param.empty())
+                    fstr += param[param.size() - size_t(1)];
+
                 si++;
             }
             else {

@@ -147,3 +147,10 @@ testing the HELLO(3,4,5) today
 testing the HELLO (3, 4 ,5   ) today
 #undef HELLO
 
+#define HELLO(...) world __VA_ARGS__
+testing the HELLO() today
+testing the HELLO (3) today
+testing the HELLO (3,4,5) today
+testing the HELLO (3, 4   ,5) today
+#undef HELLO
+
