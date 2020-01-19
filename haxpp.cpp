@@ -537,6 +537,40 @@ public:
     }
 };
 
+class pp_cond_t {
+public:
+    bool            cond = false;
+    bool            pcond = false;
+    bool            allow_else = false;
+    bool            allow_elif = false;
+public:
+    inline bool eval() const {
+        return cond && pcond;
+    }
+public:
+    void on_ifdef(const bool r,const bool pr);
+    void on_else();
+};
+
+void pp_cond_t::on_ifdef(const bool r,const bool pr) {
+    allow_elif = false;
+    allow_else = true;
+    pcond = pr;
+    cond = r;
+}
+
+void pp_cond_t::on_else() {
+    if (allow_else) {
+        /* cannot have #elif after #else */
+        allow_else = false;
+        allow_elif = false;
+        cond = !cond;
+    }
+    else {
+        throw invalid_argument("#else not allowed here");
+    }
+}
+
 static string_storage           string_store;
 
 static FileSourceStack          in_src_stk;
@@ -1803,40 +1837,6 @@ const string &tokenit_next_identifier(token_string::iterator &ti,const token_str
     }
 
     throw invalid_argument("identifier token expected");
-}
-
-class pp_cond_t {
-public:
-    bool            cond = false;
-    bool            pcond = false;
-    bool            allow_else = false;
-    bool            allow_elif = false;
-public:
-    inline bool eval() const {
-        return cond && pcond;
-    }
-public:
-    void on_ifdef(const bool r,const bool pr);
-    void on_else();
-};
-
-void pp_cond_t::on_ifdef(const bool r,const bool pr) {
-    allow_elif = false;
-    allow_else = true;
-    pcond = pr;
-    cond = r;
-}
-
-void pp_cond_t::on_else() {
-    if (allow_else) {
-        /* cannot have #elif after #else */
-        allow_else = false;
-        allow_elif = false;
-        cond = !cond;
-    }
-    else {
-        throw invalid_argument("#else not allowed here");
-    }
 }
 
 stack<pp_cond_t>    pp_cond_stack;
