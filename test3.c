@@ -198,3 +198,16 @@ testing the HELLO (funny,man,lol) today
 testing the HELLO (funny,man,lol,omg,wtf) today
 #undef HELLO
 
+#define ABCD peace
+#define HELLO world ABCD
+testing the HELLO today
+#undef HELLO
+#undef ABCD
+
+#define ABCD(x) x
+#define HELLO(z,t) world z ABCD(t)
+testing the HELLO(funny,peace) today
+testing the HELLO(freeze,peach) today
+#undef HELLO
+#undef ABCD
+
