@@ -77,3 +77,27 @@ Hello
 #define HELLO world
 #undef HELLO
 
+#define HELLO() world
+#define HELLO() world
+#define HELLO() world
+#define HELLO() world
+#undef HELLO
+
+#define HELLO(x) world
+#define HELLO(x) world
+#define HELLO(x) world
+#define HELLO(x) world
+#undef HELLO
+
+#define HELLO(x,y) world
+#define HELLO(x,y) world
+#define HELLO(x,y) world
+#define HELLO(x,y) world
+#undef HELLO
+
+#define HELLO(x,y,...) world
+#define HELLO(x,y,...) world
+#define HELLO(x,y,...) world
+#define HELLO(x,y,...) world
+#undef HELLO
+
