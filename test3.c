@@ -142,3 +142,8 @@ testing the HELLO("3","4") today
 testing the HELLO ("3","4") today
 #undef HELLO
 
+#define HELLO(x,y,z) z y x world x y z
+testing the HELLO(3,4,5) today
+testing the HELLO (3, 4 ,5   ) today
+#undef HELLO
+
