@@ -225,6 +225,18 @@ Should not !HELLO
 #endif
 #undef HELLO
 
+#define HELLO(a,b,...) a, b, __VA_ARGS__
+testing the HELLO (funny,man) today
+testing the HELLO (funny,man,lol) today
+testing the HELLO (funny,man,lol,omg,wtf) today
+#undef HELLO
+
+#define HELLO(a,b,...) a, b __VA_OPT__(,) __VA_ARGS__
+testing the HELLO (funny,man) today
+testing the HELLO (funny,man,lol) today
+testing the HELLO (funny,man,lol,omg,wtf) today
+#undef HELLO
+
 #define HELLO(a,b,...) a, b, ##__VA_ARGS__
 testing the HELLO (funny,man) today
 testing the HELLO (funny,man,lol) today

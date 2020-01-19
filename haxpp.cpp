@@ -1900,6 +1900,10 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                 if (!tmpr.empty())
                     fstr += pp_stringify(tmpr);
             }
+            else if ((*si).tval == token::COMMA) {
+                fstr += ",";
+                si++;
+            }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
             }
@@ -2016,6 +2020,13 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                                 r.clear();
                             }
                             tokens.push_back(token::STRINGIFY);
+                        }
+                        else if (strit_next_match_inc(li,lie,',')) {
+                            if (!r.empty()) {
+                                tokens.push_back(move(token(token::MACROSUBST,r)));
+                                r.clear();
+                            }
+                            tokens.push_back(token::COMMA);
                         }
                         else if (isidentifier_fc(*li)) {
                             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
@@ -2324,6 +2335,7 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                 if ((*ti).tval == token::MACROSUBST ||
                     (*ti).tval == token::VA_ARGS ||
                     (*ti).tval == token::VA_OPT ||
+                    (*ti).tval == token::COMMA ||
                     (*ti).tval == token::STRINGIFY ||
                     (*ti).tval == token::TOKEN_PASTE ||
                     (*ti).tval == token::OPEN_PARENS ||
