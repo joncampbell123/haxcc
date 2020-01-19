@@ -211,3 +211,17 @@ testing the HELLO(freeze,peach) today
 #undef HELLO
 #undef ABCD
 
+#ifdef HELLO
+Should not HELLO
+#else
+OK
+#endif
+
+#define HELLO
+#ifdef HELLO
+OK
+#else
+Should not !HELLO
+#endif
+#undef HELLO
+
