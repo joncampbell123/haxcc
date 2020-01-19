@@ -574,20 +574,9 @@ void pp_cond_t::on_else() {
     }
 }
 
-class macro_elem_t {
-public:
-    enum elem_t {
-        COPY=0,
-        PARAM
-    };
-public:
-    string                      sval;
-    size_t                      param = 0;
-};
-
 class macro_t {
 public:
-    vector<macro_elem_t>        subst;
+    vector<token>               subst; /* MACROSUBST, IDENTIFIER, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ) */
     vector<string>              param;
     bool                        last_param_variadic = false;
     bool                        parens = false;
