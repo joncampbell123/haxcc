@@ -29,3 +29,8 @@ Hello !world
 Hello
 #endif
 
+#define HELLO world
+#undef HELLO
+
+#define HELLO world blah 1 2 3 , abcd
+
