@@ -640,6 +640,7 @@ public:
     vector<token>               subst; /* MACROSUBST, IDENTIFIER, __VA_ARGS__, __VA_OPT__ ( MACROSUBST ) */
     vector<string>              param;
     bool                        last_param_variadic = false;
+    bool                        last_param_optional = false;
     bool                        parens = false;
 public:
     bool operator!=(const macro_t &m) const;
@@ -655,6 +656,7 @@ bool macro_t::operator==(const macro_t &m) const {
     if (param != m.param) return false;
     if (parens != m.parens) return false;
     if (last_param_variadic != m.last_param_variadic) return false;
+    if (last_param_optional != m.last_param_optional) return false;
     return true;
 }
 
@@ -1792,7 +1794,7 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
 
                 /* enforce required param count. the one for the variadic macro is not required to be present. */
                 size_t reqd_params = macro.param.size();
-                if (macro.last_param_variadic && reqd_params != size_t(0)) reqd_params--;
+                if (macro.last_param_variadic && macro.last_param_optional && reqd_params != size_t(0)) reqd_params--;
                 if (param.size() < reqd_params)
                     throw invalid_argument("macro invocation parameter list has too few parameters");
 
@@ -2206,6 +2208,7 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                         /* allow older style param... */
                         if (tokenit_next_match_inc(ti,tie,token::DOTDOTDOT)) {
                             macro.last_param_variadic = true;
+                            macro.last_param_optional = false;
 
                             /* this must be the last param! */
                             if (!tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS))
@@ -2223,6 +2226,7 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                     else if (tokenit_next_match_inc(ti,tie,token::DOTDOTDOT)) {
                         macro.param.push_back("__VA_ARGS__");
                         macro.last_param_variadic = true;
+                        macro.last_param_optional = true;
 
                         /* this must be the last param! */
                         if (!tokenit_next_match_inc(ti,tie,token::CLOSE_PARENS))
