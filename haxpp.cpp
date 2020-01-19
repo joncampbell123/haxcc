@@ -9,6 +9,7 @@
 #include <math.h>
 
 #include <stdexcept>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <stack>
@@ -1714,6 +1715,8 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                 };
 
                 if (tk == token::DEFINE) {
+                    vector<string> params;
+
                     /* parens must follow #define with no space */
                     if (strit_next_match_inc(li,lie,'(')) {
                         /* (params)
@@ -1738,6 +1741,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                             else if (isidentifier_fc(*li)) {
                                 string ident = parse_identifier(li,lie); /* will throw exception otherwise */
                                 tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                                params.push_back(ident);
                             }
                             else {
                                 throw invalid_argument(string("macro param list has unexpected char ") + (*li));
@@ -1750,14 +1754,71 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                     string r;
 
                     parse_skip_whitespace(li,lie);
-                    // TODO: Identification of macro params by name and entering param index
 
-                    do {
-                        r += *(li++);
-                        if (li == lie) break;
-                    } while (1);
+                    while (li != lie) {
+                        if (isidentifier_fc(*li)) {
+                            string ident = parse_identifier(li,lie); /* will throw exception otherwise */
 
-                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                            if (find(params.begin(),params.end(),ident) != params.end()) {
+                                if (!r.empty()) {
+                                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                                    r.clear();
+                                }
+                                tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                            }
+                            else if (ident == "__VA_ARGS__") {
+                                if (!r.empty()) {
+                                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                                    r.clear();
+                                }
+                                tokens.push_back(token::VA_ARGS);
+                            }
+                            else if (ident == "__VA_OPT__") {
+                                if (!r.empty()) {
+                                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                                    r.clear();
+                                }
+                                tokens.push_back(token::VA_OPT);
+                                parse_skip_whitespace(li,lie);
+                                if (strit_next_match_inc(li,lie,'(')) {
+                                    int parens = 1;
+
+                                    tokens.push_back(token::OPEN_PARENS);
+                                    while (li != lie) {
+                                        if (*li == '(')
+                                            parens++;
+                                        else if (*li == ')') {
+                                            parens--;
+                                            if (parens == 0) {
+                                                tokens.push_back(move(token(token::MACROSUBST,r)));
+                                                tokens.push_back(token::CLOSE_PARENS);
+                                                r.clear();
+                                                li++;
+                                                break;
+                                            }
+                                        }
+
+                                        r += *li++;
+                                    }
+
+                                    if (parens != 0)
+                                        throw invalid_argument("Mismatched __VA_OPT__ parens");
+                                }
+                            }
+                            else {
+                                r += ident;
+                            }
+                        }
+                        else {
+                            r += *(li++);
+                        }
+                    }
+
+                    if (!r.empty()) {
+                        tokens.push_back(move(token(token::MACROSUBST,r)));
+                        r.clear();
+                    }
+
                     return;
                 }
             }

@@ -56,3 +56,9 @@ Hello
 #define HELLO(a,b...) world a b
 #undef HELLO
 
+#define HELLO(a,b,...) world a __VA_OPT__(x) b __VA_ARGS__
+#undef HELLO
+
+#define HELLO(a,b,...) world a __VA_OPT__( hello there blah ) b c d e __VA_ARGS__
+#undef HELLO
+
