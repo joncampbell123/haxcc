@@ -286,6 +286,7 @@ public:
     token(const unsigned long long v);
     token(const token_t t);
     explicit token(const token_t t,const string _sval);
+    explicit token(const token_t t,const unsigned long long _v);
 };
 
 token::token() {
@@ -306,6 +307,11 @@ token::token(const long double v) : tval(FLOAT) {
 
 token::token(const unsigned long long v) : tval(INTEGER) {
     i.u = v;
+    i.sign = false;
+}
+
+token::token(const token_t t,const unsigned long long _v) : tval(t) {
+    i.u = _v;
     i.sign = false;
 }
 
@@ -1754,12 +1760,13 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                         if (isidentifier_fc(*li)) {
                             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
 
-                            if (find(params.begin(),params.end(),ident) != params.end()) {
+                            auto paridx = find(params.begin(),params.end(),ident);
+                            if (paridx != params.end()) {
                                 if (!r.empty()) {
                                     tokens.push_back(move(token(token::MACROSUBST,r)));
                                     r.clear();
                                 }
-                                tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                                tokens.push_back(move(token(token::MACROPARAM,(unsigned long long)(paridx - params.begin()))));
                             }
                             else if (ident == "__VA_ARGS__") {
                                 if (!r.empty()) {
