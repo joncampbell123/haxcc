@@ -1753,6 +1753,38 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
     }
 }
 
+static inline bool tokenit_next_match_inc(token_string::iterator &ti,const token_string::iterator lie,const token::token_t c) {
+    if (ti != lie && (*ti).tval == c) {
+        ti++;
+        return true;
+    }
+
+    return false;
+}
+
+/* preprocessing stage */
+bool accept_tokens(const token_string::iterator &tib,const token_string::iterator &tie) {
+    auto ti = tib;
+
+    /* we're only looking for #preprocessor directives */
+    if (ti != tie && tokenit_next_match_inc(ti,tie,token::PREPROC)) {
+        if (tokenit_next_match_inc(ti,tie,token::IFDEF)) {
+            return false;
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::IFNDEF)) {
+            return false;
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::ELSE)) {
+            return false;
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::ENDIF)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main(int argc,char **argv) {
     if (parse_argv(argc,argv))
         return 1;
@@ -1806,17 +1838,18 @@ int main(int argc,char **argv) {
             else {
                 tokens.clear();
                 parse_tokens(tokens,line.begin(),line.end(),lineno,source);
+                if (accept_tokens(tokens.begin(),tokens.end())) {
+                    if (pp_only) {
+                        if (emit_line) {
+                            out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
+                            emit_line = false;
+                        }
 
-                if (pp_only) {
-                    if (emit_line) {
-                        out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
-                        emit_line = false;
+                        for (const auto &t : tokens)
+                            out_dst.puts(to_string(t));
+
+                        out_dst.putc('\n');
                     }
-
-                    for (const auto &t : tokens)
-                        out_dst.puts(to_string(t));
-
-                    out_dst.putc('\n');
                 }
             }
 
