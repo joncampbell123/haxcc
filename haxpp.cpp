@@ -2092,8 +2092,28 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
                     throw invalid_argument(string("unexpected token in the body of a macro ") + to_string(*ti));
                 }
             }
+
+            {
+                auto mi = macro_store.find(ident);
+                if (mi != macro_store.end()) {
+//                    if (mi->second != macro)
+//                        macro_store[ident] = macro;
+//                    else
+                        fprintf(stderr,"WARNING: Macro '%s' redefinition\n",ident.c_str());
+                }
+                else {
+                    macro_store[ident] = macro;
+                }
+            }
         }
         else if (tokenit_next_match_inc(ti,tie,token::UNDEF)) {
+            const string &ident = tokenit_next_identifier(ti,tie); /* will throw exception if not! */
+
+            {
+                auto mi = macro_store.find(ident);
+                if (mi != macro_store.end())
+                    macro_store.erase(mi);
+            }
         }
         else if (tokenit_next_match_inc(ti,tie,token::ELSE)) {
             if (!pp_cond_stack.empty()) {
