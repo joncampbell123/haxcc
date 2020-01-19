@@ -18,3 +18,14 @@ Hello !world
 !Hello
 #endif
 
+#ifndef HELLO
+!Hello
+# ifndef WORLD
+!Hello !world
+# else
+!Hello world
+# endif
+#else
+Hello
+#endif
+

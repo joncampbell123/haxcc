@@ -1816,24 +1816,28 @@ public:
         return cond && pcond;
     }
 public:
-    void on_ifdef(const bool r,const bool pr) {
-        allow_elif = false;
-        allow_else = true;
-        pcond = pr;
-        cond = r;
-    }
-    void on_else() {
-        if (allow_else) {
-            /* cannot have #elif after #else */
-            allow_else = false;
-            allow_elif = false;
-            cond = !cond;
-        }
-        else {
-            throw invalid_argument("#else not allowed here");
-        }
-    }
+    void on_ifdef(const bool r,const bool pr);
+    void on_else();
 };
+
+void pp_cond_t::on_ifdef(const bool r,const bool pr) {
+    allow_elif = false;
+    allow_else = true;
+    pcond = pr;
+    cond = r;
+}
+
+void pp_cond_t::on_else() {
+    if (allow_else) {
+        /* cannot have #elif after #else */
+        allow_else = false;
+        allow_elif = false;
+        cond = !cond;
+    }
+    else {
+        throw invalid_argument("#else not allowed here");
+    }
+}
 
 stack<pp_cond_t>    pp_cond_stack;
 
