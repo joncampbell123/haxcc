@@ -2139,8 +2139,6 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                         tokens.push_back(move(token(token::IDENTIFIER,ident)));
                         macro_expand = false;
                         break;
-                    case token::IF:
-                    case token::ELIF:
                     case token::ENDIF:
                     case token::ELSE:
                         macro_expand = false;
