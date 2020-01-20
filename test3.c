@@ -192,6 +192,18 @@ testing the HELLO (funny,man,lol) today
 testing the HELLO (funny,man,lol,omg,wtf) today
 #undef HELLO
 
+/* NTS: GCC behavior says that macro##name combines the value of "macro" with the string "name".
+ *      So this becomes worldABCD -> world peace, not worldwrong */
+#define ABCD wrong
+#define worldABCD world peace
+#define HELLO(a,b,c...) #a #b world##ABCD #a#b#c
+testing the HELLO (funny,man,hey) today
+testing the HELLO (funny,man,lol) today
+testing the HELLO (funny,man,lol,omg,wtf) today
+#undef worldABCD
+#undef HELLO
+#undef ABCD
+
 #define HELLO(a,b,...) #a #b world #a#b#__VA_ARGS__
 testing the HELLO (funny,man) today
 testing the HELLO (funny,man,lol) today

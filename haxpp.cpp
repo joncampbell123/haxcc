@@ -1880,13 +1880,16 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
 
         for (vector<token>::const_iterator si=macro.subst.begin();si!=macro.subst.end();) {
             if (do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given)) {
-            }
-            else if ((*si).tval == token::TOKEN_PASTE) {
-                si++;
-                if (si == macro.subst.end())
-                    throw invalid_argument("token paste must be followed by another token");
-                if (!do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given))
-                    throw invalid_argument("token paste was not followed by expandable value");
+                while (si != macro.subst.end() && (*si).tval == token::TOKEN_PASTE) {
+                    si++;
+                    if (si == macro.subst.end())
+                        throw invalid_argument("token paste must be followed by another token");
+                    if (!do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given))
+                        throw invalid_argument("token paste was not followed by expandable value");
+                }
+
+                if (si != macro.subst.end())
+                    fstr += " ";
             }
             else if ((*si).tval == token::STRINGIFY) {
                 si++;
@@ -1898,7 +1901,7 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                     throw invalid_argument("stringify was not followed by expandable value");
 
                 if (!tmpr.empty())
-                    fstr += pp_stringify(tmpr);
+                    fstr += pp_stringify(tmpr) + " ";
             }
             else if ((*si).tval == token::COMMA) {
                 fstr += ",";
