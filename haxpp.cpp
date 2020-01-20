@@ -2266,8 +2266,34 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
             string ident = parse_identifier(li,lie); /* will throw exception otherwise */
             enum token::token_t tk;
 
-            if (is_pp && (tk=is_pp_keyword(ident)) != token::NONE)
+            if (is_pp && (tk=is_pp_keyword(ident)) != token::NONE) {
                 tokens.push_back(tk);
+
+                if (tk == token::DEFINED) {
+                    string macro;
+                    int parens = 0;
+
+                    /* macro name must be preserved, do not expand, so the test can be done properly.
+                     * we allow defined x or defined(x) */
+                    parse_skip_whitespace(li,lie);
+                    while (strit_next_match_inc(li,lie,'(')) {
+                        parens++;
+                        parse_skip_whitespace(li,lie);
+                    }
+
+                    macro = parse_identifier(li,lie);
+                    parse_skip_whitespace(li,lie);
+                    tokens.push_back(move(token(token::IDENTIFIER,ident)));
+
+                    while (parens > 0) {
+                        if (!strit_next_match_inc(li,lie,')'))
+                            throw invalid_argument("defined() with mismatched parameters");
+
+                        parse_skip_whitespace(li,lie);
+                        parens--;
+                    }
+                }
+            }
             else if ((tk=is_keyword(ident)) != token::NONE)
                 tokens.push_back(tk);
             else if (macro_expand && is_macro(ident))
