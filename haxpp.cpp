@@ -1904,8 +1904,26 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
                     fstr += pp_stringify(tmpr) + " ";
             }
             else if ((*si).tval == token::COMMA) {
-                fstr += ",";
                 si++;
+                auto si2 = si;
+                if (si != macro.subst.end() && (*si2).tval == token::TOKEN_PASTE) { /* , ## */
+                    si2++;
+                    if (si2 != macro.subst.end() && (*si2).tval == token::VA_ARGS) { /* , ## __VA_ARGS__ */
+                        si = si2;
+
+                        if (variadic_given) {
+                            fstr += ",";
+                            do_macro_expand_val(fstr,si,macro.subst.end(),param,macro,variadic_given);
+                        }
+                        else {
+                            si++;
+                        }
+
+                        continue;
+                    }
+                }
+
+                fstr += ",";
             }
             else {
                 throw invalid_argument("unexpected token in macro expansion");
