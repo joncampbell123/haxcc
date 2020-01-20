@@ -303,6 +303,8 @@ public:
 
 unsigned int token::precedence(const token &t,const bool rtl) {
     switch (t.tval) {
+        case token::DEFINED:
+            return 1;
         case token::INCREMENT:
             return rtl ? 2 : 1;
         case token::DECREMENT:
