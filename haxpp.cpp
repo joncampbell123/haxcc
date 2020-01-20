@@ -298,7 +298,80 @@ public:
     explicit token(const token_t t,const unsigned long long _v);
     bool operator!=(const token &t) const;
     bool operator==(const token &t) const;
+    static unsigned int precedence(const token &t,const bool rtl);
 };
+
+unsigned int token::precedence(const token &t,const bool rtl) {
+    switch (t.tval) {
+        case token::INCREMENT:
+            return rtl ? 2 : 1;
+        case token::DECREMENT:
+            return rtl ? 2 : 1;
+        case token::OPEN_PARENS:
+        case token::CLOSE_PARENS:
+        case token::OPEN_SBRACKET:
+        case token::CLOSE_SBRACKET:
+        case token::PERIOD:
+        case token::PTRARROW:
+            return 1u;
+        case token::PLUS:
+            return rtl ? 2 : 4;
+        case token::MINUS:
+            return rtl ? 2 : 4;
+        case token::STAR:
+            return rtl ? 2 : 3;
+        case token::AMPERSAND:
+            return rtl ? 2 : 8;
+        case token::SIZEOF:
+        case token::ALIGNOF:
+        case token::NOT:
+        case token::COMPLEMENT:
+            return 2;
+        case token::DIVISION:
+        case token::MODULUS:
+            return 3;
+        case token::LEFT_SHIFT:
+        case token::RIGHT_SHIFT:
+            return 5;
+        case token::LESS_THAN:
+        case token::LESS_THAN_OR_EQUAL:
+        case token::GREATER_THAN:
+        case token::GREATER_THAN_OR_EQUAL:
+            return 6;
+        case token::EQUALS:
+        case token::NOT_EQUALS:
+            return 7;
+        case token::CARET:
+            return 9;
+        case token::PIPE:
+            return 10;
+        case token::LOGICAL_AND:
+            return 11;
+        case token::LOGICAL_OR:
+            return 12;
+        case token::QUESTIONMARK:
+        case token::COLON:
+            return 13;
+        case token::ASSIGNMENT:
+        case token::PLUS_EQUALS:
+        case token::MINUS_EQUALS:
+        case token::MULTIPLY_EQUALS:
+        case token::DIVIDE_EQUALS:
+        case token::MODULUS_EQUALS:
+        case token::LEFT_SHIFT_EQUALS:
+        case token::RIGHT_SHIFT_EQUALS:
+        case token::AND_EQUALS:
+        case token::XOR_EQUALS:
+        case token::OR_EQUALS:
+            return 14;
+        case token::COMMA:
+            return 15;
+        default:
+            break;
+    };
+
+    return ~0u;
+}
 
 bool token::int_t::operator!=(const int_t &i) const {
     return !(*this == i);
