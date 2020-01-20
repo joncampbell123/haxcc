@@ -667,6 +667,7 @@ static FileSourceStack          in_src_stk;
 static FileDest                 out_dst;
 
 static bool                     ppp_only = false;
+static bool                     ppt_only = false;
 static bool                     pp_only = false;
 
 static string                   in_file = "-";
@@ -693,6 +694,9 @@ static int parse_argv(int argc,char **argv) {
             }
             else if (!strcmp(a,"EE")) {
                 ppp_only = true;
+            }
+            else if (!strcmp(a,"ET")) {
+                ppt_only = true;
             }
             else if (!strcmp(a,"E")) {
                 pp_only = true;
@@ -2475,7 +2479,7 @@ int main(int argc,char **argv) {
                 tokens.clear();
                 parse_tokens(tokens,line.begin(),line.end(),lineno,source);
                 if (accept_tokens(tokens.begin(),tokens.end())) {
-                    if (pp_only) {
+                    if (ppt_only) {
                         if (lineno_expect != lineno)
                             emit_line = true;
 
