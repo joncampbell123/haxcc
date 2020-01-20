@@ -2283,7 +2283,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
 
                     macro = parse_identifier(li,lie);
                     parse_skip_whitespace(li,lie);
-                    tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                    tokens.push_back(move(token(token::IDENTIFIER,macro)));
 
                     while (parens > 0) {
                         if (!strit_next_match_inc(li,lie,')'))
