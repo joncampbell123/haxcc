@@ -370,7 +370,7 @@ unsigned int token::precedence(const token &t,const bool rtl) {
             break;
     };
 
-    return ~0u;
+    return 0;
 }
 
 bool token::int_t::operator!=(const int_t &i) const {
