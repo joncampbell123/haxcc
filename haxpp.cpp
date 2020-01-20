@@ -1963,6 +1963,143 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
     }
 }
 
+void parse_tokens_define(token_string &tokens,string::iterator &li,const string::iterator lie,const int32_t lineno,const string &source) {
+    vector<string> params;
+
+    (void)lineno;
+    (void)source;
+
+    /* parens must follow #define with no space */
+    if (strit_next_match_inc(li,lie,'(')) {
+        /* (params)
+         *
+         * params =
+         * params = identifier
+         * params = identifier identifier
+         * params = identifier ... */
+        tokens.push_back(token::OPEN_PARENS);
+        parse_skip_whitespace(li,lie);
+        while (1) {
+            if (li == lie) {
+                throw invalid_argument("macro param list ended without closing parens");
+            }
+            else if (strit_next_match_inc(li,lie,')')) {
+                tokens.push_back(token::CLOSE_PARENS);
+                break;
+            }
+            else if (strit_next_match_inc(li,lie,',')) {
+                tokens.push_back(token::COMMA);
+            }
+            else if (strit_next_match_inc(li,lie,'.','.','.')) {
+                tokens.push_back(token::DOTDOTDOT);
+            }
+            else if (isidentifier_fc(*li)) {
+                string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+                tokens.push_back(move(token(token::IDENTIFIER,ident)));
+                params.push_back(ident);
+            }
+            else {
+                throw invalid_argument(string("macro param list has unexpected char ") + (*li));
+            }
+
+            parse_skip_whitespace(li,lie);
+        }
+    }
+
+    string r;
+
+    parse_skip_whitespace(li,lie);
+
+    while (li != lie) {
+        if (strit_next_match_inc(li,lie,'#','#')) {
+            if (!r.empty()) {
+                tokens.push_back(move(token(token::MACROSUBST,r)));
+                r.clear();
+            }
+            tokens.push_back(token::TOKEN_PASTE);
+        }
+        else if (strit_next_match_inc(li,lie,'#')) {
+            if (!r.empty()) {
+                tokens.push_back(move(token(token::MACROSUBST,r)));
+                r.clear();
+            }
+            tokens.push_back(token::STRINGIFY);
+        }
+        else if (strit_next_match_inc(li,lie,',')) {
+            if (!r.empty()) {
+                tokens.push_back(move(token(token::MACROSUBST,r)));
+                r.clear();
+            }
+            tokens.push_back(token::COMMA);
+        }
+        else if (isidentifier_fc(*li)) {
+            string ident = parse_identifier(li,lie); /* will throw exception otherwise */
+
+            auto paridx = find(params.begin(),params.end(),ident);
+            if (paridx != params.end()) {
+                if (!r.empty()) {
+                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                    r.clear();
+                }
+                tokens.push_back(move(token(token::MACROPARAM,(unsigned long long)(paridx - params.begin()))));
+            }
+            else if (ident == "__VA_ARGS__") {
+                if (!r.empty()) {
+                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                    r.clear();
+                }
+                tokens.push_back(token::VA_ARGS);
+            }
+            else if (ident == "__VA_OPT__") {
+                if (!r.empty()) {
+                    tokens.push_back(move(token(token::MACROSUBST,r)));
+                    r.clear();
+                }
+                tokens.push_back(token::VA_OPT);
+                parse_skip_whitespace(li,lie);
+                if (strit_next_match_inc(li,lie,'(')) {
+                    int parens = 1;
+
+                    tokens.push_back(token::OPEN_PARENS);
+                    while (li != lie) {
+                        if (*li == '(')
+                            parens++;
+                        else if (*li == ')') {
+                            parens--;
+                            if (parens == 0) {
+                                tokens.push_back(move(token(token::MACROSUBST,r)));
+                                tokens.push_back(token::CLOSE_PARENS);
+                                r.clear();
+                                li++;
+                                break;
+                            }
+                        }
+
+                        r += *li++;
+                    }
+
+                    if (parens != 0)
+                        throw invalid_argument("Mismatched __VA_OPT__ parens");
+                }
+            }
+            else {
+                r += ident;
+            }
+        }
+        else if (*li == ' ' && r.empty()) {
+            li++; /* ignore */
+        }
+        else {
+            r += *(li++);
+        }
+    }
+
+    if (!r.empty()) {
+        tokens.push_back(move(token(token::MACROSUBST,r)));
+        r.clear();
+    }
+}
+
 void parse_tokens(token_string &tokens,const string::iterator lib,const string::iterator lie,const int32_t lineno,const string &source) {
     auto li = lib;
 
@@ -2013,138 +2150,7 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                 };
 
                 if (tk == token::DEFINE) {
-                    vector<string> params;
-
-                    /* parens must follow #define with no space */
-                    if (strit_next_match_inc(li,lie,'(')) {
-                        /* (params)
-                         *
-                         * params =
-                         * params = identifier
-                         * params = identifier identifier
-                         * params = identifier ... */
-                        tokens.push_back(token::OPEN_PARENS);
-                        parse_skip_whitespace(li,lie);
-                        while (1) {
-                            if (li == lie) {
-                                throw invalid_argument("macro param list ended without closing parens");
-                            }
-                            else if (strit_next_match_inc(li,lie,')')) {
-                                tokens.push_back(token::CLOSE_PARENS);
-                                break;
-                            }
-                            else if (strit_next_match_inc(li,lie,',')) {
-                                tokens.push_back(token::COMMA);
-                            }
-                            else if (strit_next_match_inc(li,lie,'.','.','.')) {
-                                tokens.push_back(token::DOTDOTDOT);
-                            }
-                            else if (isidentifier_fc(*li)) {
-                                string ident = parse_identifier(li,lie); /* will throw exception otherwise */
-                                tokens.push_back(move(token(token::IDENTIFIER,ident)));
-                                params.push_back(ident);
-                            }
-                            else {
-                                throw invalid_argument(string("macro param list has unexpected char ") + (*li));
-                            }
-
-                            parse_skip_whitespace(li,lie);
-                        }
-                    }
-
-                    string r;
-
-                    parse_skip_whitespace(li,lie);
-
-                    while (li != lie) {
-                        if (strit_next_match_inc(li,lie,'#','#')) {
-                            if (!r.empty()) {
-                                tokens.push_back(move(token(token::MACROSUBST,r)));
-                                r.clear();
-                            }
-                            tokens.push_back(token::TOKEN_PASTE);
-                        }
-                        else if (strit_next_match_inc(li,lie,'#')) {
-                            if (!r.empty()) {
-                                tokens.push_back(move(token(token::MACROSUBST,r)));
-                                r.clear();
-                            }
-                            tokens.push_back(token::STRINGIFY);
-                        }
-                        else if (strit_next_match_inc(li,lie,',')) {
-                            if (!r.empty()) {
-                                tokens.push_back(move(token(token::MACROSUBST,r)));
-                                r.clear();
-                            }
-                            tokens.push_back(token::COMMA);
-                        }
-                        else if (isidentifier_fc(*li)) {
-                            string ident = parse_identifier(li,lie); /* will throw exception otherwise */
-
-                            auto paridx = find(params.begin(),params.end(),ident);
-                            if (paridx != params.end()) {
-                                if (!r.empty()) {
-                                    tokens.push_back(move(token(token::MACROSUBST,r)));
-                                    r.clear();
-                                }
-                                tokens.push_back(move(token(token::MACROPARAM,(unsigned long long)(paridx - params.begin()))));
-                            }
-                            else if (ident == "__VA_ARGS__") {
-                                if (!r.empty()) {
-                                    tokens.push_back(move(token(token::MACROSUBST,r)));
-                                    r.clear();
-                                }
-                                tokens.push_back(token::VA_ARGS);
-                            }
-                            else if (ident == "__VA_OPT__") {
-                                if (!r.empty()) {
-                                    tokens.push_back(move(token(token::MACROSUBST,r)));
-                                    r.clear();
-                                }
-                                tokens.push_back(token::VA_OPT);
-                                parse_skip_whitespace(li,lie);
-                                if (strit_next_match_inc(li,lie,'(')) {
-                                    int parens = 1;
-
-                                    tokens.push_back(token::OPEN_PARENS);
-                                    while (li != lie) {
-                                        if (*li == '(')
-                                            parens++;
-                                        else if (*li == ')') {
-                                            parens--;
-                                            if (parens == 0) {
-                                                tokens.push_back(move(token(token::MACROSUBST,r)));
-                                                tokens.push_back(token::CLOSE_PARENS);
-                                                r.clear();
-                                                li++;
-                                                break;
-                                            }
-                                        }
-
-                                        r += *li++;
-                                    }
-
-                                    if (parens != 0)
-                                        throw invalid_argument("Mismatched __VA_OPT__ parens");
-                                }
-                            }
-                            else {
-                                r += ident;
-                            }
-                        }
-                        else if (*li == ' ' && r.empty()) {
-                            li++; /* ignore */
-                        }
-                        else {
-                            r += *(li++);
-                        }
-                    }
-
-                    if (!r.empty()) {
-                        tokens.push_back(move(token(token::MACROSUBST,r)));
-                        r.clear();
-                    }
-
+                    parse_tokens_define(tokens,li,lie,lineno,source);
                     return;
                 }
             }
