@@ -2459,10 +2459,10 @@ int main(int argc,char **argv) {
         const string &source = in_src_stk.top().get_path();
 
         if (read_line(/*&*/line,in_src_stk.top())) {
-            if (lineno_expect != lineno)
-                emit_line = true;
-
             if (ppp_only) {
+                if (lineno_expect != lineno)
+                    emit_line = true;
+
                 if (emit_line) {
                     out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
                     emit_line = false;
@@ -2476,6 +2476,9 @@ int main(int argc,char **argv) {
                 parse_tokens(tokens,line.begin(),line.end(),lineno,source);
                 if (accept_tokens(tokens.begin(),tokens.end())) {
                     if (pp_only) {
+                        if (lineno_expect != lineno)
+                            emit_line = true;
+
                         if (emit_line) {
                             out_dst.puts(string("#line ") + to_string(lineno) + " " + source + "\n");
                             emit_line = false;
