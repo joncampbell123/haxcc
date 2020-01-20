@@ -2103,6 +2103,9 @@ void parse_tokens(token_string &tokens,const string::iterator lib,const string::
                                 r += ident;
                             }
                         }
+                        else if (*li == ' ' && r.empty()) {
+                            li++; /* ignore */
+                        }
                         else {
                             r += *(li++);
                         }
