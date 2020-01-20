@@ -2460,9 +2460,11 @@ bool pp_allow_token_display(const token_string &tokens) {
 
             return false;
         }
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 int main(int argc,char **argv) {
