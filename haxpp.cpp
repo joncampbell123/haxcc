@@ -1502,235 +1502,6 @@ string a_better_float_to_string(const long double v) {
     return tmp;
 }
 
-string to_string_pp(const token &t) {
-    switch (t.tval) {
-        case token::MACRO:
-            return t.sval + " ";
-        case token::PREPROC:
-            return "";
-        case token::MACROSUBST:
-            return t.sval + " ";
-        case token::IDENTIFIER:
-            return t.sval + " ";
-        case token::MACROPARAM:
-            return "";
-        case token::INTEGER:
-            return to_string(t.i.s) + " ";
-        case token::FLOAT:
-            return a_better_float_to_string(t.f.get_double()) + " ";
-        case token::STRING:
-            return string("\"") + string_store.get_char(t.s.strref) + string("\"") + " ";
-        case token::MINUS:
-            return "- ";
-        case token::PLUS:
-            return "+ ";
-        case token::DECREMENT:
-            return "-- ";
-        case token::INCREMENT:
-            return "++ ";
-        case token::COMMA:
-            return ", ";
-        case token::PERIOD:
-            return ". ";
-        case token::DOTDOTDOT:
-            return "... ";
-        case token::PTRARROW:
-            return "-> ";
-        case token::COMPLEMENT:
-            return " ~";
-        case token::NOT:
-            return " !";
-        case token::AMPERSAND:
-            return "& ";
-        case token::STAR:
-            return "* ";
-        case token::OPEN_PARENS:
-            return "( ";
-        case token::CLOSE_PARENS:
-            return ") ";
-        case token::OPEN_SBRACKET:
-            return "[ ";
-        case token::CLOSE_SBRACKET:
-            return "] ";
-        case token::OPEN_CBRACKET:
-            return "{ ";
-        case token::CLOSE_CBRACKET:
-            return "} ";
-        case token::SIZEOF:
-            return "sizeof ";
-        case token::ALIGNAS:
-            return "_Alignas ";
-        case token::ALIGNOF:
-            return "_Alignof ";
-        case token::ATOMIC:
-            return "_Atomic ";
-        case token::BOOL_KW:
-            return "_Bool ";
-        case token::COMPLEX:
-            return "_Complex ";
-        case token::GENERIC:
-            return "_Generic ";
-        case token::IMAGINARY:
-            return "_Imaginary ";
-        case token::NORETURN:
-            return "_Noreturn ";
-        case token::PRAGMA:
-            return "_Pragma ";
-        case token::STATIC_ASSERT:
-            return "_Static_assert ";
-        case token::THREAD_LOCAL:
-            return "_Thread_local ";
-        case token::DIVISION:
-            return "/ ";
-        case token::MODULUS:
-            return "% ";
-        case token::LESS_THAN:
-            return "< ";
-        case token::GREATER_THAN:
-            return "> ";
-        case token::LESS_THAN_OR_EQUAL:
-            return "<= ";
-        case token::GREATER_THAN_OR_EQUAL:
-            return ">= ";
-        case token::LEFT_SHIFT:
-            return "<< ";
-        case token::RIGHT_SHIFT:
-            return ">> ";
-        case token::EQUALS:
-            return "== ";
-        case token::NOT_EQUALS:
-            return "!= ";
-        case token::ASSIGNMENT:
-            return "= ";
-        case token::CARET:
-            return "^ ";
-        case token::PIPE:
-            return "| ";
-        case token::LOGICAL_AND:
-            return "&& ";
-        case token::LOGICAL_OR:
-            return "|| ";
-        case token::QUESTIONMARK:
-            return "? ";
-        case token::COLON:
-            return ": ";
-        case token::PLUS_EQUALS:
-            return "+= ";
-        case token::MINUS_EQUALS:
-            return "-= ";
-        case token::MULTIPLY_EQUALS:
-            return "*= ";
-        case token::DIVIDE_EQUALS:
-            return "/= ";
-        case token::MODULUS_EQUALS:
-            return "%= ";
-        case token::LEFT_SHIFT_EQUALS:
-            return "<<= ";
-        case token::RIGHT_SHIFT_EQUALS:
-            return ">>= ";
-        case token::AND_EQUALS:
-            return "&= ";
-        case token::XOR_EQUALS:
-            return "^= ";
-        case token::OR_EQUALS:
-            return "|= ";
-        case token::AUTO:
-            return "auto ";
-        case token::BREAK:
-            return "break ";
-        case token::CASE:
-            return "case ";
-        case token::CHAR:
-            return "char ";
-        case token::CONST:
-            return "const ";
-        case token::CONTINUE:
-            return "continue ";
-        case token::DEFAULT:
-            return "default ";
-        case token::DO:
-            return "do ";
-        case token::DOUBLE:
-            return "double ";
-        case token::ELSE:
-            return "else ";
-        case token::ENUM:
-            return "enum ";
-        case token::EXTERN:
-            return "extern ";
-        case token::FLOAT_KW:
-            return "float ";
-        case token::FOR:
-            return "for ";
-        case token::GOTO:
-            return "goto ";
-        case token::IF:
-            return "if ";
-        case token::INT:
-            return "int ";
-        case token::LONG:
-            return "long ";
-        case token::REGISTER:
-            return "register ";
-        case token::RETURN:
-            return "return ";
-        case token::SHORT:
-            return "short ";
-        case token::SIGNED:
-            return "signed ";
-        case token::STATIC:
-            return "static ";
-        case token::STRUCT:
-            return "struct ";
-        case token::SWITCH:
-            return "switch ";
-        case token::TYPEDEF:
-            return "typedef ";
-        case token::UNION:
-            return "union ";
-        case token::UNSIGNED:
-            return "unsigned ";
-        case token::VOID:
-            return "void ";
-        case token::VOLATILE:
-            return "volatile ";
-        case token::WHILE:
-            return "while ";
-        case token::STRINGIFY:
-            return "# ";
-        case token::TOKEN_PASTE:
-            return "## ";
-        case token::VA_ARGS:
-            return "__VA_ARGS__ ";
-        case token::VA_OPT:
-            return "__VA_OPT__ ";
-        case token::ELIF:
-            return "elif ";
-        case token::ENDIF:
-            return "endif ";
-        case token::DEFINED:
-            return "defined ";
-        case token::IFDEF:
-            return "ifdef ";
-        case token::IFNDEF:
-            return "ifndef ";
-        case token::DEFINE:
-            return "define ";
-        case token::UNDEF:
-            return "undef ";
-        case token::INCLUDE:
-            return "include ";
-        case token::LINE:
-            return "line ";
-        case token::ERROR:
-            return "error ";
-        default:
-            break;
-    };
-
-    return "? ";
-}
-
 string to_string(const token &t) {
     switch (t.tval) {
         case token::MACRO:
@@ -1958,6 +1729,31 @@ string to_string(const token &t) {
     };
 
     return "? ";
+}
+
+string to_string_pp(const token &t) {
+    switch (t.tval) {
+        case token::MACRO:
+            return t.sval + " ";
+        case token::PREPROC:
+            return "";
+        case token::MACROSUBST:
+            return t.sval + " ";
+        case token::IDENTIFIER:
+            return t.sval + " ";
+        case token::MACROPARAM:
+            return "";
+        case token::INTEGER:
+            return to_string(t.i.s) + " ";
+        case token::FLOAT:
+            return a_better_float_to_string(t.f.get_double()) + " ";
+        case token::STRING:
+            return string("\"") + string_store.get_char(t.s.strref) + string("\"") + " ";
+        default:
+            break;
+    };
+
+    return to_string(t);
 }
 
 void print_token(FILE *fp,const token &t) {
