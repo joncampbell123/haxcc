@@ -1935,7 +1935,7 @@ void do_macro_expand(token_string &tokens,const string &ident,string::iterator &
             else if ((*si).tval == token::COMMA) {
                 si++;
                 auto si2 = si;
-                if (si != macro.subst.end() && (*si2).tval == token::TOKEN_PASTE) { /* , ## */
+                if (si2 != macro.subst.end() && (*si2).tval == token::TOKEN_PASTE) { /* , ## */
                     si2++;
                     if (si2 != macro.subst.end() && (*si2).tval == token::VA_ARGS) { /* , ## __VA_ARGS__ */
                         si = si2;
