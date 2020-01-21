@@ -2483,12 +2483,23 @@ expression::node::node_t expression::newnode(const token &nt) {
     return r;
 }
 
+bool match_token_list(const token &t,const token::token_t *tokens) {
+    while (*tokens != token::NONE) {
+        if (t.tval == *tokens)
+            return true;
+
+        tokens++;
+    }
+
+    return false;
+}
+
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = 0);
 
-expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t match_token,expression::node::node_t headnode) {
+expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
-    while (ti != tie && (*ti).tval == match_token && (prec=token::precedence(*ti,false)) >= min_prec) {
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) >= min_prec) {
         const expression::node::node_t opnode = expr.newnode(*(ti++));
 
         if (ti != tie) {
@@ -2505,6 +2516,8 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
+const token::token_t            tokenlist_comma[] = {token::COMMA,token::NONE};
+
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec) {
     if (ti == tie)
         throw invalid_argument("expected token for expr parse");
@@ -2513,7 +2526,7 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
 
     /* expression
      * expression , expression */
-    headnode = parse_expr_ltr(expr,ti,tie,min_prec,token::COMMA,headnode);
+    headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_comma,headnode);
 
     return headnode;
 }
