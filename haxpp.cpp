@@ -687,9 +687,29 @@ public:
         return cond && pcond;
     }
 public:
+    void on_elif(const bool r);
+    void on_if(const bool r,const bool pr);
     void on_ifdef(const bool r,const bool pr);
     void on_else();
 };
+
+void pp_cond_t::on_if(const bool r,const bool pr) {
+    allow_elif = true;
+    allow_else = true;
+    pcond = pr;
+    cond = r;
+}
+
+void pp_cond_t::on_elif(const bool r) {
+    if (allow_elif) {
+        if (cond) pcond = false;
+        allow_elif = false;
+        cond = r;
+    }
+    else {
+        throw invalid_argument("#elif not allowed here");
+    }
+}
 
 void pp_cond_t::on_ifdef(const bool r,const bool pr) {
     allow_elif = false;
@@ -700,6 +720,7 @@ void pp_cond_t::on_ifdef(const bool r,const bool pr) {
 
 void pp_cond_t::on_else() {
     if (allow_else) {
+        if (cond) pcond = false;
         /* cannot have #elif after #else */
         allow_else = false;
         allow_elif = false;
@@ -2412,6 +2433,13 @@ bool pp_pass() {
     return true;
 }
 
+bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
+    (void)ti;
+    (void)tie;
+    // TODO
+    return false;
+}
+
 /* preprocessing stage */
 bool accept_tokens(const token_string::iterator &tib,const token_string::iterator &tie) {
     bool pass = pp_pass();
@@ -2419,7 +2447,19 @@ bool accept_tokens(const token_string::iterator &tib,const token_string::iterato
 
     /* we're only looking for #preprocessor directives here that control conditional inclusion */
     if (ti != tie && tokenit_next_match_inc(ti,tie,token::PREPROC)) {
-        if (tokenit_next_match_inc(ti,tie,token::IFDEF)) {
+        if (tokenit_next_match_inc(ti,tie,token::IF)) {
+            pp_cond_t pc; pc.on_if(pp_if_eval(ti,tie),pass);
+            pp_cond_stack.push(move(pc));
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::ELIF)) {
+            if (!pp_cond_stack.empty()) {
+                pp_cond_stack.top().on_elif(pp_if_eval(ti,tie));
+            }
+            else {
+                throw invalid_argument("#else not allowed here");
+            }
+        }
+        else if (tokenit_next_match_inc(ti,tie,token::IFDEF)) {
             const string &ident = tokenit_next_identifier(ti,tie); /* will throw exception if not! */
             pp_cond_t pc; pc.on_ifdef(is_macro(ident),pass);
             pp_cond_stack.push(move(pc));
