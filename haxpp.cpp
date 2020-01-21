@@ -2436,6 +2436,10 @@ bool pp_pass() {
 bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
     (void)ti;
     (void)tie;
+
+    if (ti == tie)
+        throw invalid_argument("macro if condition requires something to evaluate");
+
     // TODO
     return false;
 }
