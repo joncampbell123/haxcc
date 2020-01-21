@@ -2489,28 +2489,23 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
     if (ti == tie)
         throw invalid_argument("expected token for expr parse");
 
-    const token &r1 = *(ti++);
-    expression::node::node_t n1 = expr.newnode(r1);
+    expression::node::node_t headnode = expr.newnode(*(ti++));
 
     /* expression
      * expression , expression */
     while (ti != tie && (*ti).tval == token::COMMA && (prec=token::precedence(*ti,false)) >= min_prec) {
-        const token &r2 = *(ti++);
-        const expression::node::node_t n2 = expr.newnode(r2);
-        expr.getnode(n2).children.resize(2);
-        expr.getnode(n2).children[0] = n1;
-        n1 = n2;
+        const expression::node::node_t opnode = expr.newnode(*(ti++));
+        expr.getnode(opnode).children.resize(2);
+        expr.getnode(opnode).children[0] = headnode;
+        headnode = opnode;
 
-        if (ti != tie) {
-            const expression::node::node_t resnode = parse_expr(expr,ti,tie,prec+1u);
-            expr.getnode(n2).children[1] = resnode;
-        }
-        else {
+        if (ti != tie)
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec+1u);
+        else
             throw invalid_argument("Comma operator, missing rvalue");
-        }
     }
 
-    return n1;
+    return headnode;
 }
 
 void dump_expr_node(FILE *fp,const expression &expr,const expression::node::node_t node,unsigned int depth) {
