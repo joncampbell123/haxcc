@@ -143,6 +143,8 @@ public:
         MACROSUBST,
         MACROPARAM,
         IDENTIFIER,
+        FUNCTIONCALL,
+        TYPECAST,
         INTEGER,
         FLOAT,
         STRING,
@@ -1616,6 +1618,10 @@ string to_string(const token &t) {
             return a_better_float_to_string(t.f.get_double()) + " ";
         case token::STRING:
             return string("\"") + string_store.get_char(t.s.strref) + string("\"") + " ";
+        case token::FUNCTIONCALL:
+            return string("[functioncall]") + t.sval + " ";;
+        case token::TYPECAST:
+            return string("[typecast]") + t.sval + " ";;
         case token::MINUS:
             return "- ";
         case token::PLUS:
@@ -2433,12 +2439,113 @@ bool pp_pass() {
     return true;
 }
 
+class expression {
+    public:
+        class node {
+            public:
+                using node_t = size_t;
+                static constexpr node_t none = ~node_t(0u);
+            public:
+                token                   tval = token::NONE;
+                vector<node_t>          children;
+        };
+    public:
+        vector<node>                    nodelist;
+        node::node_t                    root = node::none;
+    public:
+        node::node_t                    newnode();
+        node::node_t                    newnode(const token &nt);
+    public:
+        inline node& getnode(const node::node_t &n) {
+            if (n < nodelist.size())
+                return nodelist[n];
+            else
+                throw runtime_error("node out of range");
+        }
+        inline const node& getnode(const node::node_t &n) const {
+            if (n < nodelist.size())
+                return nodelist[n];
+            else
+                throw runtime_error("node out of range");
+        }
+};
+
+expression::node::node_t expression::newnode() {
+    const node::node_t r = nodelist.size();
+    nodelist.resize(r+size_t(1));
+    return r;
+}
+
+expression::node::node_t expression::newnode(const token &nt) {
+    const node::node_t r = nodelist.size();
+    nodelist.resize(r+size_t(1));
+    nodelist[r].tval = nt;
+    return r;
+}
+
+expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = 0) {
+    unsigned int prec;
+
+    if (ti == tie)
+        throw invalid_argument("expected token for expr parse");
+
+    const token &r1 = *(ti++);
+    expression::node::node_t n1 = expr.newnode(r1);
+
+    /* expression
+     * expression , expression */
+    while (ti != tie && (*ti).tval == token::COMMA && (prec=token::precedence(*ti,false)) >= min_prec) {
+        const token &r2 = *(ti++);
+        const expression::node::node_t n2 = expr.newnode(r2);
+        expr.getnode(n2).children.resize(2);
+        expr.getnode(n2).children[0] = n1;
+        n1 = n2;
+
+        if (ti != tie) {
+            const expression::node::node_t resnode = parse_expr(expr,ti,tie,prec+1u);
+            expr.getnode(n2).children[1] = resnode;
+        }
+        else {
+            throw invalid_argument("Comma operator, missing rvalue");
+        }
+    }
+
+    return n1;
+}
+
+void dump_expr_node(FILE *fp,const expression &expr,const expression::node::node_t node,unsigned int depth) {
+    if (fp == NULL)
+        fp = stderr;
+
+    for (unsigned int c=0;c < depth;c++)
+        fprintf(fp,"  ");
+
+    fprintf(fp,"node[%zu]: %s\n",node,to_string(expr.getnode(node).tval).c_str());
+    for (size_t i=0;i < expr.getnode(node).children.size();i++)
+        dump_expr_node(fp,expr,expr.getnode(node).children[i],depth+1u);
+}
+
+void dump_expr(FILE *fp,const expression &expr) {
+    if (fp == NULL)
+        fp = stderr;
+
+    fprintf(fp,"expression:\n");
+    if (expr.root != expression::node::none)
+        dump_expr_node(fp,expr,expr.root,1);
+    fprintf(fp,"END\n");
+}
+
 bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
     (void)ti;
     (void)tie;
 
     if (ti == tie)
         throw invalid_argument("macro if condition requires something to evaluate");
+
+    expression expr;
+    expr.root = parse_expr(expr,ti,tie);
+
+    dump_expr(NULL,expr);
 
     // TODO
     return false;
