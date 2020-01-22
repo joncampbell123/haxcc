@@ -2873,65 +2873,65 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
         case token::ADDRESSOF:
             throw invalid_argument("struct/pointer ref not allowed in macro preprocessor");
         case token::COMMA:
-            return pp_if_eval(expr,n.children[1]); /* a,b -> b */
+            return pp_if_eval(expr,n.children.at(1)); /* a,b -> b */
         case token::PLUS:
             if (n.children.size() == 2)
-                return pp_if_eval(expr,n.children[0]) + pp_if_eval(expr,n.children[1]);
+                return pp_if_eval(expr,n.children.at(0)) + pp_if_eval(expr,n.children.at(1));
             else if (n.children.size() == 1)
-                return pp_if_eval(expr,n.children[0]); /* +a -> a */
+                return pp_if_eval(expr,n.children.at(0)); /* +a -> a */
         case token::NEGATE:
-            return -pp_if_eval(expr,n.children[0]);
+            return -pp_if_eval(expr,n.children.at(0));
         case token::MINUS:
-            return pp_if_eval(expr,n.children[0]) - pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) - pp_if_eval(expr,n.children.at(1));
         case token::NOT:
-            return (pp_if_eval(expr,n.children[0]) == 0) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) == 0) ? 1 : 0;
         case token::COMPLEMENT:
-            return ~pp_if_eval(expr,n.children[0]);
+            return ~pp_if_eval(expr,n.children.at(0));
         case token::MULTIPLY:
-            return pp_if_eval(expr,n.children[0]) * pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) * pp_if_eval(expr,n.children.at(1));
         case token::DIVISION:
-            return pp_if_eval(expr,n.children[0]) / pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) / pp_if_eval(expr,n.children.at(1));
         case token::MODULUS:
-            return pp_if_eval(expr,n.children[0]) % pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) % pp_if_eval(expr,n.children.at(1));
         case token::LOGICAL_AND:
-            return ((pp_if_eval(expr,n.children[0]) != 0ll) && (pp_if_eval(expr,n.children[1]) != 0ll)) ? 1 : 0;
+            return ((pp_if_eval(expr,n.children.at(0)) != 0ll) && (pp_if_eval(expr,n.children.at(1)) != 0ll)) ? 1 : 0;
         case token::LOGICAL_OR:
-            return ((pp_if_eval(expr,n.children[0]) != 0ll) || (pp_if_eval(expr,n.children[1]) != 0ll)) ? 1 : 0;
+            return ((pp_if_eval(expr,n.children.at(0)) != 0ll) || (pp_if_eval(expr,n.children.at(1)) != 0ll)) ? 1 : 0;
         case token::BINARY_AND:
-            return pp_if_eval(expr,n.children[0]) & pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) & pp_if_eval(expr,n.children.at(1));
         case token::BINARY_XOR:
-            return pp_if_eval(expr,n.children[0]) ^ pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) ^ pp_if_eval(expr,n.children.at(1));
         case token::BINARY_OR:
-            return pp_if_eval(expr,n.children[0]) | pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(0)) | pp_if_eval(expr,n.children.at(1));
         case token::EQUALS:
-            return (pp_if_eval(expr,n.children[0]) == pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) == pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::NOT_EQUALS:
-            return (pp_if_eval(expr,n.children[0]) != pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) != pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::LESS_THAN:
-            return (pp_if_eval(expr,n.children[0]) < pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) < pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::LESS_THAN_OR_EQUAL:
-            return (pp_if_eval(expr,n.children[0]) <= pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) <= pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::GREATER_THAN:
-            return (pp_if_eval(expr,n.children[0]) > pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) > pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::GREATER_THAN_OR_EQUAL:
-            return (pp_if_eval(expr,n.children[0]) >= pp_if_eval(expr,n.children[1])) ? 1 : 0;
+            return (pp_if_eval(expr,n.children.at(0)) >= pp_if_eval(expr,n.children.at(1))) ? 1 : 0;
         case token::TERNARY:
-            return (pp_if_eval(expr,n.children[0]) != 0ll) ?
-                    pp_if_eval(expr,n.children[1]) :
-                    pp_if_eval(expr,n.children[2]);
+            return (pp_if_eval(expr,n.children.at(0)) != 0ll) ?
+                    pp_if_eval(expr,n.children.at(1)) :
+                    pp_if_eval(expr,n.children.at(2));
         case token::IDENTIFIER:
             return 0ll; /* if the macro expansion did not replace the identifier with a value then it is zero */
         case token::DEFINED:
             {
-                const auto &c = expr.getnode(n.children[0]);
+                const auto &c = expr.getnode(n.children.at(0));
                 if (c.tval.tval == token::IDENTIFIER)
                     return is_macro(c.tval.sval) ? 1 : 0;
                 else
                     throw invalid_argument("defined() used with a non-identifier");
             }
-        case token::TYPECAST: /* [0]=type tokens [1]=expression to typecast */
+        case token::TYPECAST: /* .at(0)=type tokens .at(1)=expression to typecast */
             fprintf(stderr,"WARNING: Typecasts are ignored by the macro processor\n");
-            return pp_if_eval(expr,n.children[1]);
+            return pp_if_eval(expr,n.children.at(1));
         default:
             break;
     };

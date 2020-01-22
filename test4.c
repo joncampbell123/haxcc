@@ -235,6 +235,6 @@ Hello
 #if (long)(char)(4 + 3)
 #endif
 
-#if defined a . bcd
-#endif
+//#if defined a . bcd
+//#endif
 
