@@ -2681,6 +2681,8 @@ bool is_type_token(const token &t) {
         case token::CONST:
         case token::SIGNED:
         case token::UNSIGNED:
+        case token::AMPERSAND:
+        case token::STAR:
             return true;
         default:
             break;
