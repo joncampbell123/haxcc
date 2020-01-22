@@ -244,6 +244,8 @@ Hello
 #endif
 #if (const long long int)(long int)(unsigned char)(4 + 3)
 #endif
+#if (const long long int)(long int)(unsigned char)((char)4 + (signed int)3 - (long)(4 + 3 + 1))
+#endif
 
 //#if defined a . bcd
 //#endif
