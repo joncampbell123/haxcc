@@ -2814,6 +2814,15 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             throw invalid_argument("Strings not allowed in expressions at preprocessor level");
         case token::ASSIGNMENT:
             throw invalid_argument("Assignment not permitted in macro preprocessor");
+        case token::POSTINCREMENT:
+        case token::POSTDECREMENT:
+        case token::PREINCREMENT:
+        case token::PREDECREMENT:
+            throw invalid_argument("increment/decrement not allowed in macro preprocessor");
+        case token::DEREFERENCE:
+        case token::STRUCTREF:
+        case token::ADDRESSOF:
+            throw invalid_argument("struct/pointer ref not allowed in macro preprocessor");
         case token::COMMA:
             return pp_if_eval(expr,n.children[1]); /* a,b -> b */
         case token::PLUS:
@@ -2861,6 +2870,8 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             return (pp_if_eval(expr,n.children[0]) != 0ll) ?
                     pp_if_eval(expr,n.children[1]) :
                     pp_if_eval(expr,n.children[2]);
+        case token::IDENTIFIER:
+            return 0ll; /* if the macro expansion did not replace the identifier with a value then it is zero */
         default:
             break;
     };

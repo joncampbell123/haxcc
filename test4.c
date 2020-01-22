@@ -100,19 +100,16 @@ Hello
 Hello
 #endif
 
-#if a++
-Hello
-#endif
+//#if a++
+//Hello
+//#endif
 
-#if ++a
-Hello
-#endif
+//#if ++a
+//Hello
+//#endif
 
-#if *a
-#endif
-
-#if &a
-#endif
+//#if *a
+//#endif
 
 #if 4 * 3
 #endif
@@ -126,14 +123,17 @@ Hello
 #if 4^3
 #endif
 
-#if abc.def
-#endif
+//#if abc.def
+//#endif
 
-#if ~abc.def * 2
-#endif
+//#if ~abc.def * 2
+//#endif
 
-#if abc->def + 3
-#endif
+//#if abc->def + 3
+//#endif
+
+//#if &a
+//#endif
 
 #if 3 + (4)
 #endif
@@ -181,18 +181,6 @@ Hello
 #endif
 
 #if 1 <= 2
-#endif
-
-#if sizeof(int)
-#endif
-
-#if _Alignof(int)
-#endif
-
-#if defined(int)
-#endif
-
-#if (int)
 #endif
 
 #if c >= d || defined(MACRO1) || !defined(MACRO2)
