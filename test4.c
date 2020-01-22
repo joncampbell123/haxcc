@@ -139,3 +139,5 @@ Hello
 #if (int)
 #endif
 
+#if c >= d || defined(MACRO1) || !defined(MACRO2)
+#endif
