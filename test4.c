@@ -204,3 +204,20 @@ Hello
 #undef d
 #undef c
 
+#define a 5
+#if defined(a) && defined(b)
+OOPS
+#endif
+#if defined(a) || defined(b)
+Hello
+#endif
+#define b 3
+#if defined(a) && defined(b)
+Hello
+#endif
+#if defined(a) || defined(b)
+Hello
+#endif
+#undef b
+#undef a
+
