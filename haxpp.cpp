@@ -145,6 +145,7 @@ public:
         IDENTIFIER,
         FUNCTIONCALL,
         TYPECAST,
+        TYPESPEC,
         INTEGER,
         FLOAT,
         STRING,
@@ -1635,6 +1636,8 @@ string to_string(const token &t) {
             return string("[functioncall]") + t.sval + " ";;
         case token::TYPECAST:
             return string("[typecast]") + t.sval + " ";;
+        case token::TYPESPEC:
+            return string("[typespec]") + t.sval + " ";;
         case token::MINUS:
             return "- ";
         case token::PLUS:
@@ -2707,7 +2710,7 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
         if (tmpti != tie && is_type_token(/*&*/repl,*tmpti)) {
             ti = tmpti;
 
-            const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
+            const expression::node::node_t opnode = expr.newnode(exprfollow ? token::TYPECAST : token::TYPESPEC);
 
             /* NTS: Treat LOGICAL_AND as if two ADDRESSOF so && works properly here */
             while (ti != tie && (is_type_token(/*&*/repl,*ti) || (*ti).tval == token::LOGICAL_AND)) {
@@ -2729,8 +2732,6 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
 
             if (exprfollow)
                 expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
-            else
-                expr.getnode(opnode).children.push_back(expr.newnode(token::NONE));
 
             return opnode;
         }
