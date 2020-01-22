@@ -2872,6 +2872,12 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
                     pp_if_eval(expr,n.children[2]);
         case token::IDENTIFIER:
             return 0ll; /* if the macro expansion did not replace the identifier with a value then it is zero */
+        case token::DEFINED:
+            {
+                const auto &c = expr.getnode(n.children[0]);
+                if (c.tval.tval == token::IDENTIFIER)
+                    return is_macro(c.tval.sval) ? 1 : 0;
+            }
         default:
             break;
     };

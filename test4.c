@@ -195,6 +195,12 @@ Hello
 #if c >= d || defined(MACRO1)
 #endif
 
+#define MACRO1 11
+
+#if c >= d || defined(MACRO1)
+#endif
+
+#undef MACRO1
 #undef d
 #undef c
 
