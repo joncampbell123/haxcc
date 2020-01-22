@@ -136,6 +136,6 @@ Hello
 #if defined(int)
 #endif
 
-#if (4)
+#if (int)
 #endif
 
