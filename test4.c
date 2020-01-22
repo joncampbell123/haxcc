@@ -183,5 +183,18 @@ Hello
 #if 1 <= 2
 #endif
 
+#if c >= d || defined(MACRO1)
+#endif
+
 #if c >= d || defined(MACRO1) || !defined(MACRO2)
 #endif
+
+#define c 4
+#define d 7
+
+#if c >= d || defined(MACRO1)
+#endif
+
+#undef d
+#undef c
+
