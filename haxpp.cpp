@@ -152,6 +152,10 @@ public:
         PLUS,
         DECREMENT,
         INCREMENT,
+        PREDECREMENT,
+        PREINCREMENT,
+        POSTDECREMENT,
+        POSTINCREMENT,
         COMMA,
         PERIOD,
         DOTDOTDOT,
@@ -1631,6 +1635,14 @@ string to_string(const token &t) {
             return "-- ";
         case token::INCREMENT:
             return "++ ";
+        case token::PREDECREMENT:
+            return "--[pre] ";
+        case token::PREINCREMENT:
+            return "++[pre] ";
+        case token::POSTDECREMENT:
+            return "[post]-- ";
+        case token::POSTINCREMENT:
+            return "[post]++ ";
         case token::COMMA:
             return ", ";
         case token::PERIOD:
@@ -2629,8 +2641,8 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
 }
 
 const tokenlist_entry           tokenlist_prec1_unary[] = {
-    {token::INCREMENT,          token::INCREMENT}, // 1
-    {token::DECREMENT,          token::DECREMENT}, // 1
+    {token::INCREMENT,          token::POSTINCREMENT}, // 1
+    {token::DECREMENT,          token::POSTDECREMENT}, // 1
     {token::NONE,               token::NONE}
 };
 const token::token_t            tokenlist_prec1_binary[] = {
