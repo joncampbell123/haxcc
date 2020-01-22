@@ -221,3 +221,13 @@ Hello
 #undef b
 #undef a
 
+#if (long)4
+#endif
+
+#if (long)4 + (char)3
+#endif
+
+#if (long)(4 + 3)
+#endif
+#if (long)(char)(4 + 3)
+#endif

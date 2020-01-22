@@ -2672,6 +2672,51 @@ expression::node::node_t parse_expr_subexpr(expression &expr,token_string::itera
     return expression::node::none;
 }
 
+bool is_type_token(const token &t) {
+    switch (t.tval) {
+        case token::INT:
+        case token::CHAR:
+        case token::LONG:
+        case token::SHORT:
+        case token::CONST:
+        case token::SIGNED:
+        case token::UNSIGNED:
+            return true;
+        default:
+            break;
+    };
+
+    return false;
+}
+
+expression::node::node_t parse_expr_typecast(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
+    auto tmpti = ti;
+
+    if (tmpti != tie && (*tmpti).tval == token::OPEN_PARENS) {
+        tmpti++;
+        if (tmpti != tie && is_type_token(*tmpti)) {
+            ti = tmpti;
+
+            const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
+
+            expr.getnode(opnode).children.resize(2);
+            expr.getnode(opnode).children[0] = parse_expr(expr,ti,tie);
+
+            if (ti == tie)
+                throw invalid_argument("missing closing parens");
+            if ((*ti).tval != token::CLOSE_PARENS)
+                throw invalid_argument("missing closing parens");
+            ti++;
+
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie);
+
+            return opnode;
+        }
+    }
+
+    return expression::node::none;
+}
+
 const tokenlist_entry           tokenlist_prec1_unary[] = {
     {token::INCREMENT,          token::POSTINCREMENT}, // 1
     {token::DECREMENT,          token::POSTDECREMENT}, // 1
@@ -2742,8 +2787,12 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
 
     expression::node::node_t headnode;
 
+    /* (typecast) */
+    headnode = parse_expr_typecast(expr,ti,tie);
+
     /* (expression) */
-    headnode = parse_expr_subexpr(expr,ti,tie);
+    if (headnode == expression::node::none)
+        headnode = parse_expr_subexpr(expr,ti,tie);
 
     /* expression
      * expression = ~expression */
@@ -2878,6 +2927,9 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
                 if (c.tval.tval == token::IDENTIFIER)
                     return is_macro(c.tval.sval) ? 1 : 0;
             }
+        case token::TYPECAST: /* [0]=type tokens [1]=expression to typecast */
+            fprintf(stderr,"WARNING: Typecasts are ignored by the macro processor\n");
+            return pp_if_eval(expr,n.children[1]);
         default:
             break;
     };
