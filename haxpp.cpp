@@ -2575,7 +2575,7 @@ expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::i
     unsigned int prec;
 
     while (ti != tie && (*ti).tval == token::QUESTIONMARK && (prec=token::precedence(*ti,false)) <= min_prec) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++));
+        const expression::node::node_t opnode = expr.newnode(*(ti++),token::TERNARY);
 
         if (ti != tie) {
             expr.getnode(opnode).children.resize(3);
@@ -2812,6 +2812,8 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             throw invalid_argument("Floating point not allowed in expressions at preprocessor level");
         case token::STRING:
             throw invalid_argument("Strings not allowed in expressions at preprocessor level");
+        case token::ASSIGNMENT:
+            throw invalid_argument("Assignment not permitted in macro preprocessor");
         case token::COMMA:
             return pp_if_eval(expr,n.children[1]); /* a,b -> b */
         case token::PLUS:
@@ -2855,12 +2857,15 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             return (pp_if_eval(expr,n.children[0]) > pp_if_eval(expr,n.children[1])) ? 1 : 0;
         case token::GREATER_THAN_OR_EQUAL:
             return (pp_if_eval(expr,n.children[0]) >= pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::TERNARY:
+            return (pp_if_eval(expr,n.children[0]) != 0ll) ?
+                    pp_if_eval(expr,n.children[1]) :
+                    pp_if_eval(expr,n.children[2]);
         default:
             break;
     };
 
-    return 0ll;
-    throw invalid_argument("unsupported expression in preprocessor level");
+    throw invalid_argument(string("unsupported expression in preprocessor level, token ")+to_string(n.tval));
 }
 
 bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
