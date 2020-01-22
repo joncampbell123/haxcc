@@ -144,7 +144,6 @@ public:
         MACROPARAM,
         IDENTIFIER,
         FUNCTIONCALL,
-        SUBEXPRESSION,
         TYPECAST,
         INTEGER,
         FLOAT,
@@ -1866,8 +1865,6 @@ string to_string(const token &t) {
             return "error ";
         case token::TERNARY:
             return "[ternary] ";
-        case token::SUBEXPRESSION:
-            return "[subexpr] ";
         default:
             break;
     };
@@ -2661,10 +2658,7 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
 
 expression::node::node_t parse_expr_subexpr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
     if (ti != tie && (*ti).tval == token::OPEN_PARENS) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++),token::SUBEXPRESSION);
-
-        expr.getnode(opnode).children.resize(1);
-        expr.getnode(opnode).children[0] = parse_expr(expr,ti,tie);
+        ti++;/* step past*/ const expression::node::node_t opnode = parse_expr(expr,ti,tie);
 
         if (ti == tie)
             throw invalid_argument("missing closing parens");
