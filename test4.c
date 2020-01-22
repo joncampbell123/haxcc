@@ -100,3 +100,14 @@ Hello
 #if &a
 #endif
 
+#if 4 * 3
+#endif
+
+#if 4|3
+#endif
+
+#if 4&3
+#endif
+
+#if 4^3
+#endif

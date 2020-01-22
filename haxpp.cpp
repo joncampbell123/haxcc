@@ -198,6 +198,10 @@ public:
         ASSIGNMENT,
         CARET,
         PIPE,
+        BINARY_AND,
+        BINARY_XOR,
+        BINARY_OR,
+        MULTIPLY,
         LOGICAL_AND,
         LOGICAL_OR,
         QUESTIONMARK,
@@ -1730,6 +1734,14 @@ string to_string(const token &t) {
             return "^ ";
         case token::PIPE:
             return "| ";
+        case token::BINARY_AND:
+            return "[b-and] ";
+        case token::BINARY_XOR:
+            return "[b-xor] ";
+        case token::BINARY_OR:
+            return "[b-or] ";
+        case token::MULTIPLY:
+            return "[multiply] ";
         case token::LOGICAL_AND:
             return "&& ";
         case token::LOGICAL_OR:
@@ -2630,6 +2642,27 @@ expression::node::node_t parse_expr_ltr_unary(expression &expr,token_string::ite
     return headnode;
 }
 
+expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const tokenlist_entry *match_token,expression::node::node_t headnode) {
+    token::token_t repl;
+    unsigned int prec;
+
+    while (ti != tie && match_token_list(repl,*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++),repl);
+
+        if (ti != tie) {
+            expr.getnode(opnode).children.resize(2);
+            expr.getnode(opnode).children[0] = headnode;
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec-1u);
+            headnode = opnode;
+        }
+        else {
+            throw invalid_argument("missing rvalue");
+        }
+    }
+
+    return headnode;
+}
+
 expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
@@ -2671,28 +2704,28 @@ const tokenlist_entry           tokenlist_prec2_unary[] = {
     {token::AMPERSAND,          token::ADDRESSOF}, // 2
     {token::SIZEOF,             token::SIZEOF}, // 2
     {token::ALIGNOF,            token::ALIGNOF}, // 2
-    {token::NONE,               token::NONE},
+    {token::NONE,               token::NONE}
 };
-const token::token_t            tokenlist_precbinary3_12[] = {
-    token::LOGICAL_OR,          // 12
-    token::LOGICAL_AND,         // 11
-    token::PIPE,                // 10
-    token::CARET,               // 9
-    token::AMPERSAND,           // 8
-    token::EQUALS,              // 7
-    token::NOT_EQUALS,          // 7
-    token::LESS_THAN,           // 6
-    token::LESS_THAN_OR_EQUAL,  // 6
-    token::GREATER_THAN,        // 6
-    token::GREATER_THAN_OR_EQUAL,//6
-    token::LEFT_SHIFT,          // 5
-    token::RIGHT_SHIFT,         // 5
-    token::PLUS,                // 4
-    token::MINUS,               // 4
-    token::STAR,                // 3
-    token::DIVISION,            // 3
-    token::MODULUS,             // 3
-    token::NONE
+const tokenlist_entry           tokenlist_precbinary3_12[] = {
+    {token::LOGICAL_OR,         token::LOGICAL_OR}, // 12
+    {token::LOGICAL_AND,        token::LOGICAL_AND}, // 11
+    {token::PIPE,               token::BINARY_OR}, // 10
+    {token::CARET,              token::BINARY_XOR}, // 9
+    {token::AMPERSAND,          token::BINARY_AND}, // 8
+    {token::EQUALS,             token::EQUALS}, // 7
+    {token::NOT_EQUALS,         token::NOT_EQUALS}, // 7
+    {token::LESS_THAN,          token::LESS_THAN}, // 6
+    {token::LESS_THAN_OR_EQUAL, token::LESS_THAN_OR_EQUAL}, // 6
+    {token::GREATER_THAN,       token::GREATER_THAN}, // 6
+    {token::GREATER_THAN_OR_EQUAL,token::GREATER_THAN_OR_EQUAL}, //6
+    {token::LEFT_SHIFT,         token::LEFT_SHIFT}, // 5
+    {token::RIGHT_SHIFT,        token::RIGHT_SHIFT}, // 5
+    {token::PLUS,               token::PLUS}, // 4
+    {token::MINUS,              token::MINUS}, // 4
+    {token::STAR,               token::MULTIPLY}, // 3
+    {token::DIVISION,           token::DIVISION}, // 3
+    {token::MODULUS,            token::MODULUS}, // 3
+    {token::NONE,               token::NONE}
 };
 const token::token_t            tokenlist_prec14[] = {
     token::ASSIGNMENT,
