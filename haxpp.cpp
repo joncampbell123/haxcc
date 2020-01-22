@@ -1865,6 +1865,8 @@ string to_string(const token &t) {
             return "error ";
         case token::TERNARY:
             return "[ternary] ";
+        case token::NONE:
+            return "[none] ";
         default:
             break;
     };
@@ -2696,7 +2698,7 @@ bool is_type_token(token::token_t &repl,const token &t) {
     return false;
 }
 
-expression::node::node_t parse_expr_typecast(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
+expression::node::node_t parse_expr_typecast(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,const bool exprfollow=true) {
     token::token_t repl;
     auto tmpti = ti;
 
@@ -2725,10 +2727,36 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
                 throw invalid_argument("missing closing parens");
             ti++;
 
-            expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
+            if (exprfollow)
+                expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
+            else
+                expr.getnode(opnode).children.push_back(expr.newnode(token::NONE));
 
             return opnode;
         }
+    }
+
+    return expression::node::none;
+}
+
+expression::node::node_t parse_expr_sizeof(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
+    if (ti != tie && (*ti).tval == token::SIZEOF) {
+        ti++;
+
+        const expression::node::node_t opnode = expr.newnode(token::SIZEOF);
+
+        expr.getnode(opnode).children.resize(1);
+        if (ti != tie && (*ti).tval == token::OPEN_PARENS) {
+            expr.getnode(opnode).children[0] = parse_expr_typecast(expr,ti,tie,/*follows*/false);
+        }
+        else {
+            if (ti == tie)
+                throw invalid_argument("sizeof without argument");
+
+            expr.getnode(opnode).children[0] = expr.newnode(*(ti++));
+        }
+
+        return opnode;
     }
 
     return expression::node::none;
@@ -2810,6 +2838,10 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
     /* (expression) */
     if (headnode == expression::node::none)
         headnode = parse_expr_subexpr(expr,ti,tie);
+
+    /* sizeof(type) */
+    if (headnode == expression::node::none)
+        headnode = parse_expr_sizeof(expr,ti,tie);
 
     /* expression
      * expression = ~expression */
