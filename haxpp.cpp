@@ -2699,8 +2699,7 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
 
             const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
 
-            expr.getnode(opnode).children.resize(2);
-            expr.getnode(opnode).children[0] = parse_expr(expr,ti,tie);
+            expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
 
             if (ti == tie)
                 throw invalid_argument("missing closing parens");
@@ -2708,7 +2707,7 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
                 throw invalid_argument("missing closing parens");
             ti++;
 
-            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie);
+            expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
 
             return opnode;
         }
