@@ -319,6 +319,8 @@ public:
 unsigned int token::precedence(const token &t,const bool rtl) {
     switch (t.tval) {
         case token::DEFINED:
+        case token::SIZEOF:
+        case token::ALIGNOF:
             return 1;
         case token::INCREMENT:
             return rtl ? 2 : 1;
@@ -339,8 +341,6 @@ unsigned int token::precedence(const token &t,const bool rtl) {
             return rtl ? 2 : 3;
         case token::AMPERSAND:
             return rtl ? 2 : 8;
-        case token::SIZEOF:
-        case token::ALIGNOF:
         case token::NOT:
         case token::COMPLEMENT:
             return 2;
@@ -2691,6 +2691,7 @@ const tokenlist_entry           tokenlist_prec2_unary[] = {
     {token::COMPLEMENT,         token::COMPLEMENT}, // 2
     {token::STAR,               token::DEREFERENCE}, // 2
     {token::AMPERSAND,          token::ADDRESSOF}, // 2
+    {token::DEFINED,            token::DEFINED}, // 2
     {token::SIZEOF,             token::SIZEOF}, // 2
     {token::ALIGNOF,            token::ALIGNOF}, // 2
     {token::NONE,               token::NONE}
