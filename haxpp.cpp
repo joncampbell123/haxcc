@@ -2546,17 +2546,6 @@ bool match_token_list(token::token_t &repl,const token &t,const tokenlist_entry 
     return false;
 }
 
-bool match_token_list(const token &t,const token::token_t *tokens) {
-    while (*tokens != token::NONE) {
-        if (t.tval == *tokens)
-            return true;
-
-        tokens++;
-    }
-
-    return false;
-}
-
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = (~0u));
 
 expression::node::node_t parse_expr_rtl_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const tokenlist_entry *match_token) {
@@ -2664,35 +2653,15 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
-expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
-    unsigned int prec;
-
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++));
-
-        if (ti != tie) {
-            expr.getnode(opnode).children.resize(2);
-            expr.getnode(opnode).children[0] = headnode;
-            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec-1u);
-            headnode = opnode;
-        }
-        else {
-            throw invalid_argument("missing rvalue");
-        }
-    }
-
-    return headnode;
-}
-
 const tokenlist_entry           tokenlist_prec1_unary[] = {
     {token::INCREMENT,          token::POSTINCREMENT}, // 1
     {token::DECREMENT,          token::POSTDECREMENT}, // 1
     {token::NONE,               token::NONE}
 };
-const token::token_t            tokenlist_prec1_binary[] = {
-    token::PERIOD,              // 1
-    token::PTRARROW,            // 1
-    token::NONE
+const tokenlist_entry           tokenlist_prec1_binary[] = {
+    {token::PERIOD,             token::PERIOD},
+    {token::PTRARROW,           token::PTRARROW},
+    {token::NONE,               token::NONE}
 };
 const tokenlist_entry           tokenlist_prec2_unary[] = {
     {token::INCREMENT,          token::PREINCREMENT}, // 2
