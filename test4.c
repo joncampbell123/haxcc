@@ -111,3 +111,13 @@ Hello
 
 #if 4^3
 #endif
+
+#if abc.def
+#endif
+
+#if ~abc.def * 2
+#endif
+
+#if abc->def + 3
+#endif
+

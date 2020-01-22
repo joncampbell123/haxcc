@@ -163,6 +163,7 @@ public:
         PERIOD,
         DOTDOTDOT,
         PTRARROW,
+        STRUCTREF,
         COMPLEMENT,
         NOT,
         AMPERSAND,
@@ -1664,6 +1665,8 @@ string to_string(const token &t) {
             return "... ";
         case token::PTRARROW:
             return "-> ";
+        case token::STRUCTREF:
+            return "[structref] ";
         case token::COMPLEMENT:
             return " ~";
         case token::NOT:
@@ -2659,7 +2662,7 @@ const tokenlist_entry           tokenlist_prec1_unary[] = {
     {token::NONE,               token::NONE}
 };
 const tokenlist_entry           tokenlist_prec1_binary[] = {
-    {token::PERIOD,             token::PERIOD},
+    {token::PERIOD,             token::STRUCTREF},
     {token::PTRARROW,           token::PTRARROW},
     {token::NONE,               token::NONE}
 };
