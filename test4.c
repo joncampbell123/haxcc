@@ -65,3 +65,7 @@ Hello
 #if y ? f ? a : b : z
 Hello
 #endif
+
+#if 4 + 3 || a >= b && c >= d || a < b
+Hello
+#endif

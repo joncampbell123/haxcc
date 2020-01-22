@@ -2497,12 +2497,12 @@ bool match_token_list(const token &t,const token::token_t *tokens) {
     return false;
 }
 
-expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = 0);
+expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = (~0u));
 
 expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,expression::node::node_t headnode) {
     unsigned int prec;
 
-    while (ti != tie && (*ti).tval == token::QUESTIONMARK && (prec=token::precedence(*ti,false)) >= min_prec) {
+    while (ti != tie && (*ti).tval == token::QUESTIONMARK && (prec=token::precedence(*ti,false)) <= min_prec) {
         const expression::node::node_t opnode = expr.newnode(*(ti++));
 
         if (ti != tie) {
@@ -2530,7 +2530,7 @@ expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::i
 expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) >= min_prec) {
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
         const expression::node::node_t opnode = expr.newnode(*(ti++));
 
         if (ti != tie) {
@@ -2550,13 +2550,13 @@ expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator 
 expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) >= min_prec) {
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
         const expression::node::node_t opnode = expr.newnode(*(ti++));
 
         if (ti != tie) {
             expr.getnode(opnode).children.resize(2);
             expr.getnode(opnode).children[0] = headnode;
-            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec+1u);
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec-1u);
             headnode = opnode;
         }
         else {
@@ -2567,6 +2567,27 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
+const token::token_t            tokenlist_precbinary3_12[] = {
+    token::LOGICAL_OR,          // 12
+    token::LOGICAL_AND,         // 11
+    token::PIPE,                // 10
+    token::CARET,               // 9
+    token::AMPERSAND,           // 8
+    token::EQUALS,              // 7
+    token::NOT_EQUALS,          // 7
+    token::LESS_THAN,           // 6
+    token::LESS_THAN_OR_EQUAL,  // 6
+    token::GREATER_THAN,        // 6
+    token::GREATER_THAN_OR_EQUAL,//6
+    token::LEFT_SHIFT,          // 5
+    token::RIGHT_SHIFT,         // 5
+    token::PLUS,                // 4
+    token::MINUS,               // 4
+    token::STAR,                // 3
+    token::DIVISION,            // 3
+    token::MODULUS,             // 3
+    token::NONE
+};
 const token::token_t            tokenlist_prec14[] = {
     token::ASSIGNMENT,
     token::PLUS_EQUALS,
@@ -2589,6 +2610,10 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
         throw invalid_argument("expected token for expr parse");
 
     expression::node::node_t headnode = expr.newnode(*(ti++));
+
+    /* expression
+     * expression , expression */
+    headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_precbinary3_12,headnode);
 
     /* expression
      * expression ? t-expression : f-expression */
