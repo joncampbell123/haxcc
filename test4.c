@@ -10,7 +10,7 @@ OOPS
 Hello
 #endif
 
-#if 1,0
+#if 0,1
 Hello
 #else
 OOPS
@@ -43,15 +43,15 @@ Hello
 //#endif
 
 #if a
-Hello
-#else
 OOPS
+#else
+Hello
 #endif
 
 #if a,b
-Hello
-#else
 OOPS
+#else
+Hello
 #endif
 
 //#if a=b=c
