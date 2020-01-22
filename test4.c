@@ -205,6 +205,9 @@ Hello
 #undef c
 
 #define a 5
+#if defined a && defined b
+OOPS
+#endif
 #if defined(a) && defined(b)
 OOPS
 #endif
