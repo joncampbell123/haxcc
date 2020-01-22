@@ -2812,7 +2812,9 @@ bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
 
     dump_expr(NULL,expr);
 
-    // TODO
+    if (ti != tie)
+        throw invalid_argument("if condition did not fully parse");
+
     return false;
 }
 
