@@ -2782,7 +2782,7 @@ void dump_expr_node(FILE *fp,const expression &expr,const expression::node::node
         fp = stderr;
 
     for (unsigned int c=0;c < depth;c++)
-        fprintf(fp,"  ");
+        fprintf(fp,"| ");
 
     fprintf(fp,"node[%zu]: %s\n",node,to_string(expr.getnode(node).tval).c_str());
     for (size_t i=0;i < expr.getnode(node).children.size();i++)
