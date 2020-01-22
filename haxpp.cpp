@@ -2926,6 +2926,8 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
                 const auto &c = expr.getnode(n.children[0]);
                 if (c.tval.tval == token::IDENTIFIER)
                     return is_macro(c.tval.sval) ? 1 : 0;
+                else
+                    throw invalid_argument("defined() used with a non-identifier");
             }
         case token::TYPECAST: /* [0]=type tokens [1]=expression to typecast */
             fprintf(stderr,"WARNING: Typecasts are ignored by the macro processor\n");

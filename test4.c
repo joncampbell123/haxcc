@@ -234,3 +234,7 @@ Hello
 #endif
 #if (long)(char)(4 + 3)
 #endif
+
+#if defined a . bcd
+#endif
+
