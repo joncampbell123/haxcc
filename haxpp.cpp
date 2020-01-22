@@ -2672,7 +2672,7 @@ expression::node::node_t parse_expr_subexpr(expression &expr,token_string::itera
     return expression::node::none;
 }
 
-bool is_type_token(const token &t) {
+bool is_type_token(token::token_t &repl,const token &t) {
     switch (t.tval) {
         case token::INT:
         case token::CHAR:
@@ -2681,8 +2681,13 @@ bool is_type_token(const token &t) {
         case token::CONST:
         case token::SIGNED:
         case token::UNSIGNED:
+            repl = t.tval;
+            return true;
         case token::AMPERSAND:
+            repl = token::ADDRESSOF;
+            return true;
         case token::STAR:
+            repl = token::DEREFERENCE;
             return true;
         default:
             break;
@@ -2692,17 +2697,18 @@ bool is_type_token(const token &t) {
 }
 
 expression::node::node_t parse_expr_typecast(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
+    token::token_t repl;
     auto tmpti = ti;
 
     if (tmpti != tie && (*tmpti).tval == token::OPEN_PARENS) {
         tmpti++;
-        if (tmpti != tie && is_type_token(*tmpti)) {
+        if (tmpti != tie && is_type_token(/*&*/repl,*tmpti)) {
             ti = tmpti;
 
             const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
 
-            while (ti != tie && is_type_token(*ti)) {
-                expr.getnode(opnode).children.push_back(expr.newnode(*(ti++)));
+            while (ti != tie && is_type_token(/*&*/repl,*ti)) {
+                expr.getnode(opnode).children.push_back(expr.newnode(*(ti++),repl));
             }
 
             if (ti == tie)
