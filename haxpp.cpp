@@ -2847,6 +2847,14 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             return (pp_if_eval(expr,n.children[0]) == pp_if_eval(expr,n.children[1])) ? 1 : 0;
         case token::NOT_EQUALS:
             return (pp_if_eval(expr,n.children[0]) != pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::LESS_THAN:
+            return (pp_if_eval(expr,n.children[0]) < pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::LESS_THAN_OR_EQUAL:
+            return (pp_if_eval(expr,n.children[0]) <= pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::GREATER_THAN:
+            return (pp_if_eval(expr,n.children[0]) > pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::GREATER_THAN_OR_EQUAL:
+            return (pp_if_eval(expr,n.children[0]) >= pp_if_eval(expr,n.children[1])) ? 1 : 0;
         default:
             break;
     };

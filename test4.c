@@ -160,6 +160,21 @@ Hello
 #if 2 != 1
 #endif
 
+#if 1 > 1
+#endif
+
+#if 1 >= 1
+#endif
+
+#if 2 > 1
+#endif
+
+#if 1 < 2
+#endif
+
+#if 1 <= 2
+#endif
+
 #if sizeof(int)
 #endif
 
