@@ -2834,15 +2834,19 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
         case token::MODULUS:
             return pp_if_eval(expr,n.children[0]) % pp_if_eval(expr,n.children[1]);
         case token::LOGICAL_AND:
-            return (pp_if_eval(expr,n.children[0]) != 0ll) && (pp_if_eval(expr,n.children[1]) != 0ll);
+            return ((pp_if_eval(expr,n.children[0]) != 0ll) && (pp_if_eval(expr,n.children[1]) != 0ll)) ? 1 : 0;
         case token::LOGICAL_OR:
-            return (pp_if_eval(expr,n.children[0]) != 0ll) || (pp_if_eval(expr,n.children[1]) != 0ll);
+            return ((pp_if_eval(expr,n.children[0]) != 0ll) || (pp_if_eval(expr,n.children[1]) != 0ll)) ? 1 : 0;
         case token::BINARY_AND:
             return pp_if_eval(expr,n.children[0]) & pp_if_eval(expr,n.children[1]);
         case token::BINARY_XOR:
             return pp_if_eval(expr,n.children[0]) ^ pp_if_eval(expr,n.children[1]);
         case token::BINARY_OR:
             return pp_if_eval(expr,n.children[0]) | pp_if_eval(expr,n.children[1]);
+        case token::EQUALS:
+            return (pp_if_eval(expr,n.children[0]) == pp_if_eval(expr,n.children[1])) ? 1 : 0;
+        case token::NOT_EQUALS:
+            return (pp_if_eval(expr,n.children[0]) != pp_if_eval(expr,n.children[1])) ? 1 : 0;
         default:
             break;
     };
