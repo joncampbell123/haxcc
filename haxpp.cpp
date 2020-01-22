@@ -2496,6 +2496,26 @@ bool match_token_list(const token &t,const token::token_t *tokens) {
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = 0);
 
+expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
+    unsigned int prec;
+
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) >= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++));
+
+        if (ti != tie) {
+            expr.getnode(opnode).children.resize(2);
+            expr.getnode(opnode).children[0] = headnode;
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec);
+            headnode = opnode;
+        }
+        else {
+            throw invalid_argument("missing rvalue");
+        }
+    }
+
+    return headnode;
+}
+
 expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
@@ -2516,7 +2536,22 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
-const token::token_t            tokenlist_comma[] = {token::COMMA,token::NONE};
+const token::token_t            tokenlist_prec14[] = {
+    token::ASSIGNMENT,
+    token::PLUS_EQUALS,
+    token::MINUS_EQUALS,
+    token::MULTIPLY_EQUALS,
+    token::DIVIDE_EQUALS,
+    token::MODULUS_EQUALS,
+    token::LEFT_SHIFT_EQUALS,
+    token::RIGHT_SHIFT_EQUALS,
+    token::AND_EQUALS,
+    token::XOR_EQUALS,
+    token::OR_EQUALS,
+    token::NONE};
+const token::token_t            tokenlist_prec15[] = {
+    token::COMMA,
+    token::NONE};
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec) {
     if (ti == tie)
@@ -2525,8 +2560,12 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
     expression::node::node_t headnode = expr.newnode(*(ti++));
 
     /* expression
+     * expression = expression (also += -= *= etc) */
+    headnode = parse_expr_rtl(expr,ti,tie,min_prec,tokenlist_prec14,headnode);
+
+    /* expression
      * expression , expression */
-    headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_comma,headnode);
+    headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_prec15,headnode);
 
     return headnode;
 }
