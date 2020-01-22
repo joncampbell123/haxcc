@@ -85,3 +85,11 @@ Hello
 #if ~0 + ~~0 - !0
 Hello
 #endif
+
+#if a++
+Hello
+#endif
+
+#if ++a
+Hello
+#endif

@@ -2566,6 +2566,20 @@ expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator 
     return headnode;
 }
 
+expression::node::node_t parse_expr_ltr_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
+    unsigned int prec;
+
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++));
+
+        expr.getnode(opnode).children.resize(1);
+        expr.getnode(opnode).children[0] = headnode;
+        headnode = opnode;
+    }
+
+    return headnode;
+}
+
 expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
@@ -2586,6 +2600,16 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
+const token::token_t            tokenlist_prec1_unary[] = {
+    token::INCREMENT,           // 1
+    token::DECREMENT,           // 1
+    token::NONE
+};
+const token::token_t            tokenlist_prec1_binary[] = {
+    token::PERIOD,              // 1
+    token::PTRARROW,            // 1
+    token::NONE
+};
 const token::token_t            tokenlist_prec2_unary[] = {
     token::INCREMENT,           // 2
     token::DECREMENT,           // 2
@@ -2650,6 +2674,11 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
     /* number */
     if (headnode == expression::node::none)
         headnode = expr.newnode(*(ti++));
+
+    /* expression
+     * expression ++ -- () [] . -> expression */
+    headnode = parse_expr_ltr_unary(expr,ti,tie,min_prec,tokenlist_prec1_unary,headnode);
+    headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_prec1_binary,headnode);
 
     /* expression
      * expression * / % + - << >> etc expression */
