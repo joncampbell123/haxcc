@@ -248,7 +248,15 @@ Hello
 #endif
 #if (int*)5
 #endif
+#if (const int* const *)5
+#endif
 #if (int&)5
+#endif
+#if (int&&)5
+#endif
+#if (int & &)5
+#endif
+#if (int&&&)5
 #endif
 
 //#if defined a . bcd

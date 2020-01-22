@@ -2707,8 +2707,16 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
 
             const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
 
-            while (ti != tie && is_type_token(/*&*/repl,*ti)) {
-                expr.getnode(opnode).children.push_back(expr.newnode(*(ti++),repl));
+            /* NTS: Treat LOGICAL_AND as if two ADDRESSOF so && works properly here */
+            while (ti != tie && (is_type_token(/*&*/repl,*ti) || (*ti).tval == token::LOGICAL_AND)) {
+                if ((*ti).tval == token::LOGICAL_AND) {
+                    expr.getnode(opnode).children.push_back(expr.newnode(token::ADDRESSOF));
+                    expr.getnode(opnode).children.push_back(expr.newnode(token::ADDRESSOF));
+                    ti++;
+                }
+                else {
+                    expr.getnode(opnode).children.push_back(expr.newnode(*(ti++),repl));
+                }
             }
 
             if (ti == tie)
