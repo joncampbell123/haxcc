@@ -2699,7 +2699,9 @@ expression::node::node_t parse_expr_typecast(expression &expr,token_string::iter
 
             const expression::node::node_t opnode = expr.newnode(token::TYPECAST);
 
-            expr.getnode(opnode).children.push_back(parse_expr(expr,ti,tie));
+            while (ti != tie && is_type_token(*ti)) {
+                expr.getnode(opnode).children.push_back(expr.newnode(*(ti++)));
+            }
 
             if (ti == tie)
                 throw invalid_argument("missing closing parens");
@@ -2930,7 +2932,7 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
             }
         case token::TYPECAST: /* .at(0)=type tokens .at(1)=expression to typecast */
             fprintf(stderr,"WARNING: Typecasts are ignored by the macro processor\n");
-            return pp_if_eval(expr,n.children.at(1));
+            return pp_if_eval(expr,n.children.at(n.children.size()-size_t(1)));
         default:
             break;
     };

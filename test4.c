@@ -230,12 +230,19 @@ Hello
 #if (long)4
 #endif
 
+#if (long int)4
+#endif
+
 #if (long)4 + (char)3
 #endif
 
 #if (long)(4 + 3)
 #endif
 #if (long)(char)(4 + 3)
+#endif
+#if (long int)(unsigned char)(4 + 3)
+#endif
+#if (const long long int)(long int)(unsigned char)(4 + 3)
 #endif
 
 //#if defined a . bcd
