@@ -93,3 +93,10 @@ Hello
 #if ++a
 Hello
 #endif
+
+#if *a
+#endif
+
+#if &a
+#endif
+

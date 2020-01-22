@@ -156,6 +156,9 @@ public:
         PREINCREMENT,
         POSTDECREMENT,
         POSTINCREMENT,
+        NEGATE,
+        DEREFERENCE,
+        ADDRESSOF,
         COMMA,
         PERIOD,
         DOTDOTDOT,
@@ -1631,6 +1634,12 @@ string to_string(const token &t) {
             return "- ";
         case token::PLUS:
             return "+ ";
+        case token::NEGATE:
+            return "[negate]";
+        case token::DEREFERENCE:
+            return "[dereference] ";
+        case token::ADDRESSOF:
+            return "[addressof] ";
         case token::DECREMENT:
             return "-- ";
         case token::INCREMENT:
@@ -2538,11 +2547,12 @@ bool match_token_list(const token &t,const token::token_t *tokens) {
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = (~0u));
 
-expression::node::node_t parse_expr_rtl_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token) {
+expression::node::node_t parse_expr_rtl_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const tokenlist_entry *match_token) {
+    token::token_t repl;
     unsigned int prec;
 
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,true)) <= min_prec) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++));
+    while (ti != tie && match_token_list(/*&*/repl,*ti,match_token) && (prec=token::precedence(*ti,true)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++),repl);
 
         if (ti != tie) {
             expr.getnode(opnode).children.resize(1);
@@ -2650,18 +2660,18 @@ const token::token_t            tokenlist_prec1_binary[] = {
     token::PTRARROW,            // 1
     token::NONE
 };
-const token::token_t            tokenlist_prec2_unary[] = {
-    token::INCREMENT,           // 2
-    token::DECREMENT,           // 2
-    token::PLUS,                // 2
-    token::MINUS,               // 2
-    token::NOT,                 // 2
-    token::COMPLEMENT,          // 2
-    token::STAR,                // 2
-    token::AMPERSAND,           // 2
-    token::SIZEOF,              // 2
-    token::ALIGNOF,             // 2
-    token::NONE
+const tokenlist_entry           tokenlist_prec2_unary[] = {
+    {token::INCREMENT,          token::PREINCREMENT}, // 2
+    {token::DECREMENT,          token::PREDECREMENT}, // 2
+    {token::PLUS,               token::PLUS}, // 2
+    {token::MINUS,              token::NEGATE}, // 2
+    {token::NOT,                token::NOT}, // 2
+    {token::COMPLEMENT,         token::COMPLEMENT}, // 2
+    {token::STAR,               token::DEREFERENCE}, // 2
+    {token::AMPERSAND,          token::ADDRESSOF}, // 2
+    {token::SIZEOF,             token::SIZEOF}, // 2
+    {token::ALIGNOF,            token::ALIGNOF}, // 2
+    {token::NONE,               token::NONE},
 };
 const token::token_t            tokenlist_precbinary3_12[] = {
     token::LOGICAL_OR,          // 12
