@@ -2458,6 +2458,7 @@ class expression {
     public:
         node::node_t                    newnode();
         node::node_t                    newnode(const token &nt);
+        node::node_t                    newnode(const token &nt,const token::token_t ntval);
     public:
         inline node& getnode(const node::node_t &n) {
             if (n < nodelist.size())
@@ -2484,6 +2485,32 @@ expression::node::node_t expression::newnode(const token &nt) {
     nodelist.resize(r+size_t(1));
     nodelist[r].tval = nt;
     return r;
+}
+
+expression::node::node_t expression::newnode(const token &nt,const token::token_t ntval) {
+    const node::node_t r = nodelist.size();
+    nodelist.resize(r+size_t(1));
+    nodelist[r].tval = nt;
+    nodelist[r].tval.tval = ntval;
+    return r;
+}
+
+struct tokenlist_entry {
+    token::token_t              match;
+    token::token_t              replace;
+};
+
+bool match_token_list(token::token_t &repl,const token &t,const tokenlist_entry *tokens) {
+    while (tokens->match != token::NONE) {
+        if (t.tval == tokens->match) {
+            repl = tokens->replace;
+            return true;
+        }
+
+        tokens++;
+    }
+
+    return false;
 }
 
 bool match_token_list(const token &t,const token::token_t *tokens) {
@@ -2566,11 +2593,12 @@ expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator 
     return headnode;
 }
 
-expression::node::node_t parse_expr_ltr_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
+expression::node::node_t parse_expr_ltr_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const tokenlist_entry *match_token,expression::node::node_t headnode) {
+    token::token_t repl;
     unsigned int prec;
 
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++));
+    while (ti != tie && match_token_list(/*&*/repl,*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++),repl);
 
         expr.getnode(opnode).children.resize(1);
         expr.getnode(opnode).children[0] = headnode;
@@ -2600,10 +2628,10 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
-const token::token_t            tokenlist_prec1_unary[] = {
-    token::INCREMENT,           // 1
-    token::DECREMENT,           // 1
-    token::NONE
+const tokenlist_entry           tokenlist_prec1_unary[] = {
+    {token::INCREMENT,          token::INCREMENT}, // 1
+    {token::DECREMENT,          token::DECREMENT}, // 1
+    {token::NONE,               token::NONE}
 };
 const token::token_t            tokenlist_prec1_binary[] = {
     token::PERIOD,              // 1
