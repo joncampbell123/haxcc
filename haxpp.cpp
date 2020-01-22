@@ -2499,6 +2499,25 @@ bool match_token_list(const token &t,const token::token_t *tokens) {
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = (~0u));
 
+expression::node::node_t parse_expr_rtl_unary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token) {
+    unsigned int prec;
+
+    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,true)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++));
+
+        if (ti != tie) {
+            expr.getnode(opnode).children.resize(1);
+            expr.getnode(opnode).children[0] = parse_expr(expr,ti,tie,prec);
+            return opnode;
+        }
+        else {
+            throw invalid_argument("missing rvalue");
+        }
+    }
+
+    return expression::node::none;
+}
+
 expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,expression::node::node_t headnode) {
     unsigned int prec;
 
@@ -2567,6 +2586,19 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
+const token::token_t            tokenlist_prec2_unary[] = {
+    token::INCREMENT,           // 2
+    token::DECREMENT,           // 2
+    token::PLUS,                // 2
+    token::MINUS,               // 2
+    token::NOT,                 // 2
+    token::COMPLEMENT,          // 2
+    token::STAR,                // 2
+    token::AMPERSAND,           // 2
+    token::SIZEOF,              // 2
+    token::ALIGNOF,             // 2
+    token::NONE
+};
 const token::token_t            tokenlist_precbinary3_12[] = {
     token::LOGICAL_OR,          // 12
     token::LOGICAL_AND,         // 11
@@ -2609,10 +2641,18 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
     if (ti == tie)
         throw invalid_argument("expected token for expr parse");
 
-    expression::node::node_t headnode = expr.newnode(*(ti++));
+    expression::node::node_t headnode;
 
     /* expression
-     * expression , expression */
+     * expression = ~expression */
+    headnode = parse_expr_rtl_unary(expr,ti,tie,min_prec,tokenlist_prec2_unary);
+
+    /* number */
+    if (headnode == expression::node::none)
+        headnode = expr.newnode(*(ti++));
+
+    /* expression
+     * expression * / % + - << >> etc expression */
     headnode = parse_expr_ltr(expr,ti,tie,min_prec,tokenlist_precbinary3_12,headnode);
 
     /* expression

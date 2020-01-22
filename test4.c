@@ -69,3 +69,19 @@ Hello
 #if 4 + 3 || a >= b && c >= d || a < b
 Hello
 #endif
+
+#if 4 + 3 - 3 + 1
+Hello
+#endif
+
+#if -4 + 4
+Hello
+#endif
+
+#if !0 + !!1
+Hello
+#endif
+
+#if ~0 + ~~0 - !0
+Hello
+#endif
