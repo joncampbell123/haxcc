@@ -250,6 +250,7 @@ public:
         TOKEN_PASTE,
         VA_ARGS,
         VA_OPT,
+        TERNARY,
 
         MAX_TOKEN
     };
@@ -1826,6 +1827,8 @@ string to_string(const token &t) {
             return "line ";
         case token::ERROR:
             return "error ";
+        case token::TERNARY:
+            return "[ternary] ";
         default:
             break;
     };
@@ -2496,6 +2499,34 @@ bool match_token_list(const token &t,const token::token_t *tokens) {
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec = 0);
 
+expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,expression::node::node_t headnode) {
+    unsigned int prec;
+
+    while (ti != tie && (*ti).tval == token::QUESTIONMARK && (prec=token::precedence(*ti,false)) >= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++));
+
+        if (ti != tie) {
+            expr.getnode(opnode).children.resize(3);
+            expr.getnode(opnode).children[0] = headnode;
+            expr.getnode(opnode).children[1] = parse_expr(expr,ti,tie,prec);
+
+            if (ti == tie)
+                throw invalid_argument("Ternary ? expected :");
+            if ((*ti).tval != token::COLON)
+                throw invalid_argument("Ternary ? expected :");
+            ti++;
+
+            expr.getnode(opnode).children[2] = parse_expr(expr,ti,tie,prec);
+            headnode = opnode;
+        }
+        else {
+            throw invalid_argument("missing rvalue");
+        }
+    }
+
+    return headnode;
+}
+
 expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
     unsigned int prec;
 
@@ -2558,6 +2589,10 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
         throw invalid_argument("expected token for expr parse");
 
     expression::node::node_t headnode = expr.newnode(*(ti++));
+
+    /* expression
+     * expression ? t-expression : f-expression */
+    headnode = parse_expr_rtl_ternary(expr,ti,tie,min_prec,headnode);
 
     /* expression
      * expression = expression (also += -= *= etc) */

@@ -58,3 +58,10 @@ Hello
 OOPS
 #endif
 
+#if 1 ? a : b
+Hello
+#endif
+
+#if y ? f ? a : b : z
+Hello
+#endif
