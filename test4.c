@@ -258,10 +258,6 @@ Hello
 #endif
 #if (int&&&)5
 #endif
-#if sizeof(signed long int)
-#endif
-#if sizeof int
-#endif
 
 //#if defined a . bcd
 //#endif
