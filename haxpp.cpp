@@ -2810,7 +2810,8 @@ bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
     expression expr;
     expr.root = parse_expr(expr,ti,tie);
 
-    dump_expr(NULL,expr);
+    if (ppt_only)
+        dump_expr(NULL,expr);
 
     if (ti != tie)
         throw invalid_argument("if condition did not fully parse");
