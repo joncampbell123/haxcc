@@ -2889,6 +2889,8 @@ signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
         case token::STRUCTREF:
         case token::ADDRESSOF:
             throw invalid_argument("struct/pointer ref not allowed in macro preprocessor");
+        case token::SIZEOF:
+            throw invalid_argument("sizeof not allowed in macro preprocessor");
         case token::COMMA:
             return pp_if_eval(expr,n.children.at(1)); /* a,b -> b */
         case token::PLUS:
