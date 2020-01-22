@@ -2800,6 +2800,57 @@ void dump_expr(FILE *fp,const expression &expr) {
     fprintf(fp,"END\n");
 }
 
+signed long long pp_if_eval(expression &expr,expression::node::node_t node) {
+    if (node == expression::node::none)
+        throw invalid_argument("expression tree with no root");
+
+    const auto &n = expr.getnode(node);
+    switch (n.tval.tval) {
+        case token::INTEGER:
+            return n.tval.i.s;
+        case token::FLOAT:
+            throw invalid_argument("Floating point not allowed in expressions at preprocessor level");
+        case token::STRING:
+            throw invalid_argument("Strings not allowed in expressions at preprocessor level");
+        case token::COMMA:
+            return pp_if_eval(expr,n.children[1]); /* a,b -> b */
+        case token::PLUS:
+            if (n.children.size() == 2)
+                return pp_if_eval(expr,n.children[0]) + pp_if_eval(expr,n.children[1]);
+            else if (n.children.size() == 1)
+                return pp_if_eval(expr,n.children[0]); /* +a -> a */
+        case token::NEGATE:
+            return -pp_if_eval(expr,n.children[0]);
+        case token::MINUS:
+            return pp_if_eval(expr,n.children[0]) - pp_if_eval(expr,n.children[1]);
+        case token::NOT:
+            return (pp_if_eval(expr,n.children[0]) == 0) ? 1 : 0;
+        case token::COMPLEMENT:
+            return ~pp_if_eval(expr,n.children[0]);
+        case token::MULTIPLY:
+            return pp_if_eval(expr,n.children[0]) * pp_if_eval(expr,n.children[1]);
+        case token::DIVISION:
+            return pp_if_eval(expr,n.children[0]) / pp_if_eval(expr,n.children[1]);
+        case token::MODULUS:
+            return pp_if_eval(expr,n.children[0]) % pp_if_eval(expr,n.children[1]);
+        case token::LOGICAL_AND:
+            return (pp_if_eval(expr,n.children[0]) != 0ll) && (pp_if_eval(expr,n.children[1]) != 0ll);
+        case token::LOGICAL_OR:
+            return (pp_if_eval(expr,n.children[0]) != 0ll) || (pp_if_eval(expr,n.children[1]) != 0ll);
+        case token::BINARY_AND:
+            return pp_if_eval(expr,n.children[0]) & pp_if_eval(expr,n.children[1]);
+        case token::BINARY_XOR:
+            return pp_if_eval(expr,n.children[0]) ^ pp_if_eval(expr,n.children[1]);
+        case token::BINARY_OR:
+            return pp_if_eval(expr,n.children[0]) | pp_if_eval(expr,n.children[1]);
+        default:
+            break;
+    };
+
+    return 0ll;
+    throw invalid_argument("unsupported expression in preprocessor level");
+}
+
 bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
     (void)ti;
     (void)tie;
@@ -2816,7 +2867,11 @@ bool pp_if_eval(token_string::iterator &ti,const token_string::iterator &tie) {
     if (ti != tie)
         throw invalid_argument("if condition did not fully parse");
 
-    return false;
+    signed long long v = pp_if_eval(expr,expr.root);
+    if (ppt_only)
+        fprintf(stderr,"#if eval result %lld\n",v);
+
+    return v != 0ll;
 }
 
 /* preprocessing stage */

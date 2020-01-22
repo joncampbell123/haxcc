@@ -78,6 +78,12 @@ Hello
 Hello
 #endif
 
+#if -4
+#endif
+
+#if +4
+#endif
+
 #if !0 + !!1
 Hello
 #endif
