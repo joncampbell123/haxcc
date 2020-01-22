@@ -121,3 +121,9 @@ Hello
 #if abc->def + 3
 #endif
 
+#if 3 + (4)
+#endif
+
+#if 4 * (2 + 3*5 - 3) + (2 + 4 + 8) + (4 * (3 + (5 / 2)))
+#endif
+

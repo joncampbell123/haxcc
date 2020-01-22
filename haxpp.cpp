@@ -144,6 +144,7 @@ public:
         MACROPARAM,
         IDENTIFIER,
         FUNCTIONCALL,
+        SUBEXPRESSION,
         TYPECAST,
         INTEGER,
         FLOAT,
@@ -1865,6 +1866,8 @@ string to_string(const token &t) {
             return "error ";
         case token::TERNARY:
             return "[ternary] ";
+        case token::SUBEXPRESSION:
+            return "[subexpr] ";
         default:
             break;
     };
@@ -2656,6 +2659,25 @@ expression::node::node_t parse_expr_ltr(expression &expr,token_string::iterator 
     return headnode;
 }
 
+expression::node::node_t parse_expr_subexpr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie) {
+    if (ti != tie && (*ti).tval == token::OPEN_PARENS) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++),token::SUBEXPRESSION);
+
+        expr.getnode(opnode).children.resize(1);
+        expr.getnode(opnode).children[0] = parse_expr(expr,ti,tie);
+
+        if (ti == tie)
+            throw invalid_argument("missing closing parens");
+        if ((*ti).tval != token::CLOSE_PARENS)
+            throw invalid_argument("missing closing parens");
+        ti++;
+
+        return opnode;
+    }
+
+    return expression::node::none;
+}
+
 const tokenlist_entry           tokenlist_prec1_unary[] = {
     {token::INCREMENT,          token::POSTINCREMENT}, // 1
     {token::DECREMENT,          token::POSTDECREMENT}, // 1
@@ -2725,9 +2747,13 @@ expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,
 
     expression::node::node_t headnode;
 
+    /* (expression) */
+    headnode = parse_expr_subexpr(expr,ti,tie);
+
     /* expression
      * expression = ~expression */
-    headnode = parse_expr_rtl_unary(expr,ti,tie,min_prec,tokenlist_prec2_unary);
+    if (headnode == expression::node::none)
+        headnode = parse_expr_rtl_unary(expr,ti,tie,min_prec,tokenlist_prec2_unary);
 
     /* number */
     if (headnode == expression::node::none)
