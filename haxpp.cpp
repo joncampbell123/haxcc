@@ -2607,11 +2607,12 @@ expression::node::node_t parse_expr_rtl_ternary(expression &expr,token_string::i
     return headnode;
 }
 
-expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const token::token_t *match_token,expression::node::node_t headnode) {
+expression::node::node_t parse_expr_rtl(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec,const tokenlist_entry *match_token,expression::node::node_t headnode) {
+    token::token_t repl;
     unsigned int prec;
 
-    while (ti != tie && match_token_list(*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
-        const expression::node::node_t opnode = expr.newnode(*(ti++));
+    while (ti != tie && match_token_list(/*&*/repl,*ti,match_token) && (prec=token::precedence(*ti,false)) <= min_prec) {
+        const expression::node::node_t opnode = expr.newnode(*(ti++),repl);
 
         if (ti != tie) {
             expr.getnode(opnode).children.resize(2);
@@ -2727,22 +2728,24 @@ const tokenlist_entry           tokenlist_precbinary3_12[] = {
     {token::MODULUS,            token::MODULUS}, // 3
     {token::NONE,               token::NONE}
 };
-const token::token_t            tokenlist_prec14[] = {
-    token::ASSIGNMENT,
-    token::PLUS_EQUALS,
-    token::MINUS_EQUALS,
-    token::MULTIPLY_EQUALS,
-    token::DIVIDE_EQUALS,
-    token::MODULUS_EQUALS,
-    token::LEFT_SHIFT_EQUALS,
-    token::RIGHT_SHIFT_EQUALS,
-    token::AND_EQUALS,
-    token::XOR_EQUALS,
-    token::OR_EQUALS,
-    token::NONE};
-const token::token_t            tokenlist_prec15[] = {
-    token::COMMA,
-    token::NONE};
+const tokenlist_entry           tokenlist_prec14[] = {
+    {token::ASSIGNMENT,         token::ASSIGNMENT},
+    {token::PLUS_EQUALS,        token::PLUS_EQUALS},
+    {token::MINUS_EQUALS,       token::MINUS_EQUALS},
+    {token::MULTIPLY_EQUALS,    token::MULTIPLY_EQUALS},
+    {token::DIVIDE_EQUALS,      token::DIVIDE_EQUALS},
+    {token::MODULUS_EQUALS,     token::MODULUS_EQUALS},
+    {token::LEFT_SHIFT_EQUALS,  token::LEFT_SHIFT_EQUALS},
+    {token::RIGHT_SHIFT_EQUALS, token::RIGHT_SHIFT_EQUALS},
+    {token::AND_EQUALS,         token::AND_EQUALS},
+    {token::XOR_EQUALS,         token::XOR_EQUALS},
+    {token::OR_EQUALS,          token::OR_EQUALS},
+    {token::NONE,               token::NONE}
+};
+const tokenlist_entry           tokenlist_prec15[] = {
+    {token::COMMA,              token::COMMA},
+    {token::NONE,               token::NONE}
+};
 
 expression::node::node_t parse_expr(expression &expr,token_string::iterator &ti,const token_string::iterator &tie,unsigned int min_prec) {
     if (ti == tie)
